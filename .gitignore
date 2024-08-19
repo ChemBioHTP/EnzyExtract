@@ -1,0 +1,15 @@
+__pycache__
+.pytest_cache
+
+*.jsonl
+*.csv
+*.tsv
+*.md
+*.fasta
+
+*.env
+*.zip
+
+_debug
+
+.hidden
