@@ -8,11 +8,12 @@ import os
 from tqdm import tqdm
 
 from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import get_pmid_to_yaml_dict, to_openai_batch_request, write_to_jsonl
+from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
 from kcatextract.utils.fresh_version import next_available_version
 from kcatextract.utils.micro_fix import mM_corrected_text
 from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from kcatextract.utils.working import pmid_to_tables_from
+from kcatextract.utils.yaml_process import get_pmid_to_yaml_dict
 
 
 # def obtain_yamls(file_path):

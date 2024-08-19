@@ -2,8 +2,9 @@ import pandas as pd
 from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
 from kcatextract.hungarian.hungarian_matching import match_dfs_by_pmid
 from kcatextract.hungarian.postmatched_utils import convenience_rearrange_cols
-from kcatextract.utils.construct_batch import merge_2_yamls, yaml_to_df, fix_multiple_yamls
+from kcatextract.utils.yaml_process import fix_multiple_yamls
 from kcatextract.utils.fresh_version import next_available_version
+from kcatextract.utils.yaml_process import merge_2_yamls, yaml_to_df
 
 
 YAMLS_ORIG = "completions/enzy/brenda-rekcat-md-v1-2_1.md"

@@ -11,8 +11,9 @@ from kcatextract.backform.backform_utils import fix_the_yaml, isolate_the_yaml
 from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid
 from kcatextract.utils.pmid_management import pmids_from_cache
 from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import get_pmid_to_yaml_dict, to_openai_batch_request, write_to_jsonl
+from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
 from kcatextract.utils.fresh_version import next_available_version
+from kcatextract.utils.yaml_process import get_pmid_to_yaml_dict
 
 
 

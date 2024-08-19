@@ -6,8 +6,9 @@ import re
 import pandas as pd
 from kcatextract.fetch_sequences.confirm_enzyme_sequences import construct_window, str_to_splitable
 from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import extract_yaml_code_blocks, fix_multiple_yamls, get_resultant_content, locate_correct_batch, pmid_from_usual_cid, to_openai_batch_request, write_to_jsonl
+from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid, to_openai_batch_request, write_to_jsonl
 from kcatextract.utils.fresh_version import next_available_version
+from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
 
 compl_folder = 'completions/enzy'

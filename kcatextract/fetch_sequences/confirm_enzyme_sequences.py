@@ -12,7 +12,8 @@ import yaml
 
 from Bio.Seq import Seq
 
-from kcatextract.utils.construct_batch import extract_yaml_code_blocks, fix_multiple_yamls, get_resultant_content, locate_correct_batch, pmid_from_usual_cid
+from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid
+from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
 
 

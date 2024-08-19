@@ -7,8 +7,9 @@ from kcatextract.backform.process_human_perfect import form_human_perfect
 from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
 from kcatextract.hungarian.hungarian_matching import match_dfs_by_pmid
 from kcatextract.hungarian.postmatched_utils import convenience_rearrange_cols
-from kcatextract.utils.construct_batch import extract_yaml_code_blocks, fix_multiple_yamls, get_resultant_content, locate_correct_batch, pmid_from_usual_cid, yaml_to_df
+from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid
 from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_file
+from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df
 
 
 def script0():
