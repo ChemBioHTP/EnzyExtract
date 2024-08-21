@@ -11,6 +11,7 @@ from kcatextract.utils import prompt_collections
 from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
 from kcatextract.utils.fresh_version import next_available_version
 from kcatextract.utils.micro_fix import mM_corrected_text
+from kcatextract.utils.openai_management import process_env, submit_batch_file
 from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from kcatextract.utils.working import pmid_to_tables_from
 from kcatextract.utils.yaml_process import get_pmid_to_yaml_dict
@@ -25,7 +26,7 @@ from kcatextract.utils.yaml_process import get_pmid_to_yaml_dict
 #             result[pmid] += yaml + '\n'
 #     return result
 
-namespace = 'brenwi-giveboth-tuned'
+namespace = 'brenda-rekcat-tuneboth'
 
 # defaults
 micro_path = "C:/conjunct/vandy/yang/reocr/results/micros_resnet_v1.csv"
@@ -36,7 +37,8 @@ md_folder = 'C:/conjunct/tmp/brenda_rekcat_tables/md_v3'
 table_info_root = None
 table_md_src = None
 md_folder = None
-if namespace.startswith('tableless-') or namespace.startswith('tabled-') or namespace.startswith('rekcat-'):
+if namespace.startswith('tableless-') or namespace.startswith('tabled-') \
+        or namespace.startswith('rekcat-') or namespace.startswith('brenda-rekcat-'):
     pdf_root = "C:/conjunct/tmp/brenda_rekcat_pdfs"
     # table_info_root = "C:/conjunct/tmp/brenda_rekcat_tables"
     # table_md_src = "completions/enzy/brenda-rekcat-md-v1-2_1.md"
@@ -179,6 +181,10 @@ for filepath in tqdm(glob.glob(f"{pdf_root}/*.pdf")):
                                   model_name=model_name)
     batch.append(req)
 
-write_to_jsonl(batch, f'{dest_folder}/{namespace}_{version}.jsonl')
+will_write_to = f'{dest_folder}/{namespace}_{version}.jsonl'
+write_to_jsonl(batch, will_write_to)
 if _pmid_with_tables:
     print(f"Found {_pmid_with_tables} pmids with tables")
+
+process_env('.env')
+submit_batch_file(will_write_to)

@@ -34,9 +34,22 @@ def to_openai_batch_request(uuid: str, system_prompt: str, docs: list[str], mode
         }
     }
 
-def pmid_from_usual_cid(uuid: str) -> int:
+def pmid_from_usual_cid(cid: str) -> int:
     """Assumes f'{namespace}_{version}_{pmid}'"""
-    return int(uuid.split('_', 2)[2])
+    return int(cid.split('_', 2)[2])
+
+
+def namespace_from_usual_cid(cid: str) -> int:
+    """Assumes f'{namespace}_{version}_{pmid}'"""
+    return cid.split('_', 2)[0]
+
+def versioned_namespace_from_usual_cid(cid: str) -> int:
+    """Assumes f'{namespace}_{version}_{pmid}'"""
+    uscores = cid.count('_')
+    if uscores < 2:
+        return cid
+    namespace, version = cid.split('_', 2)[:2]
+    return f'{namespace}_{version}' # allow dois with underscores as pmid
     
 
 def write_to_jsonl(batch, filename):
@@ -44,8 +57,6 @@ def write_to_jsonl(batch, filename):
         for item in batch:
             f.write(json.dumps(item) + '\n')
             
-
-
 
 import json
 import os
@@ -79,6 +90,52 @@ def locate_correct_batch(src_folder, namespace, version=None):
                 # print(line[prefix:], target)
     raise FileNotFoundError(f"Could not find {namespace} in {src_folder}")
 
+def decode_custom_id(output_filepath):
+    """decode custom_id from output batch file
+    assumes there are none of these characters: >"< """
+    with open(output_filepath, 'r') as f:
+        line = f.readline()
+        if line.startswith('{"id": "batch_req_'):
+            # output
+            prefix = len('''{"id": "batch_req_cOTEwOobeyeib0QWIhpo7PWQ", "custom_id": "''') # "custom_id": 
+            return line[prefix:line.index('"', prefix)]
+        elif line.startswith('{"custom_id": "'):
+            # input
+            prefix = len('{"custom_id": "')
+            return line[prefix:line.index('"', prefix)]
+
+def preview_batches_in_folder(src_folder, output_folder, undownloaded_only=True, printme=True):
+    """preview the batches in a folder
+    if undownloaded_only, only print the ones that have not been downloaded"""
+    src_to_output = {}
+    for filename in os.listdir(src_folder):
+        if not filename.endswith('.jsonl'):
+            continue
+        cid = decode_custom_id(f'{src_folder}/{filename}')
+        ns = versioned_namespace_from_usual_cid(cid)
+        src_to_output[ns] = None
+    
+    for filename in os.listdir(output_folder):
+        if not filename.endswith('.jsonl'):
+            continue
+        cid = decode_custom_id(f'{output_folder}/{filename}')
+        ns = versioned_namespace_from_usual_cid(cid)
+        if ns in src_to_output:
+            src_to_output[ns] = filename
+        else:
+            print(f"Warning: {ns} not found in src_folder")
+    
+    if undownloaded_only:
+        src_to_output = {k: v for k, v in src_to_output.items() if v is None}
+    
+    if printme:
+        for k, v in src_to_output.items():
+            print(k, ":", v)
+    
+    return src_to_output
+    
+    
+
 def get_resultant_content(filename) -> list[tuple[str, str]]:
     # return list of (custom_id, content, finish_reason)
     result = []
@@ -90,3 +147,5 @@ def get_resultant_content(filename) -> list[tuple[str, str]]:
     return result
 
 
+if __name__ == '__main__':
+    preview_batches_in_folder('batches/enzy', 'completions/enzy', undownloaded_only=False)

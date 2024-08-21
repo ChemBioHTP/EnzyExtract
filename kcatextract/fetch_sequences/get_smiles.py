@@ -8,6 +8,8 @@ from urllib.parse import quote
 import pandas as pd
 import requests
 
+from tqdm import tqdm
+
 def CIRconvert(ids):
     # https://cactus.nci.nih.gov/chemical/structure
     # https://cactus.nci.nih.gov/chemical/structure_documentation
@@ -78,11 +80,20 @@ def convert_through_inchi(identifiers):
     
     return rdkit_inchi(subset['name'], subset['inchi'])
     
-        
+
+def script0():
+    # identifiers = ['3-Methylheptane', 'Aspirin', 'Diethylsulfate', 'Diethyl sulfate', '50-78-2', 'Adamant']
+    # identifiers = ['p-NPP'] # not found
+    identifiers = ['pNPP']
+    rdkit = rdkit_main(identifiers)
+    pubchem = pubchem_main(identifiers)
+    print(rdkit)
+    print(pubchem)
+    exit(0)
 
 if __name__ == "__main__":
-    # identifiers  = ['3-Methylheptane', 'Aspirin', 'Diethylsulfate', 'Diethyl sulfate', '50-78-2', 'Adamant']
-
+    script0()
+    
     # rdkit_main(identifiers)
     # df = pubchem_main(identifiers)
     # print(df)

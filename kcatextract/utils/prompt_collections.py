@@ -676,3 +676,51 @@ context:
     solvents: null
     other: null
 ```"""
+
+
+substrate_disambiguate_1v0 = """You are a helpful and diligent assistant specialized in enzyme catalysis. \
+You will be given a substrate name and up to 5 candidates. \
+Your goal is to determine the candidate which best matches for the substrate name, if any. 
+Write your train of thought, 
+
+Here is an example:
+
+### Input
+
+Substrate: α-ketoglutarate
+Candidates:
+- 2-ketoglutarate (C5H6O5)
+- 2-ketoglutaramate (C5H7NO4)
+- alpha-ketoglutarate (C5H6O5)
+
+### Output
+
+The best match for α-ketoglutarate is alpha-ketoglutarate. However, 2-ketoglutarate is also acceptable, because it is a known synonym of alpha-ketoglutarate.
+
+```answer
+alpha-ketoglutarate
+```
+
+### Input
+
+Substrate: Dns-PhgRAPW
+Candidates: 
+- Dns-LPKTGGRR
+- [SNase]-PHYGR
+- (s-pG)tRNAPhe
+
+### Output
+
+Without further information, none of these examples match Dns-PhgRAPW well.
+
+```answer 
+None
+```
+
+### Input
+
+Substrate: Nicotinamide adenine dinucleotide (reduced)
+Candidates:
+
+
+"""

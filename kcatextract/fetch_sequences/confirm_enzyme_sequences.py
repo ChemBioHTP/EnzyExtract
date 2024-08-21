@@ -542,6 +542,7 @@ def script0(use_gpt=False, allow_mut=False):
             closest = None
             closest_ident = None
             closest_target = None
+            closest_sequence = None
             for key, collection in sorted(result.items()):
                 
                     
@@ -565,6 +566,7 @@ def script0(use_gpt=False, allow_mut=False):
                                 closest = i
                                 closest_ident = ident
                                 closest_target = target
+                                closest_sequence = data['sequence']
                     if closest == -1:
                         print("wtf happened?")    
             if closest is not None:
@@ -576,11 +578,14 @@ def script0(use_gpt=False, allow_mut=False):
                 # else:
                 #     log += f"Off by {distance} "
                 # log += f"Matched {desire} with {closest_ident} in {enzyme['fullname']} at {i}\n"
-                builder.append((pmid, distance, closest_ident, enzyme['fullname'], og_desire, closest_target, closest))
+                builder.append((pmid, distance, closest_ident, enzyme['fullname'], og_desire, closest_target, closest, closest_sequence))
                 # print(f"Sequence: {sequence[i-10:i+10]}")
             else:
                 # log += f"[{pmid}] No match for {desire}\n"
                 # bulder.append((pmid, None, None, desire, target, -1))
+                # if no match, give the desire
+                # (this may occur if no pdb or uniprot or genbank is found)
+                builder.append((pmid, None, None, enzyme['fullname'], og_desire, og_target, None, None))
                 pass
 
         
@@ -591,19 +596,19 @@ def script0(use_gpt=False, allow_mut=False):
         # ct -= 1
         # if ct == 0:
             # break
-    dists_df = pd.DataFrame(builder, columns=['pmid', 'distance', 'ident', 'enzyme_name', 'desire', 'target', 'index'])
+    dists_df = pd.DataFrame(builder, columns=['pmid', 'distance', 'ident', 'enzyme_name', 'desire', 'target', 'index', 'sequence'])
     print("This many with mutants and sequences", _num_attempts)
     print("This many found", _num_found)
     print("This many in the builder", len(builder))
     
-    dists_df.to_csv("fetch_sequences/enzymes/rekcat_mutant_distances_mut.new.tsv", sep="\t", index=False)
+    dists_df.to_csv("fetch_sequences/enzymes/rekcat_mutant_distances_gpt.tsv", sep="\t", index=False)
     
     end = time.time()
     print("Time: ", end-start) # regex: 118s
     exit(0)
 if __name__ == "__main__":
     
-    script0(use_gpt=False, allow_mut=False)
+    script0(use_gpt=True, allow_mut=False)
     
     mutants = ["Ala110Arg", "R120Z/R123W", "S124W", "Y126A"]
     out = sequence_search_regex(mutants)
