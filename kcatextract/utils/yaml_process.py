@@ -543,10 +543,10 @@ def fix_multiple_yamls(file_path: Optional[str]=None, yaml_blocks: Optional[list
             yield pmid, datum + '\n' + context
 
 
-def get_pmid_to_yaml_dict(file_path) -> dict:
+def get_pmid_to_yaml_dict(file_path, **kwargs) -> dict:
     """returns a pmid_to_yaml dict"""
     pmid2yaml = {}
-    for pmid, yaml in fix_multiple_yamls(file_path=file_path):
+    for pmid, yaml in fix_multiple_yamls(file_path=file_path, **kwargs):
         if pmid not in pmid2yaml:
             pmid2yaml[pmid] = ""
         pmid2yaml[pmid] += yaml + '\n'

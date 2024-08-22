@@ -8,7 +8,7 @@ import os
 from tqdm import tqdm
 
 from kcatextract.backform.backform_utils import fix_the_yaml, isolate_the_yaml
-from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid
+from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from kcatextract.utils.pmid_management import pmids_from_cache
 from kcatextract.utils import prompt_collections
 from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
@@ -41,8 +41,8 @@ whitelist = pmids_from_cache('explode/tabled-oneshot-tuned')
 root = 'completions/enzy'
 at, version = locate_correct_batch(root, orig_namespace)
 
-for custom_id, content, finish_reason in get_resultant_content(f'{root}/{at}'):
-    pmid = str(pmid_from_usual_cid(custom_id))
+for custom_id, content, finish_reason in get_batch_output(f'{root}/{at}'):
+    pmid = pmid_from_usual_cid(custom_id)
     if pmid not in whitelist:
         continue
     

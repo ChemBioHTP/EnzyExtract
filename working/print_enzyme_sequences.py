@@ -2,7 +2,7 @@
 
 
 
-from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch
+from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch
 
 
 if __name__ == "__main__":
@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
 prompt: enzymes_v1
 """
-    for custom_id, content, stop_reason in get_resultant_content(f'{root}/{at}'):
+    for custom_id, content, stop_reason in get_batch_output(f'{root}/{at}'):
         pmid = custom_id.split('_', 2)[2]
         result += f"## PMID: {pmid}\n\n"
         result += content + "\n\n"

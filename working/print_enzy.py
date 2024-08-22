@@ -1,7 +1,7 @@
 import json
 import os
 
-from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch
+from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch
 
 
 
@@ -19,7 +19,7 @@ if __name__ == "__main__":
 prompt: table_oneshot_v1
 papers: tableless
 """
-    for custom_id, content, finish_reason in get_resultant_content(f'{root}/{at}'):
+    for custom_id, content, finish_reason in get_batch_output(f'{root}/{at}'):
         
         pmid = custom_id.split('_', 2)[2]
         if finish_reason == 'length':

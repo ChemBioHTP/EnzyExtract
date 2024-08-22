@@ -96,12 +96,12 @@ def script0():
     pmid_to_input = {}
     pmid_to_output = {}
     for item in input_batch:
-        pmid = pmid_from_usual_cid(item['custom_id'])
+        pmid = int(pmid_from_usual_cid(item['custom_id']))
         if pmid in perfect_pmids:
             pmid_to_input[pmid] = item
 
     for item in output_batch:
-        pmid = pmid_from_usual_cid(item['custom_id'])
+        pmid = int(pmid_from_usual_cid(item['custom_id']))
         if pmid in perfect_pmids:
             pmid_to_output[pmid] = item
 
@@ -183,12 +183,12 @@ def script1():
     pmid_to_input = {}
     pmid_to_output = {}
     for item in input_batch:
-        pmid = pmid_from_usual_cid(item['custom_id'])
+        pmid = int(pmid_from_usual_cid(item['custom_id']))
         if pmid in perfect_pmids:
             pmid_to_input[pmid] = item
 
     for item in output_batch:
-        pmid = pmid_from_usual_cid(item['custom_id'])
+        pmid = int(pmid_from_usual_cid(item['custom_id']))
         if pmid in perfect_pmids:
             pmid_to_output[pmid] = item
 
@@ -233,7 +233,7 @@ def script2():
         # input_batch = [json.loads(line) for line in f]
         for line in f:
             obj = json.loads(line)
-            pmid = pmid_from_usual_cid(obj['custom_id'])
+            pmid = int(pmid_from_usual_cid(obj['custom_id']))
             input_reqs[pmid] = obj
     
     output_reqs = {}
@@ -241,7 +241,7 @@ def script2():
         # output_batch = [json.loads(line) for line in f]
         for line in f:
             obj = json.loads(line)
-            pmid = pmid_from_usual_cid(obj['custom_id'])
+            pmid = int(pmid_from_usual_cid(obj['custom_id']))
             output_reqs[pmid] = obj
         
     result = []

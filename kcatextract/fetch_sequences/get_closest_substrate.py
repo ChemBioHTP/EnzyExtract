@@ -240,7 +240,7 @@ def redo_smiles_search(unknown_df, fragment_folder='fetch_sequences/results/smil
     # read the "name" column
     # redo smiles search on
     # save results to fragment_folder, appending the timestamp to create unique filenames
-    idents = unknown_df['name'].unique()
+    idents = set(unknown_df['name'])
     if not idents:
         return None, None
     timestamp = program_timestamp()
@@ -373,7 +373,7 @@ def script0():
     result = pd.concat(results)
     print(result)
 
-def script1():
+def infuse_with_substrates(checkpoint_df=None, redo_smiles=False, redo_inchi=False):
     """Objective: can we see what is left to be matched?"""
     
     
@@ -393,7 +393,8 @@ def script1():
     # step 5, anoint sequence_df with smiles via inchi
     # step 6, join checkpoint_df with sequence_df
     
-    checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_rekcat-giveboth-4o_2.csv") # 95/340
+    if checkpoint_df is None:
+        checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_rekcat-giveboth-4o_2.csv") # 95/340
     # checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_brenda-rekcat-md-v1-2_1.csv") # 497/2322 known
     
     brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
@@ -409,7 +410,12 @@ def script1():
     
     queryable = unknown_df[~unknown_df['name'].isin(unqueryable)]
     
-    redo_smiles_search(queryable)
+    if redo_smiles:
+        df1, df2 = redo_smiles_search(queryable)
+        if df1 is not None:
+            smiles_df = pd.concat([smiles_df, df1])
+        if df2 is not None:
+            smiles_df = pd.concat([smiles_df, df2])
     print(unknown_df)
     
     # step 3: skip
@@ -419,14 +425,15 @@ def script1():
     join_inchi(sequence_df, brenda_substrate_df)
 
     # step 5
-    join_smiles(sequence_df, inchi_df, request_missing=True)
+    join_smiles(sequence_df, inchi_df, request_missing=redo_inchi)
     
     # print(sequence_df)
     
     substrated_df = join_sequence_df(checkpoint_df, sequence_df)
     
-    print(substrated_df)
+    # print(substrated_df)
+    return substrated_df
     
     
 if __name__ == "__main__":
-    script1()
+    infuse_with_substrates()

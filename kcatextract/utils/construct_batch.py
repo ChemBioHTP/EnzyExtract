@@ -34,9 +34,9 @@ def to_openai_batch_request(uuid: str, system_prompt: str, docs: list[str], mode
         }
     }
 
-def pmid_from_usual_cid(cid: str) -> int:
+def pmid_from_usual_cid(cid: str) -> str:
     """Assumes f'{namespace}_{version}_{pmid}'"""
-    return int(cid.split('_', 2)[2])
+    return cid.split('_', 2)[2] # formerly int
 
 
 def namespace_from_usual_cid(cid: str) -> int:
@@ -136,7 +136,7 @@ def preview_batches_in_folder(src_folder, output_folder, undownloaded_only=True,
     
     
 
-def get_resultant_content(filename) -> list[tuple[str, str]]:
+def get_batch_output(filename) -> list[tuple[str, str]]:
     # return list of (custom_id, content, finish_reason)
     result = []
     with open(filename, 'r') as f:

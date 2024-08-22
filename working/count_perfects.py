@@ -7,7 +7,7 @@ from kcatextract.backform.process_human_perfect import form_human_perfect
 from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
 from kcatextract.hungarian.hungarian_matching import match_dfs_by_pmid
 from kcatextract.hungarian.postmatched_utils import convenience_rearrange_cols
-from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid
+from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_file
 from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df
 
@@ -47,13 +47,13 @@ def script0():
         valid_pmids = set(valid_df['pmid'])
         print("Using existing valid csv.")
         
-        for custom_id, content, finish_reason in get_resultant_content(f'{compl_folder}/{filename}'):
+        for custom_id, content, finish_reason in get_batch_output(f'{compl_folder}/{filename}'):
             if finish_reason != 'length':
                 totals += 1
         print("Started with", totals, "PMIDs")
         print("Valid PMIDs:", len(valid_pmids))
     else:
-        for custom_id, content, finish_reason in get_resultant_content(f'{compl_folder}/{filename}'):
+        for custom_id, content, finish_reason in get_batch_output(f'{compl_folder}/{filename}'):
             pmid = pmid_from_usual_cid(custom_id)
             
             content = content.replace('\nextras:\n', '\ndata:\n') # blunder
@@ -76,6 +76,7 @@ def script0():
         
         valid_df = prep_for_hungarian(pd.concat(valids)) # bad units for km and kcat are rejected here
         valid_df = valid_df.astype({'pmid': 'str'})
+        # no longer necessary since pmid is str
         
         
         if _valid_csv and not os.path.exists(_valid_csv):
@@ -168,7 +169,7 @@ def script0():
         
     # see how many also pass the QA process for backform
     backform_pmids = []
-    for custom_id, content, finish_reason in get_resultant_content(f'{compl_folder}/{filename}'):
+    for custom_id, content, finish_reason in get_batch_output(f'{compl_folder}/{filename}'):
         pmid = pmid_from_usual_cid(custom_id)
         if str(pmid) in (perfect_pmids & _have_both_enzyme_substrate):
             problems, fixed = quality_assure_ai_message(content)

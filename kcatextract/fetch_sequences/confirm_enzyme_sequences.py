@@ -12,7 +12,7 @@ import yaml
 
 from Bio.Seq import Seq
 
-from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid
+from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
 
@@ -33,8 +33,8 @@ def str_to_splitable(x): # split by ", "
     
 def load_yaml_enzymes(filepath, yaml_parse=True):
     pmid2yaml = {}
-    for custom_id, content, finish_reason in get_resultant_content(filepath):
-        pmid = str(pmid_from_usual_cid(custom_id))
+    for custom_id, content, finish_reason in get_batch_output(filepath):
+        pmid = pmid_from_usual_cid(custom_id)
         
         content = content.replace('\nextras:\n', '\ndata:\n') # blunder
 
@@ -346,7 +346,8 @@ def to_regex(codes: MutantMatcher, allow_mut: bool | MutantMatcher=False) -> tup
 
         
 
-def does_sequence_corroborate(codes: MutantMatcher | tuple[str, int], sequence: Optional[str]=None, allow_mut=False) -> tuple[int, int]:
+def does_sequence_corroborate(codes: MutantMatcher | tuple[str, int], sequence: Optional[str]=None, allow_mut=False) -> tuple[int, int, str]:
+    """Should return (index, target_index, sequence)"""
     
     if all(x in 'CAGT' for x in sequence):
         # it's a DNA sequence
@@ -380,11 +381,11 @@ def does_sequence_corroborate(codes: MutantMatcher | tuple[str, int], sequence: 
     matches = [m.start() for m in re.finditer(regex, sequence)]
     
     if not matches: # i == -1:
-        return None, -1
+        return None, -1, ""
     
     i = min(matches, key=lambda x: abs(x - target))
 
-    return i, target
+    return i, target, sequence
 
     # simple_regex, target = sequence_search_regex(mutants)
     # # get indices where sequence matches regex
@@ -503,13 +504,13 @@ def script0(use_gpt=False, allow_mut=False):
     _num_attempts = 0
     _num_found = 0
     for pmid in candidates:
-        result = idents_for_pmid(pmid, pmid2seq, uniprot_df, pdb_df)
+        db_idents = idents_for_pmid(pmid, pmid2seq, uniprot_df, pdb_df) or {}
         # pretty print
         # if result:
         #     print(json.dumps(result, indent=2))
         if use_gpt:
             inyaml = pmid2yaml.get(pmid)
-            if not inyaml or not result:
+            if not inyaml: # or not db_idents:
                 continue
             enzymes_block = inyaml.get('enzymes', [])
             if not enzymes_block:
@@ -517,7 +518,7 @@ def script0(use_gpt=False, allow_mut=False):
         else:
             # construct from results_mutants
             inyaml = pmid2mutants[pmid2mutants['pmid'] == pmid]
-            if inyaml.empty or not result or pd.isna(inyaml.iloc[0]['mutants']):
+            if inyaml.empty or pd.isna(inyaml.iloc[0]['mutants']): # or not db_idents 
                 continue
             enzymes_block = [{
                 'fullname': '???',
@@ -543,7 +544,7 @@ def script0(use_gpt=False, allow_mut=False):
             closest_ident = None
             closest_target = None
             closest_sequence = None
-            for key, collection in sorted(result.items()):
+            for key, collection in sorted(db_idents.items()):
                 
                     
                 for ident, data in sorted(collection.items()):
@@ -557,7 +558,7 @@ def script0(use_gpt=False, allow_mut=False):
                     else:
                         desire, mytarget = og_desire, og_target
                     
-                    i, target = does_sequence_corroborate((desire, mytarget), data['sequence'], allow_mut=allow_mut) # enzyme
+                    i, target, sequence = does_sequence_corroborate((desire, mytarget), data['sequence'], allow_mut=allow_mut) # enzyme
                     if i is not None:
                         assert target != -1
                         distance = abs(i - target)
@@ -566,7 +567,7 @@ def script0(use_gpt=False, allow_mut=False):
                                 closest = i
                                 closest_ident = ident
                                 closest_target = target
-                                closest_sequence = data['sequence']
+                                closest_sequence = sequence
                     if closest == -1:
                         print("wtf happened?")    
             if closest is not None:
@@ -585,7 +586,7 @@ def script0(use_gpt=False, allow_mut=False):
                 # bulder.append((pmid, None, None, desire, target, -1))
                 # if no match, give the desire
                 # (this may occur if no pdb or uniprot or genbank is found)
-                builder.append((pmid, None, None, enzyme['fullname'], og_desire, og_target, None, None))
+                builder.append((pmid, -1, None, enzyme['fullname'], og_desire, og_target, -1, None))
                 pass
 
         

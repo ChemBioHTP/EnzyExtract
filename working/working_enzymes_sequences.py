@@ -6,7 +6,7 @@ import re
 import pandas as pd
 from kcatextract.fetch_sequences.confirm_enzyme_sequences import construct_window, str_to_splitable
 from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import get_resultant_content, locate_correct_batch, pmid_from_usual_cid, to_openai_batch_request, write_to_jsonl
+from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid, to_openai_batch_request, write_to_jsonl
 from kcatextract.utils.fresh_version import next_available_version
 from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
@@ -30,8 +30,8 @@ if pmid2yaml_json and os.path.exists(pmid2yaml_json):
         pmid2yaml = json.load(f)
 else:
     pmid2yaml = {}
-    for custom_id, content, finish_reason in get_resultant_content(f'{compl_folder}/{filename}'):
-        pmid = str(pmid_from_usual_cid(custom_id))
+    for custom_id, content, finish_reason in get_batch_output(f'{compl_folder}/{filename}'):
+        pmid = pmid_from_usual_cid(custom_id)
         
         content = content.replace('\nextras:\n', '\ndata:\n') # blunder
 
