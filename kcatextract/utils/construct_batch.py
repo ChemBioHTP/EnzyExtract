@@ -136,13 +136,15 @@ def preview_batches_in_folder(src_folder, output_folder, undownloaded_only=True,
     
     
 
-def get_batch_output(filename) -> list[tuple[str, str]]:
+def get_batch_output(filename, allow_unfinished=True) -> list[tuple[str, str]]:
     # return list of (custom_id, content, finish_reason)
     result = []
     with open(filename, 'r') as f:
         for line in f:
             obj = json.loads(line)
             finish_reason = obj['response']['body']['choices'][0]['finish_reason']
+            if not allow_unfinished and finish_reason == 'length':
+                continue # skip too long
             result.append((obj['custom_id'], obj['response']['body']['choices'][0]['message']['content'], finish_reason))
     return result
 

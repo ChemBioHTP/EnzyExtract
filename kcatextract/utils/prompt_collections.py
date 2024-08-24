@@ -343,6 +343,142 @@ data:
 
 """
 
+explode_1v1 = """You are a helpful and diligent assistant responsible for augmenting extraction data.
+Given comments and a pre-extracted yaml, your task is to disambiguate each descriptor by identifying each descriptor's enzyme, organism, substrate, and coenzymes.
+Only identify enzyme, organism, substrate, and coenzymes, not any other components like pH, temperature, etc.
+
+Before your final answer, you may write thoughts and comments. Then, write your final answer in a yaml block. Here is an example:
+
+### Input
+
+```yaml
+data:
+    - descriptor: "ADH; ethanol"
+    - descriptor: "ADH; R190Q; ethanol; 25°C"
+    - descriptor: "ADH1; R203Q; methanol; 25°C"
+    - descriptor: "ADH2; t-BuOH; 30°C; (with NAD+ and Mg2+)"
+context:
+    enzymes:
+        - fullname: "alcohol dehydrogenase"
+          synonyms: "ADH, ADH1, ADH2"
+          mutants: "wild-type, R190Q, R203Q"
+          organisms: "Escherichia coli"
+    substrates: 
+        - fullname: "ethanol"
+        - fullname: "tert-butyl alcohol"
+          synonyms: "t-BuOH"
+        - fullname: "methanol"
+    temperatures: "25°C, 30°C"
+    pHs: "7.4"
+    solvents: null
+    other: null
+```
+
+### Output
+
+Only one enzyme is mentioned, so by default the enzyme is alcohol dehydrogenase, with organism E. coli.
+(In general, if an enzyme or substrate is not provided, there is usually only one enzyme or substrate in the context.)
+Entries should be provided verbatim from the context block, where possible.
+
+```yaml
+data:
+    - descriptor: "ADH; ethanol"
+      enzyme: "ADH"
+      organism: "Escherichia coli"
+      substrate: "ethanol"
+      coenzymes: null
+    - descriptor: "ADH; R190Q; ethanol; 25°C"
+      enzyme: "ADH"
+      organism: "Escherichia coli"
+      substrate: "ethanol"
+      coenzymes: null
+    - descriptor: "ADH1; R203Q; methanol; 25°C"
+      enzyme: "ADH1"
+      organism: "Escherichia coli"
+      substrate: "methanol"
+      coenzymes: null
+    - descriptor: "ADH2; t-BuOH; 30°C; (with NAD+ and Mg2+)"
+      enzyme: "ADH2"
+      organism: "Escherichia coli"
+      substrate: "t-BuOH"
+      coenzymes: "NAD+, Mg2+"
+      
+```
+
+"""
+
+# changes: coenzyme -> cofactor, clarify cofactor
+# in v3: clarify that we do not want mutant
+explode_1v3 = """You are a helpful and diligent assistant responsible for augmenting extraction data.
+Given comments and a pre-extracted yaml, your task is to disambiguate each descriptor by identifying each descriptor's enzyme, organism, substrate, and cofactors.
+Only identify enzyme, organism, substrate, and cofactors, not other components like mutant, pH, temperature, etc. 
+The substrate should always correspond to the Km value. Let "cofactors" be any additional molecules participating in the reaction, including inhibitors.
+
+Before your final answer, you may write thoughts and comments. Then, write your final answer in a yaml block. Here is an example:
+
+### Input
+
+```yaml
+data:
+    - descriptor: "ADH; ethanol"
+    - descriptor: "ADH; R190Q; ethanol; 25°C"
+    - descriptor: "ADH1; R203Q; methanol; 25°C"
+    - descriptor: "ADH2; t-BuOH; 30°C; with 0.5 mM NAD+ and 1 mM Mg2+"
+    - descriptor: "ADH2; NAD+; 30°C; with 1 mM t-BuOH and 1 mM Mg2+"
+context:
+    enzymes:
+        - fullname: "alcohol dehydrogenase"
+          synonyms: "ADH, ADH1, ADH2"
+          mutants: "wild-type, R190Q, R203Q"
+          organisms: "Escherichia coli"
+    substrates: 
+        - fullname: "ethanol"
+        - fullname: "tert-butyl alcohol"
+          synonyms: "t-BuOH"
+        - fullname: "methanol"
+    temperatures: "25°C, 30°C"
+    pHs: "7.4"
+    solvents: null
+    other: null
+```
+
+### Output
+
+Only one enzyme is mentioned, so by default the enzyme is alcohol dehydrogenase, with organism E. coli.
+(In general, if an enzyme or substrate is not provided, there is usually only one enzyme or substrate in the context. \
+Provide entries verbatim from the context block, where possible.)
+
+```yaml
+data:
+    - descriptor: "ADH; ethanol"
+      enzyme: "alcohol dehydrogenase"
+      organism: "Escherichia coli"
+      substrate: "ethanol"
+      cofactors: null
+    - descriptor: "ADH; R190Q; ethanol; 25°C"
+      enzyme: "alcohol dehydrogenase"
+      organism: "Escherichia coli"
+      substrate: "ethanol"
+      cofactors: null
+    - descriptor: "ADH1; R203Q; methanol; 25°C"
+      enzyme: "alcohol dehydrogenase"
+      organism: "Escherichia coli"
+      substrate: "methanol"
+      cofactors: null
+    - descriptor: "ADH2; t-BuOH; 30°C; with 0.5 mM NAD+ and 1 mM Mg2+"
+      enzyme: "alcohol dehydrogenase"
+      organism: "Escherichia coli"
+      substrate: "tert-butyl alcohol"
+      cofactors: "NAD+, Mg2+"
+    - descriptor: "ADH2; NAD+; 30°C; with 1 mM t-BuOH and 1 mM Mg2+"
+      enzyme: "alcohol dehydrogenase"
+      organism: "Escherichia coli"
+      substrate: "NAD+"
+      cofactors: "t-BuOH, Mg2+"
+```
+
+"""
+
 
 
 # this just does what we want in one shot
@@ -426,7 +562,7 @@ data:
       kcat: null
       Km: "9.9 ± 0.1 µM"
       kcat/Km: "4.4 s^-1 mM^-1"
-    - descriptor: "cat-1; t-BuOH; 30°C"
+    - descriptor: "ADH; t-BuOH; 30°C"
       kcat: null
       Km: null
       Vmax: "0.1 µmoles/min"

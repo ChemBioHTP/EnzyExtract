@@ -129,6 +129,7 @@ def quality_assure_ai_message(ai_msg: str):
         for line in yaml_block.split('\n'):
             for bad in baddies: # if any
                 if line.startswith(f'      kcat: "{bad}"'):
+                    nonlocal problematic_kcat
                     problematic_kcat = bad
                     builder += f'      kcat: null\n'
                     break
@@ -229,7 +230,62 @@ def quality_assure_for_enzyme_matching(req: dict, golden_idents: list[str] = [])
     
     return []
     
+def quality_assure_for_explode(req: dict):
+    """Does a few checks, to help improve the overall quality of the outputs"""
+    
+    problems = []
+        
+    assert req['messages'][0]['role'] == 'system'
+    
+    assert req['messages'][1]['role'] == 'user'
+    doc_msg = req['messages'][1]['content']
+    
+    assert req['messages'][-1]['role'] == 'assistant'    
+    
+    ai_msg = req['messages'][-1]['content']
+    
+    # reject under these conditions:
+    # 1. no yaml found
+    # 2. "wild-type" is found in any enzyme
+    # 3. the organism is found in the enzyme
+    # 4. Tris is found in the coenzyme
+    
+    def fix_yaml_for_explode(yaml_block):
+        try:
+            obj = yaml.safe_load(yaml_block)
+        except yaml.YAMLError:
+            problems.append("invalid yaml detected")
+            return yaml_block
+        
+        if not isinstance(obj, dict):
+            problems.append("yaml should be a dict")
+            return yaml_block
+        if 'data' not in obj:
+            problems.append("data field not found")
+            return yaml_block
+        if not isinstance(obj['data'], list):
+            problems.append("data field should be a list")
+            return yaml_block
+        
+        for item in obj['data']:
+            if 'wild-type' in (item.get('enzyme') or ''):
+                problems.append("wild-type found in enzyme")
+                break
+            if item.get('organism') and item.get('organism') in (item.get('enzyme') or ''):
+                problems.append("organism found in enzyme")
+                break
+            if 'Tris' in (item.get('cofactors') or ''):
+                problems.append("Tris found in coenzyme")
+                break
+        
+        return yaml_block
 
+    ai_msg = fix_the_yaml(ai_msg, fix_yaml_for_explode)
+    req['messages'][-1]['content'] = ai_msg
+    
+    return problems
+    
+    
 
 def quality_assure_finetune(req: dict):
     """Does a few checks, to help improve the overall quality of the outputs"""

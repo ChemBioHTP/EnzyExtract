@@ -78,7 +78,9 @@ def preview_batches_uploaded():
         print(f"{batch.id}, {batch.status}, {batch.metadata}")
         
 def check_undownloaded(batch_id_to_orig_name: dict[str, str] | None = None, path_to_pending:str = 'batches/pending.jsonl', 
-                       download_folder='completions/enzy', printme=True, autodownload=True):
+                       all_download_folders=['completions/enzy', 'completions/explode', 'C:/conjunct/table_eval/completions/enzy'], 
+                       download_folder='completions/enzy',
+                       printme=True, autodownload=True, y_for_autodownload=False):
     """
     
     :return: list of tuples (batch, name)
@@ -87,7 +89,7 @@ def check_undownloaded(batch_id_to_orig_name: dict[str, str] | None = None, path
     batches = []
     if batch_id_to_orig_name is None:
         batch_id_to_orig_name = {}
-        if os.path.exists(path_to_pending):
+        if path_to_pending is not None and os.path.exists(path_to_pending):
             # read from pending.jsonl
             with open(path_to_pending, 'r') as f:
                 for line in f:
@@ -97,7 +99,7 @@ def check_undownloaded(batch_id_to_orig_name: dict[str, str] | None = None, path
             # take from the last 10 batches
             batches = list(get_last_n_batches())
             # try to retain the name from the metadata
-            for batch in batches.items():
+            for batch in batches:
                 name = batch.metadata.get('filepath', batch.metadata.get('description'))
                 if name is None:
                     name = batch.id
@@ -108,15 +110,30 @@ def check_undownloaded(batch_id_to_orig_name: dict[str, str] | None = None, path
                 batch_id_to_orig_name[batch.id] = name
     
     def preferred_name(batch):
-        return batch_id_to_orig_name.get(batch.id, batch.id)
+        return batch_id_to_orig_name.get(batch.id, batch.id + '_output')
     
     if not batches:
         batches = [get_openai_client().batches.retrieve(batch_id) for batch_id in batch_id_to_orig_name.keys()]
     
-    # filter by not present in download_folder
-    downloaded_files = set(os.listdir(download_folder))
     
-    undownloaded = [batch for batch in batches if batch.status == 'completed' and preferred_name(batch) + '.jsonl' not in downloaded_files]
+    
+    downloaded_files = set()
+    for fdr in all_download_folders:
+        downloaded_files.update(os.listdir(fdr))
+    
+    
+    print()
+    print()
+    pending = [batch for batch in batches if batch.status == 'in_progress']
+    if printme:
+        for batch in pending:
+            print(f"[PENDING] {batch.id}, {batch.metadata}")
+    
+    
+    undownloaded = [batch for batch in batches if batch.status == 'completed' and 
+                    (preferred_name(batch) + '.jsonl' not in downloaded_files and
+                     batch.id + '_output.jsonl' not in downloaded_files # legacy
+                     )]
     
     if printme:
         for batch in undownloaded:
@@ -127,21 +144,25 @@ def check_undownloaded(batch_id_to_orig_name: dict[str, str] | None = None, path
         if len(undownloaded) == 0:
             print("All batches downloaded.")
         else:
-            print(f"Downloading {len(undownloaded)} batches...")
-            openai_client = get_openai_client()
-            for batch in tqdm(undownloaded):
+            if not y_for_autodownload:
+                y_for_autodownload = input("Download all undownloaded batches? (y/n): ").lower() == 'y'
+            if y_for_autodownload:
+                
+                print(f"Downloading {len(undownloaded)} batches...")
+                openai_client = get_openai_client()
+                for batch in tqdm(undownloaded):
 
-                assert batch.status == 'completed'
-                
-                jsonl = openai_client.files.content(batch.output_file_id)
-                
-                correct_name = preferred_name(batch)
-                if os.path.exists(f'{download_folder}/{correct_name}.jsonl'):
-                    print(f"File {correct_name}.jsonl already exists. Skipping.")
-                    continue
-                with open(f'{download_folder}/{correct_name}.jsonl', 'wb') as f:
-                    f.write(jsonl.content)
-                freshly_downloaded.append((batch, correct_name))
+                    assert batch.status == 'completed'
+                    
+                    jsonl = openai_client.files.content(batch.output_file_id)
+                    
+                    correct_name = preferred_name(batch)
+                    if os.path.exists(f'{download_folder}/{correct_name}.jsonl'):
+                        print(f"File {correct_name}.jsonl already exists. Skipping.")
+                        continue
+                    with open(f'{download_folder}/{correct_name}.jsonl', 'wb') as f:
+                        f.write(jsonl.content)
+                    freshly_downloaded.append((batch, correct_name))
         return freshly_downloaded
     return [(batch, preferred_name(batch)) for batch in undownloaded]
     # undownloaded

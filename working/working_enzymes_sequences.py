@@ -31,7 +31,7 @@ if pmid2yaml_json and os.path.exists(pmid2yaml_json):
 else:
     pmid2yaml = {}
     for custom_id, content, finish_reason in get_batch_output(f'{compl_folder}/{filename}'):
-        pmid = pmid_from_usual_cid(custom_id)
+        pmid = str(pmid_from_usual_cid(custom_id))
         
         content = content.replace('\nextras:\n', '\ndata:\n') # blunder
 

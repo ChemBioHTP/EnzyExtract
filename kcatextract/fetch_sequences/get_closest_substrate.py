@@ -373,7 +373,7 @@ def script0():
     result = pd.concat(results)
     print(result)
 
-def infuse_with_substrates(checkpoint_df=None, redo_smiles=False, redo_inchi=False):
+def infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_smiles=False, redo_inchi=False):
     """Objective: can we see what is left to be matched?"""
     
     
@@ -393,11 +393,9 @@ def infuse_with_substrates(checkpoint_df=None, redo_smiles=False, redo_inchi=Fal
     # step 5, anoint sequence_df with smiles via inchi
     # step 6, join checkpoint_df with sequence_df
     
-    if checkpoint_df is None:
-        checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_rekcat-giveboth-4o_2.csv") # 95/340
+         # 95/340
     # checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_brenda-rekcat-md-v1-2_1.csv") # 497/2322 known
     
-    brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
     
     # step 1
     sequence_df = to_sequence_df(checkpoint_df)
@@ -436,4 +434,6 @@ def infuse_with_substrates(checkpoint_df=None, redo_smiles=False, redo_inchi=Fal
     
     
 if __name__ == "__main__":
-    infuse_with_substrates()
+    checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_rekcat-giveboth-4o_2.csv")
+    brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
+    infuse_with_substrates(checkpoint_df, brenda_substrate_df)

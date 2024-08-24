@@ -5,12 +5,8 @@ from kcatextract.fetch_sequences import get_closest_enzyme
 from kcatextract.fetch_sequences.get_closest_substrate import infuse_with_substrates
 
 
-def script0():
+def infuse_enzyme_substrate_sequences(checkpoint_df, dists_df, brenda_df, brenda_substrate_df, redo_inchi=False):
     # run it all
-    checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_brenda-rekcat-tuneboth_2.csv") # 95/340
-    dists_df = pd.read_csv("fetch_sequences/enzymes/rekcat_mutant_distances_gpt.tsv", sep="\t")
-    
-    brenda_df = pd.read_csv("fetch_sequences/enzymes/brenda_enzymes.tsv", sep="\t")
     
     # step 1
     sequence_df = get_closest_enzyme.to_sequence_df(checkpoint_df, brenda_df)
@@ -21,11 +17,19 @@ def script0():
     # step 4, join checkpoint_df with sequence_df
     get_closest_enzyme.join_sequence_df(checkpoint_df, sequence_df)
     
-    infuse_with_substrates(checkpoint_df, redo_inchi=True)
+    infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_inchi=redo_inchi)
     
-    checkpoint_df.to_csv("_debug/_cache_seq/_cache_brenda-rekcat-tuneboth_2.tsv", index=False, sep="\t")
+    return checkpoint_df
     
-    print(checkpoint_df)
+    
+    # print(checkpoint_df)
 
 if __name__ == '__main__':
-    script0()
+    
+    checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_brenda-rekcat-tuneboth_2.csv") # 95/340
+    dists_df = pd.read_csv("fetch_sequences/enzymes/rekcat_mutant_distances_gpt.tsv", sep="\t")
+    brenda_df = pd.read_csv("fetch_sequences/enzymes/brenda_enzymes.tsv", sep="\t")
+    brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
+    
+    out = infuse_enzyme_substrate_sequences()
+    out.to_csv(None, None, None, "_debug/_cache_seq/_cache_brenda-rekcat-tuneboth_2.tsv", index=False, sep="\t")

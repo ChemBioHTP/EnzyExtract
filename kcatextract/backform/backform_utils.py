@@ -92,3 +92,56 @@ def fix_the_yaml(ai_msg: str, lambda_for_yaml: Callable[[str], str]) -> str:
         result += f"```yaml\n{fixed_yaml}```"
     
     return result
+
+def get_the_yamls(ai_msg: str) -> list[str]:
+    yamls = []
+    post_yaml = ai_msg
+    while True:
+        pre_yaml, yaml_block, post_yaml = isolate_the_yaml(post_yaml)
+        
+        if pre_yaml is None:  # No more YAML blocks found
+            break
+        
+        yamls.append(yaml_block)
+    
+    return yamls
+
+
+def train_test_split(result, train_ratio=0.5, val_ratio=0.2, max_num_train=100, max_num_val=50, seed=42):
+    """Splits a list of items into train, val, test
+    Logic is that the first train_ratio items are used for training, up to a maximum of max_num_train
+    
+    The next val_ratio * len(result) items are used for validation, or
+    val_ratio * len(not_train) if not enough items are available
+    The rest are used for testing
+    """
+    
+    # shuffle
+    import random
+    random.seed(seed)
+    random.shuffle(result)
+    
+    threshold = min(max_num_train, int(train_ratio * len(result)))
+    
+    val_threshold = min(threshold + max_num_val, threshold + int(len(result) * val_ratio))
+    # since threshold < int(len(result) * train_ratio), we can be sure that val_threshold < len(result)
+
+    
+    
+    train = result[:threshold]
+    val = result[threshold:val_threshold]
+    test = result[val_threshold:]
+    return train, val, test
+
+import json
+def save_partitions(train, val, test, dest_folder, namespace, pmids_dest=None):
+    for part, name in [(train, 'train'), (val, 'val'), (test, 'test')]:
+        if not part:
+            continue
+        with open(f"{dest_folder}/{namespace}.{name}.jsonl", 'w') as f:
+            for pmid, item in part:
+                f.write(json.dumps(item) + '\n')
+        if pmids_dest:
+            with open(f"{pmids_dest}/pmids-{namespace}.{name}.txt", 'w') as f:
+                for pmid, item in part:
+                    f.write(str(pmid) + '\n')

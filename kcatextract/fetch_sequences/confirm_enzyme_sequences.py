@@ -34,7 +34,7 @@ def str_to_splitable(x): # split by ", "
 def load_yaml_enzymes(filepath, yaml_parse=True):
     pmid2yaml = {}
     for custom_id, content, finish_reason in get_batch_output(filepath):
-        pmid = pmid_from_usual_cid(custom_id)
+        pmid = str(pmid_from_usual_cid(custom_id))
         
         content = content.replace('\nextras:\n', '\ndata:\n') # blunder
 

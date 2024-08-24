@@ -278,15 +278,17 @@ def validate_context(obj: dict, fix=True, debugpmid=None, version: int=YamlVersi
     for k, v in obj.items():
 
         allowable = ['enzymes', 'substrates', 'temperatures', 'pHs', 'solvents', 'solutions', 'other'] # , 'inhibitors']
+        substrates_like = ['substrates', 'coenzymes', 'cosubstrates', 'products', 'inhibitors', 'cofactors']
         if not (version & YamlVersions._enzymes_block):
             # if enzymes_block, these fields should be nested
             allowable.extend(['mutants', 'organisms'])
 
         if k not in allowable:
             # Scary: allow it and assume that auto_context should slot it into the "other" category
-            if debugpmid: print(f'[{debugpmid}] Context has unexpected key "{k}"')
+            if debugpmid and k not in substrates_like:
+                print(f'[{debugpmid}] Context has unexpected key "{k}"')
             parent_deletable_keys.append(k)
-            all_correct = False
+            # all_correct = False
             continue
 
         # now, verify types
