@@ -137,12 +137,12 @@ def quality_assure_ai_message(ai_msg: str):
                 builder += line + '\n'
         return builder
     ai_msg = fix_the_yaml(ai_msg, fix_problematic_kcat)
-    if problematic_kcat:
+    # if problematic_kcat:
         # print("Rectified problematic kcat:", problematic_kcat)
         # fixed_yaml = True
         
-        pre_yaml += "Reminder: I only include kcat with units of time^-1, like min^-1 or s^-1. I must leave out Vmax and specific activity."
-        pre_yaml += "\n\n"
+        # pre_yaml += "Reminder: I only include kcat with units of time^-1, like min^-1 or s^-1. I must leave out Vmax and specific activity."
+        # pre_yaml += "\n\n"
     
     # return problems, f"{pre_yaml}```yaml\n{yaml_block}```{post_yaml}"
     return problems, ai_msg

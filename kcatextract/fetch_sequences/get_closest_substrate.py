@@ -1,11 +1,17 @@
+import math
 import os
 import pandas as pd
 from rapidfuzz import fuzz
 
 from kcatextract.fetch_sequences.get_smiles import pubchem_main, rdkit_inchi, rdkit_main
+from kcatextract.utils import prompt_collections
+from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
 
-def find_similar_substrates(df, substrate_name, substrate_col_name='name', n=5, fuzzy=True):
+def find_similar_substrates(df, substrate_name: str, substrate_col_name='name', n=5, fuzzy=True):
     # Step 1: Check for case-insensitive exact matches
+    if not substrate_name or pd.isna(substrate_name):
+        return df.head(0)
+    
     df = df.drop(columns=['ec'])
     exact_matches = df[df[substrate_col_name].str.lower() == substrate_name.lower()]
     
@@ -42,26 +48,32 @@ def chemical_formula_from_inchi(inchi):
 #     'InChIKey': ['WQZGKKKJIJFFOK-UHFFFAOYSA-N', 'BJHIKXHVCXFQLS-UHFFFAOYSA-N', 'COVHOMDLPTBGKH-UHFFFAOYSA-N', 'JHIVVAPYMSGYDF-UHFFFAOYSA-N', 'MLCYWGOTUORCOA-UHFFFAOYSA-N']
 # })
 
-def extract_substrate_synonym(doc: str, ai_msg: str):
+def parse_substrate_synonym(doc: str, ai_msg: str):
+    """processes an ai message and returns (substrate, synonym, search)"""
     # get the substrate
     # expect the string Substrate: <x>
-    synonym = None
+    substrate = None
     for line in doc.split("\n"):
-        if line.startswith("Substrate:"):
+        if line.strip().startswith("Substrate:"):
             # return line.split(":")[1].strip()
-            synonym = line.split(":", 1)[1].strip()
+            substrate = line.split(":", 1)[1].strip()
             break
-        elif not line.strip():
+        elif line.strip():
             raise ValueError("invalid format: document should start with Substrate:")
     
-    substrate = None
+    synonym = None
+    search = None
     for line in ai_msg.split("\n"):
         if line.startswith("Final Answer:"):
-            substrate = line.split(":", 1)[1].strip()
-            if substrate.lower() == 'none':
-                substrate = None
+            synonym = line.split(":", 1)[1].strip()
+            if synonym.lower() == 'none':
+                synonym = None
             break
-    return (substrate, synonym)
+        elif line.startswith("Search:"):
+            search = line.split(":", 1)[1].strip()
+            if search.lower() == 'none':
+                search = None
+    return (substrate, synonym, search)
     
 
 def obtain_yet_unmatched(df: pd.DataFrame):
@@ -95,12 +107,14 @@ def to_sequence_df(checkpoint_df: pd.DataFrame) -> pd.DataFrame:
     If substrate_full is in a row, prefer it. otherwise, use substrate"""
     # substrates = set()
     builder = []
+    has_brenda = 'substrate_2' in checkpoint_df.columns
     for i, row in checkpoint_df.iterrows():
         if pd.isna(row['substrate_full']):
             builder.append((row['substrate'], None))
         else:
             builder.append((row['substrate_full'], row['substrate']))
-        builder.append((row['substrate_2'], None))
+        if has_brenda:
+            builder.append((row['substrate_2'], None))
         
     df = pd.DataFrame(builder, columns=['name', 'short_name'])
     # drop duplicates
@@ -220,6 +234,19 @@ def latest_inchi_df(fragments_folder='fetch_sequences/results/inchi_fragments') 
     return pd.concat(result) # assume all InChIs are valid, barring some unusual circumstance
 
 
+def latest_substr_synonym_folder(fragments_folder='fetch_sequences/results/inchi_fragments') -> pd.DataFrame:
+    
+    result = []
+    for filename in os.listdir(fragments_folder):
+        if filename.endswith('.tsv'):
+            df = pd.read_csv(f'{fragments_folder}/{filename}', sep='\t')
+        elif filename.endswith('.csv'):
+            df = pd.read_csv(f'{fragments_folder}/{filename}')
+        else:
+            continue
+        result.append(df[['substrate', 'synonym', 'search']])
+    return pd.concat(result) # assume all InChIs are valid, barring some unusual circumstance
+
 def drop_same_rows_ignore_case(df, other_columns=['brenda_id', 'inchi']):
     # drop duplicate rows (rows with same name, brenda_id, and inchi) but ignore case
     # but maintain the case sensitivity
@@ -246,15 +273,36 @@ def redo_smiles_search(unknown_df, fragment_folder='fetch_sequences/results/smil
     timestamp = program_timestamp()
     # do the search
     
-    rdkit_df = rdkit_main(idents)
+    print("Begin pubchem search")
+    print(f"(Need: {len(idents)})")
+    # do batches of 1000
+    idents = list(idents)
+    pubchem_df_list = []
+    for i in range(math.ceil(len(idents) / 1000)):
+        start = i * 1000
+        end = start + 1000
+        pubchem_df_part = pubchem_main(idents[start:end])
+        pubchem_df_part.to_csv(f'{fragment_folder}/pubchem_smiles_{timestamp}_{i}.csv', index=False)
+        pubchem_df_list.append(pubchem_df_part)
+    pubchem_df = pd.concat(pubchem_df_list)
+
+    # get those that are not found in pubchem_df
+    #     idents = rdkit_df[rdkit_df['Smiles'] == 'not found']['Name'].unique()
+    idents = pubchem_df[pubchem_df['Smiles'] == 'not found']['Name'].unique()
+    print("Begin rdkit search")
+    print(f"(Need: {len(idents)})")
+    rdkit_df_list = []
+    for i in range(math.ceil(len(idents) / 1000)):
+        start = i * 1000
+        end = start + 1000
+        rdkit_df_part = rdkit_main(idents[start:end])
+        rdkit_df_part.to_csv(f'{fragment_folder}/rdkit_smiles_{timestamp}_{i}.csv', index=False)
+        rdkit_df_list.append(rdkit_df_part)
+    rdkit_df = pd.concat(rdkit_df_list)
     
-    # get those that are not found in rdkit_df
-    idents = rdkit_df[rdkit_df['Smiles'] == 'not found']['Name'].unique()
-    pubchem_df = pubchem_main(idents)
-    
-    if fragment_folder is not None:
-        rdkit_df.to_csv(f'{fragment_folder}/rdkit_smiles_{timestamp}.csv', index=False)
-        pubchem_df.to_csv(f'{fragment_folder}/pubchem_smiles_{timestamp}.csv', index=False)
+    # if fragment_folder is not None:
+    #     rdkit_df.to_csv(f'{fragment_folder}/rdkit_smiles_{timestamp}.csv', index=False)
+    #     pubchem_df.to_csv(f'{fragment_folder}/pubchem_smiles_{timestamp}.csv', index=False)
     return rdkit_df, pubchem_df
     # save the results
     
@@ -350,30 +398,8 @@ def join_sequence_df(checkpoint_df, sequence_df):
     
     
 
-def script_minus1():
-    # remove EC from src_df to reduce dupes
-    src_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
-    # src_df = src_df.drop(columns=['ec'])
-    # src_df = src_df.drop_duplicates()
-    
-    src_df = drop_same_rows_ignore_case(src_df)
-    src_df.to_csv("fetch_sequences/results/smiles/brenda_inchi_subs.tsv", sep="\t", index=False)
-    # halves the size
 
-def script0():
-    """Objective: can we get matches for these synonyms?"""
-    src_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_subs.tsv", sep="\t")
-    
-    results = []
-    # trials = ['adenosine triphosphate', 'D-fructose-2,6-bisphosphate', '2-Oxoglutaric acid', 'α-ketoglutarate']
-    trials = ['p-NPP'] # 'Nicotinamide adenine dinucleotide (reduced)']
-    for trial in trials:
-        result = find_similar_substrates(src_df, trial, n=20)
-        results.append(result)
-    result = pd.concat(results)
-    print(result)
-
-def infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_smiles=False, redo_inchi=False):
+def infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_rdkit=False, redo_inchi_convert=False):
     """Objective: can we see what is left to be matched?"""
     
     
@@ -408,13 +434,13 @@ def infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_smiles=False
     
     queryable = unknown_df[~unknown_df['name'].isin(unqueryable)]
     
-    if redo_smiles:
+    if redo_rdkit:
         df1, df2 = redo_smiles_search(queryable)
         if df1 is not None:
             smiles_df = pd.concat([smiles_df, df1])
         if df2 is not None:
             smiles_df = pd.concat([smiles_df, df2])
-    print(unknown_df)
+    # print(unknown_df)
     
     # step 3: skip
     
@@ -423,7 +449,7 @@ def infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_smiles=False
     join_inchi(sequence_df, brenda_substrate_df)
 
     # step 5
-    join_smiles(sequence_df, inchi_df, request_missing=redo_inchi)
+    join_smiles(sequence_df, inchi_df, request_missing=redo_inchi_convert)
     
     # print(sequence_df)
     
@@ -433,7 +459,88 @@ def infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_smiles=False
     return substrated_df
     
     
+    
+def script_minus1():
+    # remove EC from src_df to reduce dupes
+    src_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
+    # src_df = src_df.drop(columns=['ec'])
+    # src_df = src_df.drop_duplicates()
+    
+    src_df = drop_same_rows_ignore_case(src_df)
+    src_df.to_csv("fetch_sequences/results/smiles/brenda_inchi_subs.tsv", sep="\t", index=False)
+    # halves the size
+    exit(0)
+
+def script0():
+    """Objective: can we get matches for these synonyms?"""
+    src_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_subs.tsv", sep="\t")
+    
+    results = []
+    # trials = ['adenosine triphosphate', 'D-fructose-2,6-bisphosphate', '2-Oxoglutaric acid', 'α-ketoglutarate']
+    # trials = ['εNH2 Cap-Leu-Thr(OBzl)-MCA'] # 'Nicotinamide adenine dinucleotide (reduced)']
+    trials = ['α-ketoglutarate']
+    for trial in trials:
+        result = find_similar_substrates(src_df, trial, n=20)
+        results.append(result)
+    result = pd.concat(results)
+    print(result)
+    exit(0)
+
+def ask_gpt_for_closest_substrate(brenda_substrate_df, substrates: list[str], namespace, model_name='gpt-4o'):
+    from tqdm import tqdm
+    batch = []
+    for subno, substrate in enumerate(tqdm(substrates)):
+        if pd.isna(substrate):
+            continue
+        similars = find_similar_substrates(brenda_substrate_df, substrate, n=10)
+        candidates = ""
+        for i, row in similars.iterrows():
+            candidates += f"- {row['name']}"
+            inchi = row['inchi']
+            if pd.notna(inchi) and inchi != '-':
+                candidates += f" ({chemical_formula_from_inchi(row['inchi'])})"
+            candidates += "\n"
+        
+        if not candidates:
+            continue # no candidates found
+        doc = f"""
+Substrate: {substrate}
+Candidates:
+{candidates}"""
+        
+        req = to_openai_batch_request(f'{namespace}_{subno}', prompt_collections.closest_substrate_1v0, [doc], model_name=model_name)
+        batch.append(req)
+    return batch
+
+def ask_gpt_for_closest_substrates(checkpoint_df, brenda_substrate_df, namespace):
+    # step 1
+    sequence_df = to_sequence_df(checkpoint_df)
+    sequence_df= drop_same_rows_ignore_case(sequence_df, other_columns=['short_name'])
+    smiles_df, unqueryable = latest_smiles_df()
+    
+    # brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
+    
+    # step 2
+    add_known_names(sequence_df, smiles_df, brenda_substrate_df)
+    unknown_df = get_yet_unknown_names(sequence_df)
+    
+    # queryable = unknown_df[~unknown_df['name'].isin(unqueryable)]
+    
+    substrates = unknown_df['name'].unique()
+    
+    batch = ask_gpt_for_closest_substrate(brenda_substrate_df, substrates, namespace)
+    
+    return batch
+    # exit(0)
+    
+    
 if __name__ == "__main__":
+    # script0()
+    # checkpoint_df = pd.read_csv(r"C:\conjunct\enzy_runner\data\_post_sequencing\sequenced_explode-for-brenda-rekcat-tuneboth-2_2.tsv",
+    # sep='\t')
+    # script_to_ask_gpt(checkpoint_df)
+    # exit(0)
+    script0()
     checkpoint_df = pd.read_csv("_debug/_cache_vbrenda/_cache_rekcat-giveboth-4o_2.csv")
     brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
     infuse_with_substrates(checkpoint_df, brenda_substrate_df)

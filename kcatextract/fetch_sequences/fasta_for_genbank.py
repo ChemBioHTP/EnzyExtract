@@ -3,6 +3,7 @@ from Bio import Entrez, SeqIO
 import time
 
 import pandas as pd
+import requests
 from tenacity import retry, wait_exponential
 from tqdm import tqdm
 
@@ -26,6 +27,8 @@ def fetch_fasta_by_id(identifier, db="protein"):
             return None, f"{identifier} {db} not found"
         else:
             raise e
+
+
 
 # exponential backoff
 @retry(wait=wait_exponential(multiplier=1, max=60))

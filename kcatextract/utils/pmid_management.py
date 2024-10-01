@@ -60,10 +60,10 @@ def cache_pmids_to_disk(pmids, namespace, version=None, parent_dir='C:/conjunct/
 def pmids_from_cache(namespace, version=None, parent_dir='C:/conjunct/vandy/yang/corpora/manifest/auto') -> set[str]:
 
     if version is None:
-        version = latest_version(parent_dir, namespace, '.txt')
-    if version is None:
         if os.path.exists(f"{parent_dir}/{namespace}.txt"):
             return pmids_from_file(f"{parent_dir}/{namespace}.txt")
+        version = latest_version(parent_dir, namespace, '.txt')
+    if version is None:
         raise ValueError(f"No cache found for {namespace}")
     return pmids_from_file(f"{parent_dir}/{namespace}_{version}.txt")
 

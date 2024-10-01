@@ -96,12 +96,17 @@ def read_fasta(fasta_file) -> tuple[str, str]:
         lines = f.readlines()
     return lines[0].strip(), ''.join(lines[1:]).replace('\n', '')
 
-def idents_for_pmid(pmid, pmid2seq: pd.DataFrame, uniprot_df: pd.DataFrame, pdb_df: pd.DataFrame):
+def idents_for_pmid(pmid, pmid2seq: pd.DataFrame, uniprot_df: pd.DataFrame, pdb_df: pd.DataFrame, ncbi_df: pd.DataFrame):
     # return {pmid: str, uniprots: list[dict], pdbs: list[dict], fastas: list[dict]}
     # each member of uniprots, pdbs, and fastas:
     # {identifier: str, sequence: str, descriptor: str, enzyme: str, organism: str}
     
+    if uniprot_df.empty and pdb_df.empty and ncbi_df.empty:
+        return None
+    
     subset = pmid2seq[pmid2seq['pmid'] == pmid]
+    
+    subset.replace(pd.NA, '', inplace=True)
     
     uniprots = set()
     pdbs = set()
@@ -119,24 +124,43 @@ def idents_for_pmid(pmid, pmid2seq: pd.DataFrame, uniprot_df: pd.DataFrame, pdb_
     storage = {'refseq': {}, 'genbank': {}, 'uniprot': {}, 'pdb': {}}
     # also look for downloaded fasta
     # also look for genbank
-    for (key, col) in [('refseq', refseq), ('genbank', genbank), ('uniprot', uniprots)]:
-        for ident in col:
-            if os.path.exists(f"fetch_sequences/genbank/{ident}.fasta"):
-                # print(f"Found {ident}.fasta")
-                # print the first line
-                desc, seq = read_fasta(f"fetch_sequences/genbank/{ident}.fasta")
-                storage[key][ident] = {'sequence': seq, 'descriptor': desc}
-            if key == 'uniprot':
-                rows = uniprot_subset[uniprot_subset['uniprot'] == ident]
-                # assume unique
-                if not rows.empty:
-                    row = rows.iloc[0]
-                    storage[key].setdefault(ident, {})['name'] = row['enzyme']
-                    storage[key].setdefault(ident, {})['organism'] = row['organism']
+    # for (key, col) in [('refseq', refseq), ('genbank', genbank)]: #], ('uniprot', uniprots)]:
+    #     for ident in col:
+    #         if os.path.exists(f"fetch_sequences/genbank/{ident}.fasta"):
+    #             # print(f"Found {ident}.fasta")
+    #             # print the first line
+    #             desc, seq = read_fasta(f"fetch_sequences/genbank/{ident}.fasta")
+    #             storage[key][ident] = {'sequence': seq, 'descriptor': desc}
     
+    refseq_subset = ncbi_df[ncbi_df['ncbi'].isin(refseq)]
+    genbank_subset = ncbi_df[ncbi_df['ncbi'].isin(genbank)]
+    for ident in refseq:
+        rows = refseq_subset[refseq_subset['ncbi'] == ident]
+        if not rows.empty:
+            row = rows.iloc[0]
+            storage['refseq'].setdefault(ident, {})['sequence'] = row['sequence']
+            storage['refseq'].setdefault(ident, {})['descriptor'] = row['descriptor']
+    for ident in genbank:
+        rows = genbank_subset[genbank_subset['ncbi'] == ident]
+        if not rows.empty:
+            row = rows.iloc[0]
+            storage['genbank'].setdefault(ident, {})['sequence'] = row['sequence']
+            storage['genbank'].setdefault(ident, {})['descriptor'] = row['descriptor']
+    
+    for ident in uniprots:
+        rows = uniprot_subset[uniprot_subset['uniprot'] == ident]
+        # assume unique
+        if not rows.empty:
+            row = rows.iloc[0]
+            storage['uniprot'].setdefault(ident, {})['name'] = row['enzyme']
+            storage['uniprot'].setdefault(ident, {})['organism'] = row['organism']
+    
+    # pdb_subset = pdb_df[pdb_df['pdb'].isin(pdbs)]
     for pdb in pdbs:
         # we can read from tsv
         # subset['pdb'] startswith PDB, to allow for newer version
+        if not pdb or len(pdb) < 4:
+            continue # skip empty, which is otherwise disastrous
         rows = pdb_df[pdb_df['pdb'].str.lower().str.startswith(pdb.lower())]
         for i, row in rows.iterrows():
             versioned_pdb = row['pdb']
@@ -150,7 +174,8 @@ def idents_for_pmid(pmid, pmid2seq: pd.DataFrame, uniprot_df: pd.DataFrame, pdb_
             }
             mutant_codes = grep_mutant_codes(row.get('descriptor', ''))
             storage['pdb'][versioned_pdb]['pdb_mutants'] = mutant_codes
-            
+    
+    # for ncbi in 
 
             
     
@@ -190,25 +215,39 @@ def parse_mutant_codes(mutants: list[str]) -> list[tuple[str, int, str]]:
                 continue
             start_amino = None
             end_amino = None
+            is_amino3 = False
             if mut[0] in amino1 and mut[1].isdigit():
                 start_amino = mut[0]
                 mut = mut[1:]
             elif mut[:3] in amino3:
                 start_amino = protein_letters_3to1[mut[:3]]
                 mut = mut[3:]
+                is_amino3 = True
             else:
                 continue
             
-            if mut[-1] in amino1 and mut[-2].isdigit():
+            if not len(mut):
+                continue
+            
+            if len(mut) == 1:
+                # single digit mutation
+                if mut[0].isdigit():
+                    end_amino = None
+                    mut = mut
+                else:
+                    continue # BAD
+            elif mut[-1] in amino1 and mut[-2].isdigit():
                 end_amino = mut[-1]
                 mut = mut[:-1]
             elif mut[-3:] in amino3:
                 end_amino = protein_letters_3to1[mut[-3:]]
                 mut = mut[:-3]
+                is_amino3 = True
             else:
-                continue
+                pass
             
-            if start_amino is None or end_amino is None or not mut.isdigit():
+            if start_amino is None or not mut.isdigit() or (end_amino is None and not is_amino3): # or end_amino is None 
+                # allow for unspecified tail mutation if it's amino 3
                 continue    
             point_muts.append((start_amino, int(mut), end_amino))
     return point_muts
@@ -314,9 +353,9 @@ def to_matcher_dict(codes: MutantMatcher, allow_mut=False):
                 result[point] += last_char
     return result, min_point
 
-def to_regex(codes: MutantMatcher, allow_mut: bool | MutantMatcher=False) -> tuple[str, int]:
+def to_regex(codes: MutantMatcher, allow_mut: bool | MutantMatcher=False) -> tuple[str, int | None]:
     if not codes:
-        return ''
+        return '', None
     min_point, max_point = codes[0][1], codes[-1][1]
     if allow_mut:
         regex = [set() for _ in range(max_point - min_point + 1)]

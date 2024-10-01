@@ -17,8 +17,16 @@ def CIRconvert(ids):
         url = 'http://cactus.nci.nih.gov/chemical/structure/' + quote(ids) + '/smiles'
         ans = urlopen(url).read().decode('utf8')
         return ans
-    except:
-        return 'not found'
+    except Exception as e:
+        if '404' in str(e):
+            return 'not found'
+        elif '500' in str(e):
+            raise Exception('Server error')
+        elif '429' in str(e):
+            print('Rate limit exceeded. Waiting 5 seconds...')
+            time.sleep(5)
+        else:
+            return 'not found'
 
 
 
@@ -30,7 +38,7 @@ def rdkit_main(identifiers, wait=0.25):
         # batch = identifiers[i:i+10]
         # for ids in batch:
             # print(ids, CIRconvert(ids))
-    for x in identifiers:
+    for x in tqdm(identifiers):
         smiles = CIRconvert(x)
         result.append({'Name': x, 'Smiles': smiles})
         time.sleep(wait)
@@ -51,7 +59,7 @@ def pubchem_main(identifiers, wait=0.25):
     # https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/aspirin/synonyms/TXT
     result = [] # pd.DataFrame(columns = ['Name', 'Smiles'])
     fails = 0
-    for x in identifiers:
+    for x in tqdm(identifiers):
         try:
             url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + x + '/property/CanonicalSMILES/TXT'
     #         remove new line character with rstrip

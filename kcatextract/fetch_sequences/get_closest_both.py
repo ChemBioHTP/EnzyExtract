@@ -17,7 +17,7 @@ def infuse_enzyme_substrate_sequences(checkpoint_df, dists_df, brenda_df, brenda
     # step 4, join checkpoint_df with sequence_df
     get_closest_enzyme.join_sequence_df(checkpoint_df, sequence_df)
     
-    infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_inchi=redo_inchi)
+    infuse_with_substrates(checkpoint_df, brenda_substrate_df, redo_inchi_convert=redo_inchi)
     
     return checkpoint_df
     

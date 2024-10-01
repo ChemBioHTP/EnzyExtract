@@ -78,7 +78,7 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
         obj = {
             'enzyme': None,
             'enzyme_full': None,
-            'substrate': None,
+            'substrate': entry.get('substrate', None), # change: allow substrate to be directly given
             'substrate_full': None,
             'mutant': None,
             'organism': None,
@@ -93,15 +93,18 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
             'descriptor': entry.get('descriptor')
         }
         # put to lower
-        for k, values in context.items():
+        for key, values in context.items():
             # put to lower
-            if k == 'other' and not isinstance(values, list):
+            k = key[:-1] if key.endswith('s') else key
+            if key == 'other' and not isinstance(values, list):
                 continue # TODO
+            if obj.get(k): # do not overwrite
+                continue
+            
             v_lower = [v.lower() for v in values]
             for tag in tags:
                 if values and tag.lower() in v_lower: # if the tag is a member of a context-list
                     # remove "s" from key
-                    k = k[:-1] if k.endswith('s') else k
                     if k == 'solvent': # forceful transfer
                         obj['solution'] = tag
                     elif k == 'other' or k not in obj: # guard against "inhibitors" or other unspecified types
@@ -110,16 +113,15 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
                         obj[k] = tag
                     break
             else:
-                if values and len(values) == 1 and k not in ['mutants', 'other']: # if singleton, use it
-                    k = k[:-1] if k.endswith('s') else k
+                if values and len(values) == 1 and key not in ['mutants', 'other']: # if singleton, use it
                     if k in obj:
                         obj[k] = values[0]
 
         # singleton enzyme/substrate
 
 
-        for k in ['enzyme', 'substrate', 'mutant', 'organism']:
-            if obj[k] is None:
+        for key in ['enzyme', 'substrate', 'mutant', 'organism']:
+            if obj[key] is None:
                 # ugh oh, we really want the enzyme/substrate/mutant
                 # go in reverse: check if an enzyme is a substring of a tag
 
@@ -131,7 +133,7 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
                 #         obj[k] = eors
                 #         break
                 queries = []
-                for eors in context.get(k + 's') or []:
+                for eors in context.get(key + 's') or []:
                     queries.append((r'\b' + re.escape(eors) + r'\b', eors))
                 for tag in tags: # this will be in tag order
                     if "(with" in tag:
@@ -139,7 +141,7 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
                         continue
                     for query, eors in queries:
                         if re.search(query, tag, re.IGNORECASE):
-                            obj[k] = eors
+                            obj[key] = eors
                             break
 
 
@@ -166,15 +168,15 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
 
         # try to locate the full name
         # this is special to the "partB" and "improve" and "oneshot" series
-        for k, specs in [('enzyme', enzyme_specs), ('substrate', substrate_specs)]:
+        for key, specs in [('enzyme', enzyme_specs), ('substrate', substrate_specs)]:
             if not specs:
                 continue
 
             proceedwith = None
-            if obj[k] is not None:
+            if obj[key] is not None:
                 # orig case is fine, because we assign obj['enzyme'] to the orig case
                 for eors in specs: # could also be substrate
-                    if obj[k] in eors.get('synonyms', []) or obj[k] in eors.get('fullname', ''):
+                    if obj[key] in eors.get('synonyms', []) or obj[key] in eors.get('fullname', ''):
                         proceedwith = eors
 
             elif len(specs) == 1:
@@ -182,7 +184,7 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
                 eors = specs[0] # enzyme or substrate
                 proceedwith = eors
 
-            elif k == 'enzyme' and obj['mutant'] is not None:
+            elif key == 'enzyme' and obj['mutant'] is not None:
                 # enzyme is None, but mutant is not None, suggests that it matched with some sort of mutant
                 for eors in specs:
                     if obj['mutant'] in eors['mutants']:
@@ -195,10 +197,10 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
 
 
             if proceedwith is not None:
-                obj[f'{k}_full'] = proceedwith['fullname']
-                if not obj[k]:
-                    obj[k] = proceedwith['fullname']
-                if k == 'enzyme' and len(proceedwith['organisms']) == 1 and not obj['organism']:
+                obj[f'{key}_full'] = proceedwith['fullname']
+                if not obj[key]:
+                    obj[key] = proceedwith['fullname']
+                if key == 'enzyme' and len(proceedwith['organisms']) == 1 and not obj['organism']:
                     obj['organism'] = proceedwith['organisms'][0]
 
 
@@ -223,15 +225,39 @@ def fix_df_for_yaml(df):
         df['descriptor'] = None
     return df
 
+string_acceptors = None
+# string_acceptors = ['descriptor', 'kcat', 'Km', 'kcat/Km', 'substrate', 
+#             'fullname', 'synonyms', 'mutants', 'organisms', 'temperatures', 'pHs', 'solvents', 
+#             'solutions', 'other']
 
+def force_escape_str(yaml_block: str) -> str:
+    builder = ""
+    for line in yaml_block.split('\n'):
+        if ': ' in line:
+            key, value = line.split(': ', 1)
+            if value == 'null' or value == '[]':
+                continue # exception
+            if string_acceptors is None or key.strip('- ') in string_acceptors:
+            # allow any
+                if value and not (value[0] in '"\'' and value.strip()[-1] in '"\''):
+                    escaped_str = value.replace('"', '\\"')
+                    line = f'{key}: "{escaped_str}"'
+        elif line.strip().startswith('- '):
+            space, value = line.split('- ', 1)
+            if value and not (value[0] in '"\'' and value.strip()[-1] in '"\''):
+                escaped_str = value.replace('"', '\\"')
+                line = f'{space}- "{escaped_str}"'
+            
+        builder += line + '\n'
+    return builder
 def parse_yaml(content: str, debugpmid=None):
     content = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]', '', content)
-
-    # GPT doesn't tend to escape strings properly in YAML.
-    # This is a hack to fix that.
-    # badly_escaped_re = r': "(.+".*)"\n'
-    # for match in re.finditer(badly_escaped_re, content):
-    #     intended_str = match.group(1)
+    
+    # we want to read everything as strings, including numbers
+    # this is a hack that does that
+    
+    content = force_escape_str(content)
+        
 
     try:
         obj = yaml.safe_load(content)
@@ -247,8 +273,12 @@ def validate_data(obj: list, fix=True, debugpmid=None):
     all_correct = True
     for datum in obj:
         delete_keys = []
+        if not isinstance(datum, dict):
+            if debugpmid: print(f"[{debugpmid}] Data is not a dict but a", type(datum), ":", datum)
+            all_correct = False
+            continue
         for k, v in datum.items():
-            if k in ['descriptor', 'kcat', 'Km', 'km', 'kcat/Km']:
+            if k in ['descriptor', 'kcat', 'Km', 'km', 'kcat/Km', 'substrate']:
                 if v and not isinstance(v, str):
                     if debugpmid: print(f"[{debugpmid}] Key {k} is not a string")
                     delete_keys.append(k)
@@ -273,10 +303,16 @@ def validate_context(obj: dict, fix=True, debugpmid=None, version: int=YamlVersi
     all_correct = True
 
     parent_deletable_keys = []
-
+    
+    if not isinstance(obj, dict):
+        if debugpmid: print(f"[{debugpmid}] Context is not a dict but a", type(obj), ":", obj)
+        return False
 
     for k, v in obj.items():
-
+        # you know what, drop "other". pretty much useless
+        if k == 'other':
+            parent_deletable_keys.append(k)
+            continue
         allowable = ['enzymes', 'substrates', 'temperatures', 'pHs', 'solvents', 'solutions', 'other'] # , 'inhibitors']
         substrates_like = ['substrates', 'coenzymes', 'cosubstrates', 'products', 'inhibitors', 'cofactors']
         if not (version & YamlVersions._enzymes_block):
@@ -295,28 +331,39 @@ def validate_context(obj: dict, fix=True, debugpmid=None, version: int=YamlVersi
         # begrudgingly allow either string or list of strings everywhere
         if k == 'enzymes':
             if (version & YamlVersions._enzymes_block):
-                if v and not isinstance(v, list):
-                    if debugpmid: print(f"In {debugpmid}: context key enzymes is not a list:", v)
-                    all_correct = False
-                else:
+                if not v:
+                    # set to empty list
+                    obj['enzymes'] = []
+                    continue
+                if isinstance(v, list):
                     for enzyme in v:
                         if not isinstance(enzyme, dict):
                             if debugpmid: print(f"In {debugpmid}: context key enzymes has a non-dict item:", enzyme)
                             all_correct = False
+                else:
+                    if debugpmid: print(f"In {debugpmid}: context key enzymes is not a list:", v)
+                    all_correct = False
             else:
                 if v and not isinstance(v, (str, list)):
                     if debugpmid: print(f"In {debugpmid}: context key enzymes is not a string or list:", v)
                     all_correct = False
         elif k == 'substrates':
             if (version & YamlVersions._substrates_block):
-                if v:
-                    if not isinstance(v, list):
-                        if debugpmid: print(f"In {debugpmid}: context key substrates is not a list:", v)
-                        all_correct = False
+                if not v:
+                    # set to empty list
+                    obj['substrates'] = []
+                    continue
+                if isinstance(v, list):
                     for substrate in v:
                         if not isinstance(substrate, dict):
                             if debugpmid: print(f"In {debugpmid}: context key substrates has a non-dict item:", substrate)
                             all_correct = False
+                        elif 'fullname' not in substrate:
+                            if debugpmid: print(f"In {debugpmid}: context key substrates has a dict item without 'fullname':", substrate)
+                            all_correct = False
+                else:
+                    if debugpmid: print(f"In {debugpmid}: context key substrates is not a list:", v)
+                    all_correct = False
             else:
                 if v and not isinstance(v, (str, list)):
                     if debugpmid: print(f"In {debugpmid}: context key substrates is not a string or list:", v)
@@ -325,6 +372,12 @@ def validate_context(obj: dict, fix=True, debugpmid=None, version: int=YamlVersi
 
             if isinstance(v, list):
                 # again, begrudgingly allow lists of only strings
+                # if k == 'other':
+                    # begrudgingly allow list of dicts I guess
+                    # for i, item in enumerate(v):
+                    #     if isinstance(item, dict):
+                    #         obj['other'][i] = '; '.join([k + ": " + v for k, v in item.items()])
+                # else:
                 for item in v:
                     if not isinstance(item, str):
                         if debugpmid: print(f'In {debugpmid}: context key "{k}" has a non-string item:', item)
@@ -401,7 +454,7 @@ def explode_context(obj: dict, debugpmid=None, yaml_version: int=YamlVersions.OR
     return obj
 
 
-def yaml_to_df(content: str | dict, auto_context=False, version: int=YamlVersions.ORIG, debugpmid=None, verbose=True) -> tuple[pd.DataFrame, dict]:
+def yaml_to_df(content: str | dict, auto_context=False, version: int=YamlVersions.ONESHOT, debugpmid=None, verbose=True) -> tuple[pd.DataFrame, dict]:
 
     if isinstance(content, str):
         obj = parse_yaml(content, debugpmid=debugpmid)

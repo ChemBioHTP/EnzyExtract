@@ -689,6 +689,60 @@ Additional notes:
 - The biomolecule corresponding to the Km should be placed first, with coenzymes in parentheticals. For example, "(with NADPH)". 
 """
 
+# derived from v1_2
+# features: 
+# no more strings
+# remove solvent
+table_oneshot_v3 = """You are a helpful and diligent assistant responsible for extracting Km and kcat data from tables from pdfs.
+For each data point, you extract the kcat (turnover number), Km (Michaelis constant), kcat/Km (catalytic efficiency), substrate, and descriptor. 
+When extracting, you are primarily interested in kcat with units time^-1, and Km with units of molarity. (ie. mM, nmol/mL, etc.) \
+Therefore, you must exclude Vmax, specific activity, Ki, etc.
+
+kcat and Km should be formatted like so: "33 ± 0.3 s^-1" or "2.3 mM". Report the error if present. \
+Keep original units and values (do not convert units), but attempt to clean up OCR errors. Be thorough and extract all data points present, including wild-type.
+
+The kcat and Km value must correspond to the descriptor. The descriptor and substrate fields must together contain all the information to uniquely identify the entry. \
+The descriptor will most likely contain the enzyme, but it may also contain conditions like mutant code, organism, pH, temperature, etc. The substrate should be whatever corresponds to the Km value.
+
+At the end, contextualize the data. Report all described enzymes, substrates, mutants, organisms, temperatures, pHs, solvents, etc. Reference descriptor fragments verbatim.
+In the context, also include information common to all the entries in the table. For instance, if all the entries share the same enzyme and organism, report that in the context rather than in every descriptor.
+
+Before your final answer, you may write thoughts and comments, like observing which enzymes, substrates and conditions to report and how the table entries vary.
+
+Then, format your final answer like this example:
+```yaml
+data:
+    - descriptor: wild-type cat-1
+      substrate: H2O2
+      kcat: 1 min^-1
+      Km: null
+      kcat/Km: null
+    - descriptor: R190Q cat-1; 25°C
+      substrate: H2O2
+      kcat: 33 ± 0.3 s^-1
+      Km: "2.3 mM"
+      kcat/Km: null
+    - descriptor: R203Q cat-1; (with NADPH); 25°C
+      substrate: H2O2
+      kcat: null
+      Km: 9.9 ± 0.1 µM
+      kcat/Km: 4.4 s^-1 mM^-1
+context:
+    enzymes:
+        - fullname: catalase
+          synonyms: cat-1
+          mutants: wild-type; R190Q; R203Q
+          organisms: Escherichia coli
+    substrates: 
+        - fullname: hydrogen peroxide
+          synonyms: H2O2
+        - fullname: water
+    temperatures: 25°C; 30°C
+    pHs: 7.4
+    other: NADPH
+```
+"""
+
 backform_eval_v1 = """You are a diligent assistant specialized in enzyme catalysis. 
 Given a list of descriptors, you must identify equivalent descriptors and synonyms. For each numbered item, you must find the matching descriptor in the lettered list.
 
@@ -814,10 +868,11 @@ context:
 ```"""
 
 
-substrate_disambiguate_1v0 = """You are a helpful and diligent assistant specialized in enzyme catalysis. \
-You will be given a substrate name and up to 5 candidates. \
+closest_substrate_1v0 = """You are a helpful and diligent assistant specialized in enzyme catalysis. \
+You will be given a substrate name and up to 10 candidates. \
 Your goal is to determine the candidate which best matches for the substrate name, if any. 
-Write your train of thought, 
+Write your train of thought, then write your final answer. 
+Begin your answer with "Search: " if an alias may be a better search term. Otherwise, write "Final Answer: ".
 
 Here is an example:
 
@@ -833,8 +888,8 @@ Candidates:
 
 The best match for α-ketoglutarate is alpha-ketoglutarate. However, 2-ketoglutarate is also acceptable, because it is a known synonym of alpha-ketoglutarate.
 
-```answer
-alpha-ketoglutarate
+```
+Final Answer: alpha-ketoglutarate
 ```
 
 ### Input
@@ -849,14 +904,48 @@ Candidates:
 
 Without further information, none of these examples match Dns-PhgRAPW well.
 
-```answer 
-None
+```
+Final Answer: None
 ```
 
 ### Input
 
-Substrate: Nicotinamide adenine dinucleotide (reduced)
+Substrate: p-NPP
 Candidates:
+- YPNP (C23H31N5O7)
+- AMP-PCP (C10H16N5O13P3)
+- 3-NP (C3H7NO2)
+
+### Output
+
+p-NPP stands for para-nitrophenyl phosphate. None of the candidates are relevant, so the full name might be a better search term.
+
+```
+Search: para-nitrophenyl phosphate
+```
+
+"""
 
 
+prompt_organism_v1_1 = """
+You are a helpful assistant. Given a list of organism names, convert each name into canonical form, which is its genus and species.
+If you are unsure, prefix the name with [Guess].
+
+Here is an example:
+
+### Input
+
+B. subtilis 
+Human
+Rat spleen
+Acidaminococcus fermentans
+
+### Output
+
+```
+Bacillus subtilis
+Homo sapiens
+[Guess] Rattus norvegicus
+Acidaminococcus fermentans
+```
 """

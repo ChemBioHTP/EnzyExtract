@@ -25,16 +25,28 @@ def count_enzyme_substrate_all_matched(checkpoint_df: pd.DataFrame, how='pmid'):
 def broad_na(x):
     # note that for km or kcat, not na will also usually correspond to having a numeric value
     # because fix_km and fix_kcat will convert non-numeric and weird values to na
+    if x is None:
+        return True
     if isinstance(x, list):
         return x == []
-    return pd.isna(x) or (not x)
+    if isinstance(x, str):
+        if x == 'nan':
+            return True
+        return x == ""
+    if pd.isna(x):
+        return True
+    if not x:
+        return True
+    return False
+    #     return pd.isna(x)
+    # return pd.isna(x) or (not x)
 
-# def is_numlike(x):
+def is_numlike(x):
 #     # this is necessary, becauase although we guarantee that
 #     # hung. matched dfs will have fixed km and kcat, 
 #     # the ground truth may actually have non-numeric values 
 #     # (ie. "NA" or "")
-#     return not broad_na(x) and any([c.isdigit() for c in str(x)])
+    return not broad_na(x) and any([c.isdigit() for c in str(x)])
 
 
 # current_best = pd.read_csv('completions/enzy/rekcat-vs-brenda_5.csv')
@@ -90,15 +102,15 @@ def get_agreement_score(checkpoint_df: pd.DataFrame, allow_brenda_missing=True):
         # then, we need at least 1 non-null value
         # also, need that kcat_feedback and km_feedback are both empty
         
-        if broad_na(row.km) != broad_na(row.km_2):
+        if is_numlike(row.km) != is_numlike(row.km_2):
             return False
-        if broad_na(row.kcat) != broad_na(row.kcat_2):
-            if allow_brenda_missing and broad_na(row.kcat_2):
+        if is_numlike(row.kcat) != is_numlike(row.kcat_2):
+            if allow_brenda_missing and not is_numlike(row.kcat_2):
                 pass
             else:
                 return False
-        if broad_na(row.kcat_km) != broad_na(row.kcat_km_2):
-            if allow_brenda_missing and broad_na(row.kcat_km_2):
+        if is_numlike(row.kcat_km) != is_numlike(row.kcat_km_2):
+            if allow_brenda_missing and not is_numlike(row.kcat_km_2):
                 pass
             else:
                 return False

@@ -287,7 +287,8 @@ def script3():
     
     # backform from a md file
     val_set = [10206992, 10347221, 10373434, 10947957, 10960485, 11016923, 11468288, 11675384, 12054464, 12604203]
-    md_path = 'completions/enzy_tuned/rekcat-giveboth-4o_2 train.md'
+    # md_path = 'completions/enzy_tuned/rekcat-giveboth-4o_2 train.md'
+    md_path = 'completions/enzy_tuned/giveboth-cofactor-4o_2 train v2.md'
     with open(md_path, 'r', encoding='utf-8') as f:
         content = f.read()
     train = []
@@ -295,7 +296,7 @@ def script3():
     for pmid, content in read_md_by_pmid(content):
         assert pmid in input_reqs
         input_req = input_reqs[pmid]
-        req = openai_crafted_batch_to_finetune(input_req, content, system_prompt=prompt_collections.table_oneshot_v1_2)
+        req = openai_crafted_batch_to_finetune(input_req, content, system_prompt=prompt_collections.table_oneshot_v3)
         if int(pmid) in val_set:
             val.append((pmid, req))
         else:
@@ -305,7 +306,7 @@ def script3():
     
     dest_folder = 'backform/finetunes'
     pmids_dest = 'C:/conjunct/vandy/yang/corpora/manifest/auto/finetunes'
-    namespace = 'rekcat-giveboth-train_1'
+    namespace = 't2neboth'
     save_partitions(train, val, [], dest_folder, namespace, pmids_dest=pmids_dest)
     
     

@@ -136,7 +136,7 @@ def preview_batches_in_folder(src_folder, output_folder, undownloaded_only=True,
     
     
 
-def get_batch_output(filename, allow_unfinished=True) -> list[tuple[str, str]]:
+def get_batch_output(filename, allow_unfinished=True) -> list[tuple[str, str, str]]:
     # return list of (custom_id, content, finish_reason)
     result = []
     with open(filename, 'r') as f:
@@ -148,6 +148,16 @@ def get_batch_output(filename, allow_unfinished=True) -> list[tuple[str, str]]:
             result.append((obj['custom_id'], obj['response']['body']['choices'][0]['message']['content'], finish_reason))
     return result
 
+
+def get_batch_input(filename) -> list[tuple[str, list[str]]]:
+    # return list of (custom_id, docs)
+    result = []
+    with open(filename, 'r') as f:
+        for line in f:
+            obj = json.loads(line)
+            docs = [msg['content'] for msg in obj['body']['messages'][1:]]
+            result.append((obj['custom_id'], docs))
+    return result
 
 if __name__ == '__main__':
     preview_batches_in_folder('batches/enzy', 'completions/enzy', undownloaded_only=False)
