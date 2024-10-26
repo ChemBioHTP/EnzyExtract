@@ -52,14 +52,25 @@ def parse_value_and_unit(value_str):
             exponent = re.search(r"[x×]\s*10(-?\d+)", value_str)
         if exponent:
             exponent_factor = 10 ** int(exponent.group(1))
+        
+        # now, truncate the exponent out of the value_str
+        # that way, we don't parse the exponent as a mantissa - for example, 10^-4
+        exp_idx = exponent.start()
+        mantissa_part = value_str[:exp_idx] # + value_str[exponent.end():]
     elif "e" in value_str:
         # scientific notation
         exponent = re.search(r"\de(-?\d+)", value_str, re.IGNORECASE)
         if exponent:
             exponent_factor = 10 ** int(exponent.group(1))
+        
+        # now, truncate the exponent out of the value_str
+        exp_idx = exponent.start()
+        mantissa_part = value_str[:exp_idx]
+    else:
+        mantissa_part = value_str
     
-    numeric_splitter = min(value_str.find("±"), value_str.find(" -- ")) # brenda supports ranges
-    numeric_part = value_str[:numeric_splitter] if numeric_splitter != -1 else value_str
+    numeric_splitter = min(mantissa_part.find("±"), mantissa_part.find(" -- ")) # brenda supports ranges
+    numeric_part = mantissa_part[:numeric_splitter] if numeric_splitter != -1 else mantissa_part
     match = re.match(r"(\d+(?:\.\d+)?)[\s±]*", numeric_part)
     if match:
         value = float(match.group(1))
