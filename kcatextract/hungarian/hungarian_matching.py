@@ -119,7 +119,11 @@ def mislabeled_unit_similarity(a_mantissa, b_mantissa, max_score=0.95):
         return max_score
     return 0
 
-def off_by_10_similarity(a_value, b_value, off_by_10_score=0.7, off_by_100_score=0.5, off_by_1000_score=0.9, off_by_more_score=0.3, instead_return_ratio=False):
+def off_by_10_similarity(a_value, b_value, 
+                         off_by_10_score=0.7, off_by_100_score=0.5, 
+                         off_by_1000_score=0.9, off_by_more_score=0.3, 
+                         instead_return_ratio=False,
+                         base=10):
     """
     For when the annotator accidentally converted wrong by a factor of 10.
     This isn't a perfect match, but it should be worth more than the base similarity of 0.526315
@@ -132,23 +136,23 @@ def off_by_10_similarity(a_value, b_value, off_by_10_score=0.7, off_by_100_score
     ratio = max(a_value, b_value) / min(a_value, b_value)
     eps = 1e-6 # floating point error
     if instead_return_ratio:
-        off_by_10_score = 10
-        off_by_100_score = 100
-        off_by_1000_score = 1000
-    if abs(ratio - 10) < eps:
+        off_by_10_score = base**1 # 10
+        off_by_100_score = base**2 # 100
+        off_by_1000_score = base**3 # 1000
+    if abs(ratio - base**1) < eps: # 10
         return off_by_10_score
-    elif abs(ratio - 100) < eps:
+    elif abs(ratio - base**2) < eps: # 100
         return off_by_100_score
-    elif abs(ratio - 1000) < eps:
+    elif abs(ratio - base**3) < eps: # 1000
         return off_by_1000_score
     else:
         # if ratio is very close to 10**n, return off_by_more_score
         n = round(np.log10(ratio))
         if n <= 0:
             return 0 # do not accept off by 1
-        if abs(ratio - 10**n) < eps:
+        if abs(ratio - base**n) < eps: # 10**n
             if instead_return_ratio:
-                return 10**n
+                return base**n
             return off_by_more_score
     return 0
 
@@ -182,7 +186,9 @@ def value_similarity(a, b, value_name='kcat'):
     # similarity just among sigfigs. relevant if units simply labeled wrong
     unit_similarity = mislabeled_unit_similarity(a_mantissa, b_mantissa)
     
-    off_by_10_score = off_by_10_similarity(a_value, b_value) if value_name == 'km' else 0
+    off_by_10_score = off_by_10_similarity(a_value, b_value) if value_name == 'km' else \
+        off_by_10_similarity(a_value, b_value, base=60) # if 'kcat', then watch for off-by-60 errors. Note that previous matching had 0.
+
     
     return max(value_similarity, unit_similarity, off_by_10_score)
 

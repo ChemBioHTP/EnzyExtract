@@ -7,12 +7,12 @@ def pmids_from_file(filename) -> set[str]:
     with open(filename) as f:
         return set(f.read().splitlines())
 
-def pmids_from_directory(filepath, recursive=False) -> set[str]:
+def pmids_from_directory(filepath, recursive=False, filetype='.pdf') -> set[str]:
     """Searches directory for PDF files and returns their PMIDs"""
     result = set()
     for root, dirs, files in os.walk(filepath):
         for filename in files:
-            if filename.endswith('.pdf'):
+            if filename.endswith(filetype): # '.pdf'):
                 pmid = filename.rsplit('.', 1)[0]
                 result.add(pmid)
         if not recursive:
@@ -96,6 +96,36 @@ def cache_directory_to_disk_manifest(parent_dir, write_dir='C:/conjunct/vandy/ya
                 cache_pmids_to_disk(result, namespace=namespace, parent_dir=f"{write_dir}/{overall_name}")
         if not recursive:
             break
+
+def lift_pmids(pmids, walk_dir, write_dir, extension='.pdf'):
+    """
+    From PMIDs stored in a recursive directory structure walk_dir, 
+    elevate them to a flat structure in write_dir.
+
+    Simply copy over the files that match the PMIDs.
+    No need to provide the original location of the PMIDs.
+    """
+    if not pmids:
+        print("No PMIDs to lift")
+        return
+
+    if isinstance(pmids[0], (int, float)):
+        print("Warning: PMIDs should be strings, not integers or floats")
+        pmids = [str(int(pmid)) for pmid in pmids]
+
+    import shutil
+    os.makedirs(write_dir, exist_ok=True)
+
+    for root, dirs, files in os.walk(walk_dir):
+        result = []
+        for filename in files:
+            if filename.endswith(extension):
+                pmid = filename.rsplit('.', 1)[0]
+                if pmid in pmids:
+                    # copy over the file
+                    shutil.copyfile(f"{root}/{filename}", f"{write_dir}/{filename}")
+                    
+
 
 def _run_tests():
     pmids = pmids_from_directory("D:/brenda/wiley")

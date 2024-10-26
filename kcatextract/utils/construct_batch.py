@@ -65,21 +65,30 @@ import os
 def locate_correct_batch(src_folder, namespace, version=None):
     # filename gets scrambled. luckily, just search for 
     # {"id": "batch_req_cOTEwOobeyeib0QWIhpo7PWQ", "custom_id": 
-    prefix = len("""{"id": "batch_req_cOTEwOobeyeib0QWIhpo7PWQ", """) # "custom_id": 
+    
+    # prefix = len("""{"id": "batch_req_cOTEwOobeyeib0QWIhpo7PWQ", """) # "custom_id": 
+    # they changed the length of the id
+    # now, search for ", "custom_id": "
     
     # search by date created, to prefer the newest versions
     # for filename in os.listdir(src_folder):
-    for filename in sorted(os.listdir(src_folder), 
+    candidates = sorted(os.listdir(src_folder), 
                            key=lambda x: os.path.getctime(os.path.join(src_folder, x)),
-                           reverse=True):
+                           reverse=True)
+    for filename in candidates:
         if not filename.endswith('.jsonl'):
             continue
         with open(f'{src_folder}/{filename}', 'r') as f:
             line = f.readline()
-            target = f'"custom_id": "{namespace}_'
+            target = f"{namespace}_" # f'"custom_id": "{namespace}_'
             if version is not None:
                 target += str(version)
-                
+            
+            query = '", "custom_id": "'
+            if query not in line:
+                continue
+            prefix = line.index(query) + len('", "custom_id": "')
+            
             if line[prefix:].startswith(target):
                 if version is None:
                     start_from = prefix + len(target)

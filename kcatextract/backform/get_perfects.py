@@ -131,6 +131,14 @@ def get_agreement_score(checkpoint_df: pd.DataFrame, allow_brenda_missing=True):
         total += 1
         if is_good_enough(row):
             agreement += 1
+        else:
+            pass
+        
+        # in other words:
+        # subset = df[km_2, kcat_2, kcat_km_2] are not all null
+        # subset2 = subset[km] is not null
+        # subset3 = subset2[km_feedback and kcat_feedback] are null
+        # 
     
     return agreement, total
     

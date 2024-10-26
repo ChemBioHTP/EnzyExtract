@@ -84,7 +84,7 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
             'organism': None,
             'kcat': entry.get('kcat'),
             'km': entry.get('km', entry.get('Km')),
-            'kcat_km': entry.get('kcat_km', entry.get('kcat/Km')),
+            'kcat_km': entry.get('kcat_km', entry.get('kcat/Km', entry.get('kcat_Km'))),
             'temperature': None,
             'pH': None,
             # 'solvent': None,
@@ -526,7 +526,10 @@ def merge_2_yamls(base: str | dict, extras: str | dict, debugpmid=None, base_ver
 
 
 def extract_yaml_code_blocks(content, current_pmid=None) -> list[tuple[str, str]]:
-    """Return list of tuple of (yaml_string, pmid)"""
+    """
+    Reads markdown: either multiple GPT responses or a single response.
+    
+    Return list of tuple of (yaml_string, pmid)"""
     # extract all the content inside ```yaml code blocks
     # return list of strings
     result = []
@@ -608,6 +611,23 @@ def get_pmid_to_yaml_dict(file_path, **kwargs) -> dict:
 
     return pmid2yaml
 
+def equivalent_from_json_schema(content: str) -> dict:
+    """Converts a string which is represented by JSON (common for structured output) into YAML"""
+    import json
+    obj = json.loads(content)
+    # replace the context.pHs to list[str] if it is float
+    if 'context' in obj:
+        if 'pHs' in obj['context']:
+            old_list = obj['context']['pHs']
+            new_list = []
+            for item in old_list:
+                if not isinstance(item, str):
+                    new_list.append(str(item))
+                else:
+                    new_list.append(item)
+            obj['context']['pHs'] = new_list
+    return obj
+    
 
 
 if __name__ == '__main__':

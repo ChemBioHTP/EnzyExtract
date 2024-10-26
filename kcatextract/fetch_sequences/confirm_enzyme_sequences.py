@@ -106,7 +106,7 @@ def idents_for_pmid(pmid, pmid2seq: pd.DataFrame, uniprot_df: pd.DataFrame, pdb_
     
     subset = pmid2seq[pmid2seq['pmid'] == pmid]
     
-    subset.replace(pd.NA, '', inplace=True)
+    subset = subset.replace(pd.NA, '')
     
     uniprots = set()
     pdbs = set()
