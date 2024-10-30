@@ -1,0 +1,12 @@
+*.env
+relink/**
+relink
+*.jsonl
+__pycache__/**
+_debug/**
+backform/**
+completions/**
+data/**
+.vscode
+fetch_sequences/**
+prints/**
