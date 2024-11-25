@@ -10,3 +10,6 @@ data/**
 .vscode
 fetch_sequences/**
 prints/**
+zrun_legacy/**
+dev/data/**
+dev/debug/**

@@ -72,7 +72,7 @@ print("Using version:", version)
 #                                     model_name='gpt-4o')
 #         batch.append(req)
 
-path_to_matched_df = f'data/_cache_valid/_valid_{orig_namespace}_{og_version}.csv'
+path_to_matched_df = f'data/valid/_valid_{orig_namespace}_{og_version}.csv'
 df = pd.read_csv(path_to_matched_df)
 pmids = pmids_needing_exploding(df)
 batch = create_explode_batch(pmids, namespace, version, f'{root}/{at}', prompt=prompt_collections.explode_1v3)

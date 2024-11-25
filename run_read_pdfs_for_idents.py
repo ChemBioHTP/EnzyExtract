@@ -133,7 +133,7 @@ if __name__ == "__main__":
     # # src_folder = "C:/conjunct/tmp/brenda_rekcat_pdfs"
     # src_folder = "D:/scratch/wiley"
     # dest_df_path = "fetch_sequences/readpdf/all_nonbrenda_dbids.tsv"
-    dest_df_path = "fetch_sequences/mutants/nonbrenda_mutants.tsv"
+    dest_df_path = "fetch_sequences/readpdf/nonbrenda_mutants.tsv"
 
     sources = ["scratch/asm", "scratch/hindawi", "scratch/open", "scratch/wiley", "topoff/hindawi", "topoff/open", "topoff/wiley", "wos/asm", "wos/hindawi", "wos/jbc", "wos/local_shim", "wos/open", "wos/wiley"]
     for src_folder in sources:

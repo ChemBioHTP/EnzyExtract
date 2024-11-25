@@ -23,7 +23,9 @@ def print_stats(stats):
 def compare_a_b(
         valid_a_df, 
         valid_b_df,
+        namespace, 
         *,
+        version = None, 
         blacklist = None,
         whitelist = None
 ):
@@ -33,10 +35,17 @@ def compare_a_b(
     # monitor a batch and how many pass every single requirement
     
     # brenwi-giveboth-tuneboth, rekcat-giveboth-4o
-
+    
+    # if None, will re-match with ground-truth
+    # matched_csv = f'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
+    
+    valids = []
+    valid_pmids = set()
+    total_ingested = 0
+    
     stats = {}
-    # stats['namespace'] = namespace
-    # print("Namespace:", namespace)
+    stats['namespace'] = namespace
+    print("Namespace:", namespace)
     valid_a_df = valid_a_df.astype({'pmid': 'str'})
     valid_b_df = valid_b_df.astype({'pmid': 'str'})
 
@@ -137,9 +146,9 @@ def script1():
 
     matched_df.to_csv(write_dest, index=False)
 
-def script_compare_tupled():
+if __name__ == "__main__":
     blacklist = whitelist = None
-    redo = True
+    redo = False
     # blacklist = pmids_from_cache("finetunes/pmids-rekcat-giveboth-train_1.train")
     # blacklist = pmids_from_cache("finetunes/tableless-oneshot.train")
     
@@ -147,28 +156,47 @@ def script_compare_tupled():
     # whitelist = pmids_from_batch("C:/conjunct/table_eval/batches/enzy/tableless-oneshot_1.jsonl")
 
     
-    brenda_csv = 'C:/conjunct/vandy/yang/corpora/brenda/brenda_km_kcat_key_v2.csv'
-    brenda_df = prep_for_hungarian(pd.read_csv(brenda_csv, dtype={'pmid': str}))
-    brenda_df = widen_df(brenda_df)
+    # namespace = 'brenda-rekcat-md-v1-2' 
+    # namespace = 'brenda-rekcat-tuneboth' # rekcat-giveboth-4o
+    # namespace = 'brenda-asm-apogee-4o'
+    # namespace = 'humaneval-apogee-20241029'
+    namespace = 'arctic-t2neboth'
+    structured = namespace.endswith('-str')
+    version = None
+    # compl_folder = 'C:/conjunct/table_eval/completions/enzy'
+    compl_folder = 'completions/enzy'
 
-    valid_a_df = brenda_df
+    # valid_a_df = pd.read_csv('data/_compiled/nonbrenda.tsv', sep='\t')
+    # valid_b_df = pd.read_csv('data/humaneval/apogee_runeem_20241025.csv', dtype={'pmid': str})
+    
+    valid_a_df = pd.read_csv(f'data/valid/_valid_{namespace}_1.csv', dtype={'pmid': str})
     valid_b_df = pd.read_csv('data/humaneval/runeem_20241114.csv', dtype={'pmid': str})
-    valid_b_df = prep_for_hungarian(valid_b_df)
+
     whitelist = set(valid_b_df['pmid'])
 
-    write_dest = f"data/humaneval/comparisons/compare_1_is_brenda_2_is_runeem.csv"
+    write_dest = f"data/humaneval/comparisons/compare_{namespace}_runeem.csv"
+    print("Namespace:", namespace)
     if os.path.exists(write_dest) and not redo:
         print("Already exists")
     else:
         stats, matched_df = compare_a_b(valid_a_df, valid_b_df, 
-            blacklist=blacklist, whitelist=whitelist)
-        matched_df.to_csv(write_dest, index=False)
+            namespace=namespace, version=version, blacklist=blacklist, whitelist=whitelist)
+        matched_df.to_csv(f"data/humaneval/comparisons/compare_{namespace}_runeem.csv", index=False)
+    
+        # append stats
+        dest = 'data/stats/compare_a_b_stats.tsv'
+        df = pd.DataFrame([stats])
+
+        if not os.path.exists(dest):
+            df.to_csv(dest, index=False, sep='\t')
+        else:
+            df.to_csv(dest, mode='a', header=False, index=False, sep='\t')
     
 
         # convert to polars
     import polars as pl
     from kcatextract.metrics.polaric import precision_recall, mean_log_relative_ratio, string_similarity, get_accuracy_score
-    df = pl.read_csv(write_dest, 
+    df = pl.read_csv(f'data/humaneval/comparisons/compare_{namespace}_runeem.csv', 
                      schema_overrides={'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 
                                        'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8})
     
@@ -203,8 +231,4 @@ def script_compare_tupled():
     print("Substrate similarity:", substrate_similarity)
 
     
-
-def script_compare_untupled():
-    pass
-
     

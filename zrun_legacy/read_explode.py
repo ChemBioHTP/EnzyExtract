@@ -38,7 +38,7 @@ for custom_id, content, finish_reason in get_batch_output(f'{root}/{at}'):
 
 explode_df = pd.concat(dfs)
 
-orig_df = pd.read_csv(f'data/_cache_vbrenda/_cache_{og_namespace}_{og_version}.csv')
+orig_df = pd.read_csv(f'data/mbrenda/_cache_{og_namespace}_{og_version}.csv')
 orig_df = orig_df.astype({'pmid': str})
 # enrich
 enriched_df = infuse_explode_results(orig_df, explode_df)

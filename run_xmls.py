@@ -1,5 +1,6 @@
 # working_enzy_table_md, but tableless
 
+import io
 import json
 import pandas as pd
 import pymupdf
@@ -17,10 +18,13 @@ from kcatextract.utils.working import pmid_to_tables_from
 from kcatextract.utils.yaml_process import get_pmid_to_yaml_dict
 from kcatextract.utils.openai_schema import to_openai_batch_request_with_schema
 from kcatextract.utils.xml_pipeline import xml_get_soup, xml_abstract_processing, xml_raw_text_processing, xml_table_processing
+from kcatextract.utils.xml_cals import parse_cals_table
 
 def process_xml(filepath, original_tables=True):
     """
     original_tables: if True, will give tables as original xml.
+    If False, will give tables as an abridged version
+    If None: will skip tables
     """
     with open(filepath, "r", encoding='utf-8') as f:
         soup = xml_get_soup(f.read())
@@ -52,10 +56,12 @@ def process_xml(filepath, original_tables=True):
 # {raw_table}
 # ```
 # """
-    else:
+    elif original_tables is False:
         # use old table extraction method
         for raw_table in xml_table_processing(soup):
             docs.append(raw_table)
+    elif original_tables is None:
+        pass
     
     docs.append(f"Abstract: {abstract}")
     docs.append(f"Text: {raw_txt}")
@@ -80,7 +86,7 @@ def get_pure_tables(filepath, original_tables=True):
         tree = etree.parse(f)
 
     tables = []
-    dfs = []
+    # dfs = []
     if original_tables:
         # Use XPath to find all `ce:table` elements
         namespaces = {
@@ -98,22 +104,22 @@ def get_pure_tables(filepath, original_tables=True):
                 tables.append(raw_table)
             
             # see if pandas can parse it
-            try:
-                df = pd.read_xml(io.StringIO(raw_table))
-                if df is not None:
-                    dfs.append(df)
-            except Exception as e:
-                print("Error parsing table")
-                print(e)
+            # try:
+            #     df = pd.read_xml(io.StringIO(raw_table))
+            #     if df is not None:
+            #         dfs.append(df)
+            # except Exception as e:
+            #     print("Error parsing table")
+            #     print(e)
 
-    return tables, dfs
+    return tables
 
 process_env('.env')
 
-namespace = 'openelse-brenda-xml-4o' # 'wos-open-apogee-429d-t2neboth'
+namespace = 'openelse-brenda-cobble-t4neboth' # 'wos-open-apogee-429d-t2neboth'
 
 # defaults
-dest_folder = 'batches/enzy'
+dest_folder = 'batches/enzy/bucket'
 prompt = prompt_collections.table_oneshot_v3
 
 xml_root = "c:/conjunct/vandy/yang/dois/elsevier/downloads"
@@ -134,6 +140,13 @@ elif namespace.endswith('-t2neboth'):
             
     prompt = prompt_collections.table_oneshot_v3
     model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t2neboth:9zuhXZVV' # gpt-4o
+elif namespace.endswith('-t3neboth'):
+    prompt = prompt_collections.table_oneshot_v3
+    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t3neboth:AOpwZY6M'
+elif namespace.endswith('-t4neboth'):
+    prompt = prompt_collections.table_oneshot_v3
+    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t4neboth:AQOYyPCz'
+
 elif namespace.endswith('-oneshot') or namespace.endswith('-4o'):
         
     # prompt = prompt_collections.table_oneshot_v1
@@ -161,14 +174,20 @@ print("Using version: ", version)
 acceptable_pmids = pmids_from_directory(xml_root, filetype='.xml')
 
 # whitelist = pmids_from_cache("apogee_429")
-whitelist = pmids_from_cache("brenda")
+# blacklist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+# blacklist = set(blacklist_df['pmid'])
+whitelist = pmids_from_cache('brenda')
+
+blacklist = set() # pmids_from_cache("brenda")
 
 # disallowed_pmids = pmids_from_cache("brenda_rekcat_pdfs")
 
 
 # target_pmids = acceptable_pmids #  - disallowed_pmids
 # target_pmids = acceptable_pmids & pmid_to_tables.keys()
-target_pmids = acceptable_pmids & whitelist # - disallowed_pmids
+if 'whitelist' not in locals():
+    whitelist = acceptable_pmids
+target_pmids = (acceptable_pmids & whitelist) - blacklist # - disallowed_pmids
 # target_pmids = acceptable_pmids & whitelist - disallowed_pmids
 
 print(f"Using pmids {len(acceptable_pmids)} -> {len(target_pmids)}")
@@ -182,21 +201,42 @@ for filepath in tqdm(glob.glob(f"{xml_root}/*.xml")):
     if pmid not in target_pmids:
         continue
 
+
+    # all_xml_tables[filename] = tables
+    # look at tables
     # temp thing to look at tables
-    tables, dfs = get_pure_tables(filepath)
-    all_xml_tables[filename] = tables
-    all_dfs.extend(dfs)
-    continue
+
     
     try:
         # doc = pymupdf.open(filepath)
-        docs = process_xml(filepath, original_tables=True)
+        docs = process_xml(filepath, original_tables=None)
         if not docs:
             continue
     except Exception as e:
         print("Error opening", filepath)
         print(e)
         continue
+    
+    tables = get_pure_tables(filepath)
+    table_docs = []
+    for table in tables:
+        html, text = parse_cals_table(table)
+        content = ''
+        if text:
+            content = text + '\n\n'
+            
+
+        if html is not None:
+            try:
+                df = pd.read_html(io.StringIO(html))
+                if df:
+                    df = df[0]
+                    content += df.fillna('').to_markdown() + '\n\n'
+            except Exception as e:
+                print(e)
+        table_docs.append(content)
+    docs = table_docs + docs
+    
     
     # now make a batch
     if structured:
@@ -206,14 +246,11 @@ for filepath in tqdm(glob.glob(f"{xml_root}/*.xml")):
         req = to_openai_batch_request(f'{namespace}_{version}_{pmid}', prompt, docs, 
                                   model_name=model_name)
     batch.append(req)
-    
-    if len(batch) > 500: # temporarily reduce for testing
-        break
 
 # temp thing to look at tables
-with open('data/dev/all_xml_tables.json', 'w') as f:
-    json.dump(all_xml_tables, f)
-exit(0)
+# with open('data/dev/all_xml_tables.json', 'w') as f:
+    # json.dump(all_xml_tables, f)
+# exit(0)
 
 print("Using model", model_name)
 

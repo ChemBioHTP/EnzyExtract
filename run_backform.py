@@ -4,7 +4,7 @@ import pandas as pd
 
 from kcatextract.backform.backform_utils import openai_batch_to_finetune, openai_crafted_batch_to_finetune, train_test_split, save_partitions
 from kcatextract.backform.quality_assure import quality_assure_finetune, quality_assure_for_enzyme_matching, quality_assure_for_explode
-from kcatextract.backform.get_perfects import get_perfects_only
+from kcatextract.metrics.get_perfects import get_perfects_only
 from kcatextract.utils import prompt_collections
 from kcatextract.utils.construct_batch import pmid_from_usual_cid
 from kcatextract.utils.md_management import read_md_by_pmid
@@ -76,6 +76,8 @@ def script0():
     with open(f"{DEST_FOLDER}/pmids-{NAMESPACE}.test.txt", 'w') as f:
         for pmid, req in test:
             f.write(str(pmid) + '\n')
+
+# note: see table_eval/working/working_backform_oneshot.py
 
 if __name__ == "__main__":
     script0()

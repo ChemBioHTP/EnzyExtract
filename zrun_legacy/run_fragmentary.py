@@ -45,7 +45,7 @@ def script1():
 
 def script2():
     from kcatextract.utils.openai_management import merge_all_chunked_completions
-    folder = 'completions/enzy'
+    folder = 'completions/enzy/bucket'
     merge_all_chunked_completions(folder, folder)
 
 if __name__ == '__main__':

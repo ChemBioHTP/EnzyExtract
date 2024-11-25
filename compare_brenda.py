@@ -3,7 +3,7 @@ import json
 import os
 import pandas as pd
 from kcatextract.backform.quality_assure import quality_assure_ai_message
-from kcatextract.backform.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
+from kcatextract.metrics.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
 from kcatextract.backform.process_human_perfect import form_human_perfect
 from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
 from kcatextract.hungarian.hungarian_matching import match_dfs_by_pmid
@@ -11,6 +11,7 @@ from kcatextract.hungarian.postmatched_utils import convenience_rearrange_cols
 from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_file
+from kcatextract.metrics.polaric import precision_recall, mean_log_relative_ratio
 
 # brenwi-giveboth-tuneboth_2
 def print_stats(stats):
@@ -33,6 +34,94 @@ def print_stats(stats):
     
     # print("Of that, this number is ready for fine-tune:", stats.get('fine_tune_ready', 'NA'))
 
+
+def generate_mbrenda_csv(namespace = 'rekcat-giveboth-4o', 
+        version = None, 
+        compl_folder = 'completions/enzy',
+        use_yaml=True,
+        silence=True):
+    """
+    Given a namespace, generate the mbrenda csv
+    """
+    
+    brenda_csv = 'C:/conjunct/vandy/yang/corpora/brenda/brenda_km_kcat_key_v2.csv'
+    
+    
+    filename, version = locate_correct_batch(compl_folder, namespace, version=version) # , version=1)
+    print(f"Located {filename} version {version} in {compl_folder}")
+    
+    matched_csv = f'data/mbrenda/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
+    _valid_csv = f'data/valid/_valid_{namespace}_{version}.csv'
+    
+    valids = []
+    valid_pmids = set()
+    total_ingested = 0
+    
+    print("Namespace:", namespace)
+    # if valid_csv exists, we can save some time
+    if _valid_csv and os.path.exists(_valid_csv):
+        valid_df = pd.read_csv(_valid_csv, dtype={'pmid': 'str'})
+        valid_pmids = set(valid_df['pmid'])
+        print("Using existing valid csv.")
+        
+        for custom_id, content, finish_reason in get_batch_output(f'{compl_folder}/{filename}'):
+            if finish_reason != 'length':
+                total_ingested += 1
+    else:
+        for custom_id, content, finish_reason in get_batch_output(f'{compl_folder}/{filename}'):
+            pmid = str(pmid_from_usual_cid(custom_id))
+            
+            content = content.replace('\nextras:\n', '\ndata:\n') # blunder
+            if finish_reason == 'length':
+                print("Too long:", pmid)
+                continue
+            total_ingested += 1
+            
+            if use_yaml:
+                _generator = fix_multiple_yamls(yaml_blocks=extract_yaml_code_blocks(content, current_pmid=pmid))
+            else:
+                # assume json content
+                _generator = [(0, equivalent_from_json_schema(content))]
+            for _, yaml in _generator: # 
+                # assert _ == None
+                
+                df, context = yaml_to_df(yaml, auto_context=True, debugpmid=None if silence else pmid) # pmid, silence debug
+                df['pmid'] = pmid
+                if df.empty:
+                    continue
+                valids.append(df)
+                valid_pmids.add(pmid) # needs to be a set
+        
+        valid_df = prep_for_hungarian(pd.concat(valids)) # bad units for km and kcat are rejected here
+        # valid_df = valid_df.astype({'pmid': 'str'})
+        
+        if _valid_csv and not os.path.exists(_valid_csv):
+            print("Writing to", _valid_csv)
+            valid_df.to_csv(_valid_csv, index=False)
+    
+    # Match 1: now, calculate agreement score with grount-truth
+    coeffs ={
+        # ignore descriptor
+            "kcat": 0.5,
+            "km": 1,
+            "substrate": 0.01,
+            "mutant": 2, # mutants are rare but probably reliable
+        }
+    
+    # Match2: need to match with BRENDA
+    # stage 2: hungarian matching
+        
+    brenda_df = prep_for_hungarian(pd.read_csv(brenda_csv))
+    brenda_df = widen_df(brenda_df)
+    
+    # ground_truth_df = ground_truth_df.astype({'pmid': 'str'})
+    matched_df = match_dfs_by_pmid(valid_df, brenda_df, sorted(valid_pmids), coeffs)
+    
+    matched_df = convenience_rearrange_cols(matched_df)
+    
+    if matched_csv and not os.path.exists(matched_csv):
+        matched_df.to_csv(matched_csv, index=False)
+        
 
 def run_stats(*, 
         namespace = 'rekcat-giveboth-4o', # tuned # tableless-oneshot # brenda-rekcat-md-v1-2
@@ -65,8 +154,8 @@ def run_stats(*,
     filename, version = locate_correct_batch(compl_folder, namespace, version=version) # , version=1)
     print(f"Located {filename} version {version} in {compl_folder}")
     
-    matched_csv = f'data/_cache_vbrenda/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
-    _valid_csv = f'data/_cache_valid/_valid_{namespace}_{version}.csv'
+    matched_csv = f'data/mbrenda/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
+    _valid_csv = f'data/valid/_valid_{namespace}_{version}.csv'
     
     valids = []
     valid_pmids = set()
@@ -152,15 +241,8 @@ def run_stats(*,
     # print(f"These pmids don't: {valid_pmids - _have_both_enzyme_substrate}")
     # valid_pmids = _at_least_one_empty
     
-    # we can exclude pdfs now
-    if whitelist is None:
-        whitelist = valid_pmids
-    if blacklist is None:
-        blacklist = set()
         
-    valid_pmids = (valid_pmids & whitelist) - blacklist
-    _have_both_enzyme_substrate = _have_both_enzyme_substrate & valid_pmids
-    print("After whitelist/blacklist:", len(valid_pmids))
+    
     # whitelist = pmids_from_batch("batches/enzy/brenda-rekcat-md-v1-2_1.jsonl")
     # valid_pmids = valid_pmids & whitelist
     # print("Whitelisted PMIDs:", len(valid_pmids))
@@ -190,11 +272,24 @@ def run_stats(*,
             ### PRINT
             # print(f"Ground-truth Agreement score: ={agreement}/{total} which is ({agreement/total:.2f})")
             gt_matched_df.to_csv(f"data/_cache_vk63/_vs_gt_{namespace}_{version}.csv", index=False)
+    
+    # we should match everything, but a view can be only after the whitelist/blacklist
+    # we can exclude pdfs now
+    if whitelist is None:
+        whitelist = valid_pmids
+    if blacklist is None:
+        blacklist = set()
+
+    view_pmids = (valid_pmids & whitelist) - blacklist
+    print("After whitelist/blacklist:", len(view_pmids))
+    _have_both_enzyme_substrate = _have_both_enzyme_substrate & valid_pmids
         
     
     if not against_brenda:
-        stats['our_kcat'] = len(valid_df['kcat'].dropna())
-        stats['our_km'] = len(valid_df['km'].dropna())
+        view_df = valid_df[valid_df['pmid'].isin(view_pmids)]
+
+        stats['our_kcat'] = len(view_df['kcat'].dropna())
+        stats['our_km'] = len(view_df['km'].dropna())
         
         stats['brenda_kcat'] = 0
         stats['brenda_km'] = 0
@@ -212,7 +307,6 @@ def run_stats(*,
             matched_df = matched_df[matched_df['pmid'].isin(valid_pmids)]
         else:
             
-            
             brenda_df = prep_for_hungarian(pd.read_csv(brenda_csv))
             brenda_df = widen_df(brenda_df)
             
@@ -226,20 +320,23 @@ def run_stats(*,
         
         # kcat and km versus brenda
         matched_df.replace('', pd.NA, inplace=True)
-        stats['our_kcat'] = len(matched_df['kcat'].dropna())
-        stats['brenda_kcat'] = len(matched_df['kcat_2'].dropna())
+
+        view_df = matched_df[matched_df['pmid'].isin(view_pmids)]
+
+        stats['our_kcat'] = len(view_df['kcat'].dropna())
+        stats['brenda_kcat'] = len(view_df['kcat_2'].dropna())
         
-        stats['our_km'] = len(matched_df['km'].dropna())
-        stats['brenda_km'] = len(matched_df['km_2'].dropna())
+        stats['our_km'] = len(view_df['km'].dropna())
+        stats['brenda_km'] = len(view_df['km_2'].dropna())
         ### PRINT
         
         # get agreement score
-        agreement, total = get_agreement_score(matched_df)
+        agreement, total = get_agreement_score(view_df)
         stats['brenda_agreement'] = agreement
         stats['brenda_total'] = total
         ### PRINT
         
-        superset_df = get_perfects_only(matched_df, allow_superset=True)
+        superset_df = get_perfects_only(view_df, allow_superset=True)
         superset_pmids = superset_df['pmid'].unique()
         stats['brenda_superset'] = len(superset_pmids)
         stats['brenda_superset_kcat'] = len(superset_df['kcat'].dropna())
@@ -248,7 +345,7 @@ def run_stats(*,
         ### PRINT
         
         
-        perfect_df = get_perfects_only(matched_df, allow_superset=False)
+        perfect_df = get_perfects_only(view_df, allow_superset=False)
         
         perfect_pmids = set(perfect_df['pmid'])
         stats['brenda_perfect'] = len(perfect_pmids)
@@ -317,28 +414,78 @@ if __name__ == "__main__":
     # whitelist = pmids_from_batch("C:/conjunct/table_eval/batches/enzy/brenda-rekcat-md-v1-2_1.jsonl")
     # whitelist = pmids_from_batch("C:/conjunct/table_eval/batches/enzy/tableless-oneshot_1.jsonl")
 
+    # read whitelist as the pmids from data/mbrenda/_cache_openelse-brenda-xml-4o
+    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-bucket-md-4o-str_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-md-4o_1.csv', dtype={'pmid': str})
+    # whitelist = set(whitelist_df['pmid'])
+    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+    # whitelist &= set(whitelist_df['pmid'])
     
     # namespace = 'brenda-rekcat-md-v1-2' 
     # namespace = 'brenda-rekcat-tuneboth' # rekcat-giveboth-4o
     # namespace = 'brenda-asm-apogee-4o'
-    namespace = 'openelse-brenda-xml-4o'
+    # namespace = 'openelse-brenda-xml-4o'
+    # namespace = 'openelse-bucket-md-4o-str'
+    # namespace = 'openelse-brenda-md-4o'
+    namespace = 'beluga-t2neboth'
+
+    
     structured = namespace.endswith('-str')
     version = None
     # compl_folder = 'C:/conjunct/table_eval/completions/enzy'
     compl_folder = 'completions/enzy'
+
+    # merge fragments
+    # check to see if we need to merge
+    need_merge = False
+    filename, version = locate_correct_batch(compl_folder, namespace)
+    if filename.endswith('0.jsonl'):
+        need_merge = True
+    
+    if need_merge:
+        from kcatextract.utils.openai_management import merge_chunked_completions
+        print(f"Merging all chunked completions for {filename} v{version}. Confirm? (y/n)")    
+        if input() != 'y':
+            exit(0)
+        merge_chunked_completions(namespace, version=version, compl_folder=compl_folder, dest_folder=compl_folder)
+
     stats = run_stats(namespace=namespace, version=version, compl_folder=compl_folder, blacklist=blacklist, whitelist=whitelist,
               against_brenda=True,
               silence=False,
               use_yaml=not structured)
     
     # append stats to block_stats.tsv
-    dest = 'data/block_stats.tsv'
-    df = pd.DataFrame([stats])
+    # dest = 'data/block_stats.tsv'
+    # df = pd.DataFrame([stats])
 
-    if not os.path.exists(dest):
-        df.to_csv(dest, index=False, sep='\t')
-    else:
-        df.to_csv('data/block_stats.tsv', mode='a', header=False, index=False, sep='\t')
+    # if not os.path.exists(dest):
+    #     df.to_csv(dest, index=False, sep='\t')
+    # else:
+    #     df.to_csv('data/block_stats.tsv', mode='a', header=False, index=False, sep='\t')
+    
+
+        # convert to polars
+    import polars as pl
+    df = pl.read_csv(f'data/mbrenda/_cache_{namespace}_1.csv', 
+                     schema_overrides={'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8})
+    
+    TP, FP, FN = precision_recall(df)
+    print("TP:", TP.height)
+    print("FP:", FP.height)
+    print("FN:", FN.height)
+
+    precision = TP.height / (TP.height + FP.height)
+    recall = TP.height / (TP.height + FN.height)
+
+    print("Precision:", precision)
+    print("Recall:", recall)
+
+    # calculate percent error
+    kcat_error = mean_log_relative_ratio(df, 'kcat')
+    km_error = mean_log_relative_ratio(df, 'km')
+    print("kcat, Mean orders of magnitude error (perfect is 0):", kcat_error)
+    print("kM, Mean orders of magnitude error (perfect is 0):", km_error)
         
     
     

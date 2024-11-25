@@ -62,12 +62,26 @@ def process_dataframe(df):
     
     return pd.DataFrame(results, columns=['query_organism', 'query_enzyme', 'accession', 'organism', 'protein_name', 'sequence'])
 
-if __name__ == '__main__':
-    
-    
+def create_tried():
     df = pd.read_csv('data/_compiled/nonbrenda.tsv', sep='\t')
-    # perform the rename enzyme_full --> enzyme_name, and organism --> organism_name
     df = df[['enzyme_full', 'organism']]
+    df.columns = ['enzyme_name', 'organism_name']
+
+     # get unique rows
+    df = df.drop_duplicates()
+    
+    # require both organism and enzyme name
+    df = df.dropna()
+
+    content = []
+    content.append(df.copy())
+
+    df = pd.read_csv('data/_compiled/apogee-brenda-and-nonbrenda.tsv', sep='\t')
+    # perform the rename enzyme_full --> enzyme_name, and organism --> organism_name
+
+    # enzyme_preferred: enzyme_full, fill na with enzyme, then enzyme_2
+    df['enzyme_preferred'] = df['enzyme_full'].fillna(df['enzyme']).fillna(df['enzyme_2'])
+    df = df[['enzyme_preferred', 'organism']]
     df.columns = ['enzyme_name', 'organism_name']
     
     # get unique rows
@@ -75,14 +89,60 @@ if __name__ == '__main__':
     
     # require both organism and enzyme name
     df = df.dropna()
+    # up to i=1100
+
+    df = df[0:1100]
+    content.append(df.copy())
+
+    tried_df = pd.concat(content)
+    tried_df = tried_df.drop_duplicates()
+    tried_df.to_csv('fetch_sequences/uniprot/tried.tsv', sep='\t', index=False)
+
+
+
+    exit(0)
+
+if __name__ == '__main__':
+    
+    # create_tried()
+    # df = pd.read_csv('data/_compiled/nonbrenda.tsv', sep='\t')
+    df = pd.read_csv('data/_compiled/apogee-brenda-and-nonbrenda.tsv', sep='\t')
+    # perform the rename enzyme_full --> enzyme_name, and organism --> organism_name
+
+    # enzyme_preferred: enzyme_full, fill na with enzyme, then enzyme_2
+    df['enzyme_preferred'] = df['enzyme_full'].fillna(df['enzyme']).fillna(df['enzyme_2'])
+    df = df[['enzyme_preferred', 'organism']]
+    df.columns = ['enzyme_name', 'organism_name']
+    
+    # get unique rows
+    df = df.drop_duplicates()
+    
+    # require both organism and enzyme name
+    df = df.dropna()
+
+    tried_df = pd.read_csv('fetch_sequences/uniprot/tried.tsv', sep='\t')
+    # drop rows which exactly match the tried ones
+
+    df = df.merge(tried_df, on=['enzyme_name', 'organism_name'], how='left', indicator=True)
+    df = df[df['_merge'] == 'left_only']
+    df = df.drop(columns=['_merge'])
+
+    
     
     # do in batches of 100, because I'm scared
     timestamp = time.strftime('%Y%m%d-%H%M%S')
-    write_dest = 'fetch_sequences/enzymatch'
+    # write_dest = 'fetch_sequences/uniprot/apogee-nonbrenda'
+    write_dest = 'fetch_sequences/uniprot/apogee-brenda'
+    print(f"To go: {len(df)}")
     for i in range(0, len(df), 100):
-        if i <= 17500:
-            continue # keep processing from where we left off
+        # if i <= 17500:
+            # continue # keep processing from where we left off
         result_df = process_dataframe(df[i:i+100])
         result_df.to_csv(f'{write_dest}/uniprot_{timestamp}_{i}.tsv', sep='\t', index=False)
         print(f'Written to {write_dest}/uniprot_{timestamp}_{i}.tsv')
+
+        # update tried_df
+        tried_df = pd.concat([tried_df, df[i:i+100]])
+        tried_df = tried_df.drop_duplicates()
+        tried_df.to_csv('fetch_sequences/uniprot/tried.tsv', sep='\t', index=False)
     

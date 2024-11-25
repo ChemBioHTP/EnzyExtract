@@ -12,7 +12,7 @@ def script0():
     checkpoint_df = pd.read_csv(f"C:/conjunct/enzy_runner/data/_post_sequencing/sequenced_explode-for-{namespace}_{version}.tsv",
     sep='\t')
     checkpoint_df = checkpoint_df.astype({'pmid': str})
-    brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
+    brenda_substrate_df = pd.read_csv("fetch_sequences/substrates/brenda_inchi_all.tsv", sep="\t")
 
     batch = script_to_ask_gpt(checkpoint_df, brenda_substrate_df, namespace=f"gptclose-for-{namespace}_{version}")
     

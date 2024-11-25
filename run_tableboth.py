@@ -28,7 +28,7 @@ from kcatextract.utils.openai_schema import to_openai_batch_request_with_schema
 #     return result
 process_env('.env')
 
-namespace = 'brenda-pnas-apogee-4o-str' # 'wos-open-apogee-429d-t2neboth'
+namespace = 'beluga-t2neboth' # 'brenda-pnas-apogee-4o-str' # 'wos-open-apogee-429d-t2neboth'
 
 # defaults
 micro_path = "C:/conjunct/vandy/yang/reocr/results/micros_resnet_v1.csv"
@@ -36,15 +36,34 @@ dest_folder = 'batches/enzy'
 prompt = prompt_collections.table_oneshot_v3 # 1_2
 # md_folder = 'C:/conjunct/tmp/brenda_rekcat_tables/md_v3'
 
+
+
 table_info_root = None
 table_md_src = None
 md_folder = None
+
 if namespace.startswith('tableless-') or namespace.startswith('tabled-') \
         or namespace.startswith('rekcat-') or namespace.startswith('brenda-rekcat-'):
     pdf_root = "C:/conjunct/tmp/brenda_rekcat_pdfs"
     md_folder = 'C:/conjunct/tmp/brenda_rekcat_tables/md_v3'
     # table_info_root = "C:/conjunct/tmp/brenda_rekcat_tables"
     # table_md_src = "completions/enzy/brenda-rekcat-md-v1-2_1.md"
+elif namespace.startswith('arctic-'):
+    pdf_root = 'C:/conjunct/tmp/eval/arctic'
+    if namespace.startswith('arctic-nomu-'):
+        # throwaway
+        micro_path = f"C:/conjunct/vandy/yang/reocr/cache/iter3/mM_topoff_hindawi.csv"
+        md_folder = 'C:/conjunct/tmp/eval/arctic_dev/tables_no_mu'
+    elif namespace.startswith('arctic-control-'):
+        micro_path = 'C:/conjunct/tmp/eval/arctic_dev/mM.csv'
+        md_folder = None
+    else:
+        micro_path = 'C:/conjunct/tmp/eval/arctic_dev/mM.csv'
+        md_folder = 'C:/conjunct/tmp/eval/arctic_dev/tables'
+elif namespace.startswith('beluga-'):
+    pdf_root = 'C:/conjunct/tmp/eval/arctic'
+    micro_path = 'C:/conjunct/tmp/eval/beluga_dev/mM.csv'
+    md_folder = 'C:/conjunct/tmp/eval/beluga_dev/tables'
 else:
     toplevels = ['brenda', 'scratch', 'wos', 'topoff']
     secondlevels = ['wiley', 'open', 'asm', 'jbc', 'hindawi', 'openremote', 'local_shim', 'pnas', 'scihub']
@@ -132,6 +151,14 @@ elif namespace.endswith('-t2neboth'):
             
     prompt = prompt_collections.table_oneshot_v3
     model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t2neboth:9zuhXZVV' # gpt-4o
+
+elif namespace.endswith('-t3neboth'):
+    prompt = prompt_collections.table_oneshot_v3
+    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t3neboth:AOpwZY6M'
+elif namespace.endswith('-t4neboth'):
+    prompt = prompt_collections.table_oneshot_v3
+    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t4neboth:AQOYyPCz'
+
 elif namespace.endswith('-oneshot') or namespace.endswith('-4o'):
         
     # prompt = prompt_collections.table_oneshot_v1
@@ -156,7 +183,7 @@ pmid_to_yaml = {}
 if table_md_src is not None:
     pmid_to_yaml = get_pmid_to_yaml_dict(table_md_src)
 
-pmid_to_tables = None
+pmid_to_tables = {}
 if md_folder is not None:
     pmid_to_tables = pmid_to_tables_from(md_folder)
     assert pmid_to_tables, "No tables found"
@@ -170,7 +197,7 @@ acceptable_pmids = pmids_from_directory(pdf_root)
 
 # whitelist = pmids_from_cache("apogee_429")
 
-disallowed_pmids = pmids_from_cache("brenda_rekcat_pdfs")
+disallowed_pmids = set() # pmids_from_cache("brenda_rekcat_pdfs")
 
 
 # target_pmids = acceptable_pmids #  - disallowed_pmids
@@ -191,7 +218,7 @@ for pmid in target_pmids:
     if pmid in pmid_to_tables:
         _intersect += 1
 print(f"Intersection of {_intersect} pmids with tables")
-assert _intersect > 0, "No intersection of tables found"
+assert _intersect >= 0, "No intersection of tables found"
 
 REDACT = False
 
@@ -200,7 +227,10 @@ micro_df = pd.read_csv(micro_path)
 micro_df = micro_df.astype({'pdfname': 'str'})
 
 # only want 
-micro_df = micro_df[(micro_df['real_char'] == "mu") & (micro_df['confidence'] > 0.98)]
+true_micro_df = micro_df[(micro_df['real_char'] == "mu") & (micro_df['confidence'] > 0.98)]
+# micro_df = true_micro_df
+true_m_df = micro_df[micro_df['real_char'] == "m"]
+micro_df = pd.concat([true_micro_df, true_m_df], ignore_index=True)
 
 
 # sanity check: ensure that some of the pmids are in the micro_df

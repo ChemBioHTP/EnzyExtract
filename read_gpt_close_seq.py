@@ -65,7 +65,7 @@ df.to_csv(f"fetch_sequences/synonyms/substrate/{namespace}_{version}.tsv", index
 exit(0)
 explode_df = pd.concat(dfs)
 
-orig_df = pd.read_csv(f'data/_cache_vbrenda/_cache_{og_namespace}_{og_version}.csv')
+orig_df = pd.read_csv(f'data/mbrenda/_cache_{og_namespace}_{og_version}.csv')
 orig_df = orig_df.astype({'pmid': str})
 # enrich
 enriched_df = infuse_explode_results(orig_df, explode_df)

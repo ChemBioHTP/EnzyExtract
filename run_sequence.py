@@ -10,7 +10,7 @@ def script0():
     # fetch_sequences symlink
     dists_df = pd.read_csv("fetch_sequences/enzymes/rekcat_mutant_distances_gpt.tsv", sep="\t")
     brenda_df = pd.read_csv("fetch_sequences/enzymes/brenda_enzymes.tsv", sep="\t")
-    brenda_substrate_df = pd.read_csv("fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
+    brenda_substrate_df = pd.read_csv("fetch_sequences/substrates/brenda_inchi_all.tsv", sep="\t")
 
     out = infuse_enzyme_substrate_sequences(
                     checkpoint_df=checkpoint_df, dists_df=dists_df, brenda_df=brenda_df, 

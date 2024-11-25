@@ -1,7 +1,11 @@
-
+"""
+Prerequisites:
+run_read_pdfs_for_idents.py
+"""
 import os
 import pickle
 import time
+from typing import TypedDict
 
 import pandas as pd
 from tqdm import tqdm
@@ -9,8 +13,7 @@ from tqdm import tqdm
 from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
-from kcatextract.fetch_sequences.confirm_enzyme_sequences import idents_for_pmid, load_yaml_enzymes, form_mutant_matcher, to_regex, does_sequence_corroborate, sequence_search_regex
-from kcatextract.fetch_sequences.confirm_enzyme_sequences import MutantMatcher
+from kcatextract.fetch_sequences.confirm_enzyme_sequences import idents_for_pmid, load_yaml_enzymes, form_mutant_codes, to_regex, does_sequence_corroborate, sequence_search_regex, MutantCodes, to_amino_sequence, find_offset, find_p, find_p_offset
 
 def load_df_from_folder(dirpath):
     ret = []
@@ -71,7 +74,19 @@ def _get_enzymes_with_mutants(pmid, use_gpt, pmid2yaml=None, pmid2mutants=None):
         return []
     return enzymes_block
 
-def _search_idents_by_name(search_enzymes_by_name: pd.DataFrame, enzyme: dict):
+class _SequenceDict(TypedDict):
+    sequence: str
+class DBIdents(TypedDict):
+    """
+    dict of accession to dict of sequence
+    """
+    uniprot: dict[str, dict[str, _SequenceDict]]
+    pdb: dict[str, dict[str, _SequenceDict]]
+    genbank: dict[str, dict[str, _SequenceDict]]
+
+    
+
+def _search_idents_by_name(search_enzymes_by_name: pd.DataFrame, enzyme: dict) -> DBIdents:
     """
     search_enzymes_by_name: a dataframe with columns 'query_enzyme', 'query_organism', 'accession', 'sequence'
     enzyme: an enzyme straight from the yaml. needs 'fullname', 'name', 'organisms'
@@ -98,7 +113,7 @@ def _search_idents_by_name(search_enzymes_by_name: pd.DataFrame, enzyme: dict):
     db_idents = {'uniprot': _bdr}
     return db_idents
 
-def _find_closest_match(db_idents: dict[str, dict[str, dict]], codes: MutantMatcher, 
+def _find_closest_match(db_idents: dict[str, dict[str, dict]], codes: MutantCodes, 
                         og_desire, og_target, 
                         allow_mut=False):
     """
@@ -115,15 +130,23 @@ def _find_closest_match(db_idents: dict[str, dict[str, dict]], codes: MutantMatc
                 continue
             _attempted = True
             
-            if key == 'pdb' and (_my_muts := data['pdb_mutants']):
-                # for pdb mutant codes, may need to recalculate based on mutant codes
-                desire, target = to_regex(codes, allow_mut=_my_muts)
-            else:
-                desire, target = og_desire, og_target
-                
-            target = max(target, 0) # sometimes, the mutant code will be 0-indexed like Y0T \shrug
+            ## approach 1
+            # if key == 'pdb' and (_my_muts := data.get('pdb_mutants', None)):
+            #     # for pdb mutant codes, may need to recalculate based on mutant codes
+            #     desire, target = to_regex(codes, allow_mut=_my_muts)
+            # else:
+            #     desire, target = og_desire, og_target
+            # target = max(target, 0) # sometimes, the mutant code will be 0-indexed like Y0T \shrug
+            # i, _, sequence = does_sequence_corroborate((desire, target), data['sequence'], allow_mut=allow_mut) # enzyme
+
+            ## approach 2
+            sequence = to_amino_sequence(data['sequence'])
+            target = max(min(pos for _, pos, _ in codes) - 1, 0)
+            offset = find_offset(sequence, codes)
+            if offset is None:
+                continue
+            i = target + offset
             
-            i, _, sequence = does_sequence_corroborate((desire, target), data['sequence'], allow_mut=allow_mut) # enzyme
             if i is not None:
                 assert target != -1
                 distance = abs(i - target)
@@ -151,7 +174,8 @@ def _find_closest_match(db_idents: dict[str, dict[str, dict]], codes: MutantMatc
 def script0(namespace, uniprot_df, pdb_df, ncbi_df, *, use_gpt=False, gpt_namespace=None, allow_mut=False, write_dest=None,
             search_enzymes_by_name: pd.DataFrame=None, 
             use_pkl_dir='_debug/pkl/nonbrenda.pkl',
-            pmid2seq: pd.DataFrame=None
+            pmid2seq: pd.DataFrame=None,
+            pmids: list[str]=None
     ):
     
     # namespace = 'rekcat'    
@@ -177,13 +201,30 @@ def script0(namespace, uniprot_df, pdb_df, ncbi_df, *, use_gpt=False, gpt_namesp
     print("These many pmids with sequences: ", len(candidates))
     print("These many pmids with yaml: ", len(pmid2yaml))
     # log = ""
-    builder = []
+    # builder = []
+    builder = {'pmid': [], 
+               'provenance': [], 
+               'distance': [], 
+               'ident': [], 
+               'enzyme_name': [], 
+               'desire': [], 
+               'target': [], 
+               'index': [], 
+               'sequence': [],
+               'N': [],
+               'k': [],
+               'P_any': [],
+               'P_better': []}
+
     # ct = 10
     
     _num_attempts = 0
     _num_found = 0
     _num_mutant_codes = 0
-    for pmid in tqdm(candidates):
+
+    if 'pdb_unversioned' not in pdb_df.columns:
+        pdb_df['pdb_unversioned'] = pdb_df['pdb'].str.split('_').str[0].str.lower()
+    for pmid in tqdm(pmids): # tqdm(candidates):
         db_idents = idents_for_pmid(pmid, pmid2seq, uniprot_df, pdb_df, ncbi_df) or {}
         
         enzymes_block = _get_enzymes_with_mutants(pmid, pmid2yaml=pmid2yaml, pmid2mutants=pmid2mutants, use_gpt=use_gpt)
@@ -199,19 +240,63 @@ def script0(namespace, uniprot_df, pdb_df, ncbi_df, *, use_gpt=False, gpt_namesp
             if not mutants:
                 continue
             # find the closest match
-            codes = form_mutant_matcher(mutants)
+            codes = form_mutant_codes(mutants)
             if not codes:
                 continue
             
             has_mutants = True
-            if not db_idents:
+            og_desire, og_target = to_regex(codes, allow_mut=allow_mut)
+            # if not db_idents:
                 # search by name
-                db_idents = _search_idents_by_name(search_enzymes_by_name, enzyme)
+                # db_idents = _search_idents_by_name(search_enzymes_by_name, enzyme)
                 
             
-            og_desire, og_target = to_regex(codes, allow_mut=allow_mut)
-            closest_idx, closest_distance, closest_ident, closest_target, closest_sequence, _attempted = _find_closest_match(db_idents, codes, og_desire, og_target, allow_mut=allow_mut)
-            builder.append((pmid, closest_distance, closest_ident, enzyme['fullname'], og_desire, closest_target, closest_idx, closest_sequence))
+            provenance = None
+            att = None
+            ns = []
+            _unique_codes = set(x[1] for x in codes)
+            k = len(_unique_codes)
+            if db_idents:
+                att = _find_closest_match(db_idents, codes, og_desire, og_target, allow_mut=allow_mut)
+                provenance = 'referenced'
+                for key, collection in db_idents.items():
+                    for seq in collection.values():
+                        if 'sequence' in seq:
+                            ns.append(len(seq['sequence']))
+            if att is None or att[0] == -1:
+                # try again, with the uniprot search
+                db_idents_searched = _search_idents_by_name(search_enzymes_by_name, enzyme)
+                att = _find_closest_match(db_idents_searched, codes, og_desire, og_target, allow_mut=allow_mut)
+                provenance = 'searched'
+                for key, collection in db_idents_searched.items():
+                    for seq in collection.values():
+                        if 'sequence' in seq:
+                            ns.append(len(seq['sequence']))
+
+            closest_idx, closest_distance, closest_ident, closest_target, closest_sequence, _attempted = att
+            # builder.append((pmid, provenance, closest_distance, closest_ident, enzyme['fullname'], og_desire, closest_target, closest_idx, closest_sequence))
+            builder['pmid'].append(pmid)
+            builder['provenance'].append(provenance)
+            builder['distance'].append(closest_distance) # att[1])
+            builder['ident'].append(closest_ident) # att[2])
+            builder['enzyme_name'].append(enzyme['fullname'])
+            builder['desire'].append(og_desire)
+            builder['target'].append(closest_target) # att[3])
+            builder['index'].append(att[0])
+            builder['sequence'].append(closest_sequence) # att[4])
+
+            builder['N'].append(len(ns))
+            builder['k'].append(k)
+            if closest_distance == -1:
+                builder['P_any'].append(None)
+                builder['P_better'].append(None)
+            else:
+                P_any = find_p(ns, k, 20)
+                P_better = 1 - (1 - find_p_offset(k, 20, closest_distance)) ** len(ns)
+                builder['P_any'].append(P_any)
+                builder['P_better'].append(P_better)
+
+            # P 
             # print(f"Sequence: {sequence[i-10:i+10]}")
             found = found or (closest_idx != -1)
             attempted = attempted or _attempted
@@ -222,8 +307,8 @@ def script0(namespace, uniprot_df, pdb_df, ncbi_df, *, use_gpt=False, gpt_namesp
             _num_attempts += 1
         if has_mutants:
             _num_mutant_codes += 1
-    dists_df = pd.DataFrame(builder, columns=['pmid', 'distance', 'ident', 'enzyme_name', 'desire', 'target', 'index', 'sequence'])
-    print("This many in the builder", len(builder))
+    dists_df = pd.DataFrame(builder) # , columns=['pmid', 'provenance', 'distance', 'ident', 'enzyme_name', 'desire', 'target', 'index', 'sequence'])
+    print("This many in the builder", len(builder['pmid']))
     print("This many with mutant codes", _num_mutant_codes)
     print("This many with mutants and sequences", _num_attempts)
     print("This many found", _num_found)
@@ -238,21 +323,24 @@ def script0(namespace, uniprot_df, pdb_df, ncbi_df, *, use_gpt=False, gpt_namesp
     exit(0)
 if __name__ == "__main__":
     
-    unidf = load_df_from_folder("fetch_sequences/enzymatch")
+    namespace = 'apogee-nonbrenda'
+    unidf = load_df_from_folder(f"fetch_sequences/uniprot/{namespace}")
     
-    namespace = 'nonbrenda'
     uniprot_df = pd.read_csv(f"fetch_sequences/results/uniprot_fragments/{namespace}_uniprots.tsv", sep="\t") \
-        .head(0)
+        # .head(0)
     pdb_df = pd.read_csv(f"fetch_sequences/results/pdb_fragments/{namespace}_pdbs.tsv", sep="\t") \
-        .head(0) # empty
+        # .head(0) # empty
     ncbi_df = pd.read_csv(f"fetch_sequences/results/ncbi_fragments/{namespace}_ncbis.tsv", sep="\t") \
-        .head(0) # empty
+        # .head(0) # empty
     
-    
+
+    reference_df = pd.read_csv(f"data/_compiled/apogee-nonbrenda.tsv", sep="\t", dtype={'pmid': str})
+    pmids = reference_df['pmid'].unique().tolist()
     script0(namespace, uniprot_df=uniprot_df, pdb_df=pdb_df, ncbi_df=ncbi_df, 
-            use_gpt=True, allow_mut=False, gpt_namespace='data/_compiled/nonbrenda.jsonl',
+            use_gpt=True, allow_mut=False, gpt_namespace='data/_compiled/apogee-nonbrenda.jsonl',
             search_enzymes_by_name=unidf,
-            write_dest=f"fetch_sequences/enzymes/nonbrenda_mutant_distances_by_name2.tsv")
+            pmids=pmids,
+            write_dest=f"fetch_sequences/enzymes/apogee_nonbrenda_mutant_sequences.tsv")
     
     # mutants = ["Ala110Arg", "R120Z/R123W", "S124W", "Y126A"]
     # out = sequence_search_regex(mutants)

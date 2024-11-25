@@ -9,7 +9,7 @@ def script0():
     # root = "C:/conjunct/table_eval/completions/enzy"
     # namespace = "explode-for-brenda-rekcat-tuneboth-2" # "rekcat-giveboth-4o" # "brenda-rekcat-md-v1-2"
     # namespace = "wos-wiley-t2neboth"
-    namespace = "scratch-wiley-apogee-t2neboth" # "brenda-rekcat-md-v1-2"
+    namespace = "brenda-scihub-apogee-t2neboth" # "brenda-rekcat-md-v1-2"
     # version = "1"
     to_file = f"prints/{namespace}"
     at, version = locate_correct_batch(root, namespace) # , '1')

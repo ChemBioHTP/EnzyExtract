@@ -12,7 +12,7 @@ def drop_same_rows_ignore_case(df):
     return df
 
 if __name__ == "__main__":
-    src_df = pd.read_csv("C:/conjunct/table_eval/fetch_sequences/results/smiles/brenda_inchi_all.tsv", sep="\t")
+    src_df = pd.read_csv("C:/conjunct/table_eval/fetch_sequences/substrates/brenda_inchi_all.tsv", sep="\t")
     # lower every single name
     src_df = drop_same_rows_ignore_case(src_df)
     
