@@ -20,7 +20,8 @@ def xml_get_soup(raw_text) -> bs4.BeautifulSoup | None:
     for j in junk:
         raw_text = raw_text.replace(j, '')
 
-    soup = bs4.BeautifulSoup(raw_text, "html.parser") # avoid putting in head/body tags
+    # idk why, but html.parser kept hanging 
+    soup = bs4.BeautifulSoup(raw_text, "lxml") # avoid putting in head/body tags
     return soup
 def xml_raw_text_processing(soup: bs4.BeautifulSoup) -> str:
     """

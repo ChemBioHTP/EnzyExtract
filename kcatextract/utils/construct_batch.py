@@ -43,7 +43,7 @@ def namespace_from_usual_cid(cid: str) -> int:
     """Assumes f'{namespace}_{version}_{pmid}'"""
     return cid.split('_', 2)[0]
 
-def versioned_namespace_from_usual_cid(cid: str) -> int:
+def versioned_namespace_from_usual_cid(cid: str) -> tuple[str, int]:
     """Assumes f'{namespace}_{version}_{pmid}'"""
     uscores = cid.count('_')
     if uscores < 2:

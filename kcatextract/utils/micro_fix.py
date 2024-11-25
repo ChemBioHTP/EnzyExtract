@@ -5,6 +5,7 @@ import pandas as pd
 import pymupdf
 
 _re_mM = re.compile(r"\bmM\b")
+_re_mM_i = re.compile(r"\bmM\b", re.IGNORECASE)
 
 def _iob(bbox1: tuple[float, float, float, float], bbox2: tuple[float, float, float, float]):
     """
@@ -38,24 +39,33 @@ def build_paragraph(words: Generator[tuple, None, None]):
         result = result[1:]
     return result
 
-def fix_generator(gen: Generator[tuple, None, None], subset: pd.DataFrame):
+def fix_generator(gen: Generator[tuple, None, None], subset: pd.DataFrame, allow_lowercase=True) -> Generator[tuple, None, None]:
+    _re = _re_mM_i if allow_lowercase else _re_mM
+
+    micro_subset = subset[subset['real_char'] == 'mu']
+    mM_subset = subset[subset['real_char'] == 'm']
     for x0, y0, x1, y1, word, blockno, lineno, wordno in gen:
-        if _re_mM.search(word):
-            for _, row in subset.iterrows():
+        if _re.search(word):
+            for _, row in micro_subset.iterrows():
                 bbox = (row['x0'], row['y0'], row['x1'], row['y1'])
                 if _iob(bbox, (x0, y0, x1, y1)) > 0.5:
-                    word = _re_mM.sub('µM', word)
-                    # print("Swapped")
+                    word = _re.sub('µM', word) # print("Swapped")
                     break
+            else:
+                for _, row in mM_subset.iterrows():
+                    bbox = (row['x0'], row['y0'], row['x1'], row['y1'])
+                    if _iob(bbox, (x0, y0, x1, y1)) > 0.5:
+                        word = _re.sub('mM', word)
+                        break
         yield x0, y0, x1, y1, word, blockno, lineno, wordno
         
 
-def mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pd.DataFrame) -> list[str]:
+def mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pd.DataFrame, allow_lowercase=True) -> list[str]:
     pmid_subset = micro_df[micro_df['pdfname'] == pdfname]
     result = []
     for pageno, page in enumerate(doc):
         subset = pmid_subset[pmid_subset['pageno'] == pageno]
-        result.append(build_paragraph(fix_generator(page.get_text('words'), subset)))
+        result.append(build_paragraph(fix_generator(page.get_text('words'), subset, allow_lowercase=allow_lowercase)))
     return result
                   
     # apply redaction

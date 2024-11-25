@@ -2,7 +2,7 @@
 import os
 import pandas as pd
 from kcatextract.backform.quality_assure import quality_assure_ai_message
-from kcatextract.backform.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
+from kcatextract.metrics.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
 from kcatextract.backform.process_human_perfect import form_human_perfect
 from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
 from kcatextract.hungarian.hungarian_matching import match_dfs_by_pmid

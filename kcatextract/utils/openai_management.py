@@ -25,7 +25,20 @@ def get_openai_client():
             raise ValueError("No OpenAI key found!")
     return _openai_client
 
-
+persistent_input = None
+def get_user_y_n():
+    global persistent_input
+    if persistent_input is True:
+        inp = 'y'
+    elif persistent_input is False:
+        inp = 'n'
+    else:
+        inp = input("Proceed? (y/n): ")
+    if inp == 'Y':
+        persistent_input = True
+    elif inp == 'N':
+        persistent_input = False
+    return inp
 def submit_batch_file(filepath, pending_file=None):
     openai_client = get_openai_client()
     # read to make sure
@@ -33,7 +46,11 @@ def submit_batch_file(filepath, pending_file=None):
     with open(filepath, 'r') as f:
         count = sum(1 for _ in f)
     print(f"Batch of {count} items at {filepath} ready for submission. Submit to OpenAI?")
-    if input("Proceed? (y/n): ").lower() == 'y':
+
+
+    inp = get_user_y_n()
+    
+    if inp.lower() == 'y':
         with open(filepath, 'rb') as f:
             batch_input_file = openai_client.files.create(
                 file=f,
@@ -82,12 +99,13 @@ def preview_batches_uploaded():
     for batch in get_last_n_batches():
         print(f"{batch.id}, {batch.status}, {batch.metadata}")
         
-def check_undownloaded(_all_batch2name: dict[str, str] | None = None, path_to_pending:str = 'batches/pending.jsonl', 
+def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl', 
                        all_download_folders=['completions/enzy', 'completions/explode', 'completions/gptclose', 'completions/_cache', 'C:/conjunct/table_eval/completions/enzy',
-                                             'completions/enzy/apogee'], 
-                       download_folder='completions/enzy',
+                                             'completions/enzy/apogee', 'completions/enzy/bucket', 'completions/enzy/cobble'], 
+                       _default_download_folder='completions/enzy', # 'completions/enzy',
                        errors_folder='completions/errors',
-                       printme=True, autodownload=True, y_for_autodownload=False):
+                       printme=True, autodownload=True, y_for_autodownload=False,
+                       _all_batch2name: dict[str, tuple[str, str]] | None = None):
     """
     
     :return: list of tuples (batch, name)
@@ -111,9 +129,13 @@ def check_undownloaded(_all_batch2name: dict[str, str] | None = None, path_to_pe
                     obj = json.loads(line)
                     
                     val = obj['input']
-                    name = os.path.basename(val)
-                    name = os.path.splitext(name)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
-                    _all_batch2name[obj['output']] = name
+
+                    dirname = os.path.dirname(val)
+                    dirname = dirname.replace('batches', 'completions')
+
+                    basename = os.path.basename(val)
+                    basename = os.path.splitext(basename)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
+                    _all_batch2name[obj['output']] = (dirname, basename)
         else:
             # take from the last 10 batches
             batches = list(get_last_n_batches())
@@ -121,15 +143,23 @@ def check_undownloaded(_all_batch2name: dict[str, str] | None = None, path_to_pe
             for batch in batches:
                 name = batch.metadata.get('filepath', batch.metadata.get('description'))
                 if name is None:
-                    name = batch.id
+                    write_dest = ('', batch.id)
                 else:
+
+                    dirname = os.path.dirname(name)
+                    dirname = dirname.replace('batches', 'completions')
+
                     # get the basename, remove the extension
-                    name = os.path.basename(name)
-                    name = os.path.splitext(name)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
-                _all_batch2name[batch.id] = name
+                    basename = os.path.basename(name)
+                    basename = os.path.splitext(basename)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
+                    write_dest = (dirname, basename)
+                _all_batch2name[batch.id] = write_dest
     
     def preferred_name(batch_id):
-        return _all_batch2name.get(batch_id, batch_id + '_output')
+        return _all_batch2name.get(batch_id, batch_id + '_output')[1]
+    
+    def preferred_dirname(batch_id):
+        return _all_batch2name.get(batch_id, batch_id + '_output')[0]
     
     # we are only interested in batches not yet downloaded
     batch2name = {}
@@ -150,7 +180,7 @@ def check_undownloaded(_all_batch2name: dict[str, str] | None = None, path_to_pe
             print(f"[PENDING] {batch.id}, {batch.metadata}")
     
     
-    undownloaded = [batch for batch in batches if batch.status == 'completed' and 
+    undownloaded = [batch for batch in batches if batch.status in ['completed', 'cancelled'] and 
                     (preferred_name(batch.id) + '.jsonl' not in downloaded_files and
                      batch.id + '_output.jsonl' not in downloaded_files # legacy
                      )]
@@ -172,11 +202,24 @@ def check_undownloaded(_all_batch2name: dict[str, str] | None = None, path_to_pe
                 openai_client = get_openai_client()
                 for batch in tqdm(undownloaded):
 
-                    assert batch.status == 'completed'
+                    assert batch.status in ['completed', 'cancelled']
+                    
+                    out_file_id = batch.output_file_id
+                    if out_file_id is None:
+                        # Cancelled?
+                        continue
                     
                     jsonl = openai_client.files.content(batch.output_file_id)
                     
                     correct_name = preferred_name(batch.id)
+
+                    download_folder = preferred_dirname(batch.id)
+                    if not os.path.exists(download_folder):
+                        y = input(f"Folder {download_folder} does not exist. Create? (y/n): ").lower() == 'y'
+                        if y:
+                            os.makedirs(download_folder)
+                        else:
+                            download_folder = _default_download_folder
                     if os.path.exists(f'{download_folder}/{correct_name}.jsonl'):
                         print(f"File {correct_name}.jsonl already exists. Skipping.")
                         continue

@@ -4,7 +4,7 @@ import difflib
 import os
 import re
 import time
-from typing import Optional
+from typing import Optional, Union
 
 import Bio
 import pandas as pd
@@ -104,19 +104,26 @@ def idents_for_pmid(pmid, pmid2seq: pd.DataFrame, uniprot_df: pd.DataFrame, pdb_
     if uniprot_df.empty and pdb_df.empty and ncbi_df.empty:
         return None
     
-    subset = pmid2seq[pmid2seq['pmid'] == pmid]
+    subset = pmid2seq[pmid2seq['pmid'] == pmid] 
     
-    subset = subset.replace(pd.NA, '')
+    subset = subset.replace(pd.NA, '') # type: pd.DataFrame
     
     uniprots = set()
     pdbs = set()
     refseq = set()
     genbank = set()
+
     for i, row in subset.iterrows():
-        uniprots.update(row['uniprot'].split(', '))
-        pdbs.update(row['pdb'].split(', '))
-        refseq.update(row['refseq'].split(', '))
-        genbank.update(row['genbank'].split(', '))
+        for col, coll in [('uniprot', uniprots), ('pdb', pdbs), ('refseq', refseq), ('genbank', genbank)]:
+            obj = row[col]
+            if obj:
+                coll.update(obj.split(', '))
+    # for i, row in subset.iterrows():
+    #     uniprots.update(row['uniprot'].split(', '))
+    #     pdbs.update(row['pdb'].split(', '))
+    #     refseq.update(row['refseq'].split(', '))
+    #     genbank.update(row['genbank'].split(', '))
+    
     
     uniprot_subset = uniprot_df[uniprot_df['uniprot'].isin(uniprots)]
     # pdb_subset = pdb_df[pdb_df['pdb'].isin(pdbs)]
@@ -156,24 +163,27 @@ def idents_for_pmid(pmid, pmid2seq: pd.DataFrame, uniprot_df: pd.DataFrame, pdb_
             storage['uniprot'].setdefault(ident, {})['organism'] = row['organism']
     
     # pdb_subset = pdb_df[pdb_df['pdb'].isin(pdbs)]
-    for pdb in pdbs:
-        # we can read from tsv
-        # subset['pdb'] startswith PDB, to allow for newer version
-        if not pdb or len(pdb) < 4:
-            continue # skip empty, which is otherwise disastrous
-        rows = pdb_df[pdb_df['pdb'].str.lower().str.startswith(pdb.lower())]
-        for i, row in rows.iterrows():
-            versioned_pdb = row['pdb']
-            
-            # search for mutant codes
-            storage['pdb'][versioned_pdb] = {
-                'name': (row['sys_name'] or row['name']),
-                'organism': row['organism'],
-                'sequence': row['seq_can'] or row['seq'],
-                'descriptor': (row['descriptor'] or row['name']) or row['sys_name']
-            }
-            mutant_codes = grep_mutant_codes(row.get('descriptor', ''))
-            storage['pdb'][versioned_pdb]['pdb_mutants'] = mutant_codes
+    # for pdb in pdbs:
+    #     # we can read from tsv
+    #     # subset['pdb'] startswith PDB, to allow for newer version
+    #     if not pdb or len(pdb) < 4:
+    #         continue # skip empty, which is otherwise disastrous
+        # rows = pdb_df[pdb_df['pdb_lower'].str.lower().str.startswith(pdb.lower())]
+
+    pdbs_lower = {x.lower() for x in pdbs}
+    pdb_subset = pdb_df[pdb_df['pdb_unversioned'].isin(pdbs_lower)]
+    for i, row in pdb_subset.iterrows():
+        versioned_pdb = row['pdb']
+        
+        # search for mutant codes
+        storage['pdb'][versioned_pdb] = {
+            'name': (row['sys_name'] or row['name']),
+            'organism': row['organism'],
+            'sequence': row['seq_can'] or row['seq'],
+            'descriptor': (row['descriptor'] or row['name']) or row['sys_name']
+        }
+        # mutant_codes = grep_mutant_codes(row.get('descriptor', ''))
+        # storage['pdb'][versioned_pdb]['pdb_mutants'] = mutant_codes
     
     # for ncbi in 
 
@@ -252,9 +262,113 @@ def parse_mutant_codes(mutants: list[str]) -> list[tuple[str, int, str]]:
             point_muts.append((start_amino, int(mut), end_amino))
     return point_muts
 
-MutantMatcher = list[tuple[str, int, str]]
+MutantCodes = list[tuple[str, int, str]]
+"""
+Type to describe a series of mutant codes. 
+Each tuple is (start_amino, position, end_amino)
+where start_amino is the 1-letter amino acid code.
+"""
 
-def form_mutant_matcher(mutants: list[str]) -> MutantMatcher:
+def find_offset(sequence: str, matcher: MutantCodes, which='orig') -> int:
+    """
+    Find the offset in a sequence such that all amino acids in the sequence match those described by the MutantCodes.
+
+    Note that if the MutantCodes specifies multiple original amino acids at the same position, then it will find no match.
+
+    :param sequence: The sequence to search
+    :param matcher: The MutantCodes to match
+    :param which: Specifies which amino acid to look for.
+        'orig' - look for the original amino acid
+        'mut' - look for the mutated amino acid
+        'both' - accept both
+    """
+    sequence = sequence.upper()
+    min_pos = min(pos for _, pos, _ in matcher)
+    max_pos = max(pos for _, pos, _ in matcher)
+    
+    # Calculate the range for offset search
+    # Allow negative offsets up to the minimum position
+    # and positive offsets that would still fit the maximum position
+    start_offset = -min_pos + 1
+    end_offset = len(sequence) - max_pos + 1
+    
+    best_offset = None
+    # Try each possible offset, including negative ones
+    for offset in range(start_offset, end_offset):
+        matches_all = True
+        
+        # Check if all mutations match at this offset
+        for start_aa, pos, end_aa in matcher:
+            seq_pos = offset + pos - 1  # -1 because positions are 1-based
+            if seq_pos >= len(sequence):
+                matches_all = False
+                break
+            is_orig = sequence[seq_pos] == start_aa
+            is_mut = sequence[seq_pos] == end_aa
+            if (which == 'orig' and not is_orig) \
+                or (which == 'mut' and not is_mut) \
+                or (which == 'both' and not (is_orig or is_mut)):
+                matches_all = False
+                break
+                
+        if matches_all:
+            if best_offset is None or abs(offset) < abs(best_offset):
+                best_offset = offset
+            # if offset is positive, we may break early
+            if offset > 0:
+                break
+    
+    
+    return best_offset
+    # return None  # No valid offset found
+
+
+def find_p(n: Union[int, list[int]], k: int, alphabet_size: int) -> float:
+    """
+    Find P(substring in sequence) under the assumption that sequences can be modeled as
+    choosing random letters independent (not strictly true, but can approximate).
+    :param n: Length of the sequence, or a list of the lengths of sequences
+    :param k: Length of the substring
+
+    If n is a list, then we find the probability that the substring is in at least one of the sequences.
+    """
+    if isinstance(n, int):
+        n = [n]
+    total = 1
+    for length in n:
+        total *= (1 - (1 / alphabet_size**k)) ** (length - k + 1)
+    return 1 - total
+
+def find_p_offset(k: int, alphabet_size: int, offset: int) -> float:
+    """
+    Find P(substring in sequence better than offset) under the same assumptions as find_p
+
+    For example, if offset=5, then we find P(substring in sequence where offset <= 5)
+    """
+    n_candidates = 1 + abs(offset) * 2
+    return 1 - (1 - (1 / alphabet_size**k)) ** n_candidates
+
+def script_offset_test():
+    sequence = "MALWMRLLPL"
+    codes = [('M', 1, 'A'), ('P', 5, 'W')]
+    offset = find_offset(sequence, codes)
+    # assume that the sequence starts at 1
+    # hence we expect M
+    # but the only match for query M...P is at position 5 (index 4)
+    # offset = (5 - 1) = 4
+    assert offset == 4, offset
+
+    codes = [('M', 3, 'A'), ('P', 7, 'W')]
+    offset = find_offset(sequence, codes)
+    assert offset == 2, offset
+
+    codes = [('M', 5, 'A'), ('P', 9, 'W')]
+    offset = find_offset(sequence, codes)
+    assert offset == 0, offset
+
+    exit(0)
+
+def form_mutant_codes(mutants: list[str]) -> MutantCodes:
     if isinstance(mutants, str):
         if '; ' in mutants:
             mutants = mutants.split('; ')
@@ -271,7 +385,7 @@ def form_mutant_matcher(mutants: list[str]) -> MutantMatcher:
     codes.sort(key=lambda x: x[1])
     return codes
 
-def closest_match(sequence: str, matcher: MutantMatcher) -> int:
+def closest_match(sequence: str, matcher: MutantCodes) -> int:
     if not matcher:
         return -1, -1
     first_char, min_point, _ = matcher[0]
@@ -333,13 +447,13 @@ def sequence_search_regex(mutants: list[str]):
     """Given a list of mutant codes (ie. R123A), return a regex that matches a fasta sequence
     Search the fasta sequence for the regex. If the string matches the regex at index desired_index, then the enzyme is corroborated.
     """
-    codes = form_mutant_matcher(mutants)
+    codes = form_mutant_codes(mutants)
     if not codes:
         return None
     return to_regex(codes)
     
 
-def to_matcher_dict(codes: MutantMatcher, allow_mut=False):
+def to_matcher_dict(codes: MutantCodes, allow_mut=False):
     
     result = {}
     if not codes:
@@ -353,7 +467,7 @@ def to_matcher_dict(codes: MutantMatcher, allow_mut=False):
                 result[point] += last_char
     return result, min_point
 
-def to_regex(codes: MutantMatcher, allow_mut: bool | MutantMatcher=False) -> tuple[str, int | None]:
+def to_regex(codes: MutantCodes, allow_mut: bool | MutantCodes=False) -> tuple[str, int | None]:
     if not codes:
         return '', None
     min_point, max_point = codes[0][1], codes[-1][1]
@@ -383,11 +497,11 @@ def to_regex(codes: MutantMatcher, allow_mut: bool | MutantMatcher=False) -> tup
         return ''.join(('.' if not myset else f'[{"".join(sorted(myset))}]') for myset in regex), desired_index
     return ''.join(regex), desired_index
 
-        
 
-def does_sequence_corroborate(codes: MutantMatcher | tuple[str, int], sequence: Optional[str]=None, allow_mut=False) -> tuple[int, int, str]:
-    """Should return (index, target_index, sequence)"""
-    
+def to_amino_sequence(sequence: str):
+    """
+    convert a sequence of either DNA or amino acids to amino acids
+    """
     if all(x in 'CAGT' for x in sequence):
         # it's a DNA sequence
         # convert to protein
@@ -398,11 +512,17 @@ def does_sequence_corroborate(codes: MutantMatcher | tuple[str, int], sequence: 
             sequence += 'N' * (3 - len(sequence) % 3)
             # return False
         sequence = Bio.Seq.translate(sequence)
+    return sequence
+
+def does_sequence_corroborate(codes: MutantCodes | tuple[str, int], sequence: Optional[str]=None, allow_mut=False) -> tuple[int, int, str]:
+    """Should return (index, target_index, sequence)"""
+    
+    sequence = to_amino_sequence(sequence)
     # mutants = enzyme.get('mutants')
     # if not mutants:
     #     return None
     # find the closest match
-    # codes = form_mutant_matcher(mutants)
+    # codes = form_mutant_codes(mutants)
     # if not codes:
     #     return None
     
@@ -574,7 +694,7 @@ def script0(use_gpt=False, allow_mut=False):
             if not mutants:
                 continue
             # find the closest match
-            codes = form_mutant_matcher(mutants)
+            codes = form_mutant_codes(mutants)
             if not codes:
                 continue
             og_desire, og_target = to_regex(codes, allow_mut=allow_mut)
@@ -591,13 +711,21 @@ def script0(use_gpt=False, allow_mut=False):
                         continue
                     attempted = True
                     
-                    if key == 'pdb' and (_my_muts := data['pdb_mutants']):
-                        # special logic for pdb mutant codes
-                        desire, target = to_regex(codes, allow_mut=_my_muts)
-                    else:
-                        desire, mytarget = og_desire, og_target
+                    # if key == 'pdb' and (_my_muts := data['pdb_mutants']):
+                    #     # special logic for pdb mutant codes
+                    #     desire, target = to_regex(codes, allow_mut=_my_muts)
+                    # else:
+                    #     desire, mytarget = og_desire, og_target
                     
-                    i, target, sequence = does_sequence_corroborate((desire, mytarget), data['sequence'], allow_mut=allow_mut) # enzyme
+                    sequence = to_amino_sequence(data['sequence'])
+                    # i, target, sequence = does_sequence_corroborate((desire, mytarget), data['sequence'], allow_mut=allow_mut) # enzyme
+                    target = min(pos for _, pos, _ in codes) - 1
+                    offset = find_offset(sequence, codes)
+                    if offset is None:
+                        continue
+                    i = target + offset
+
+
                     if i is not None:
                         assert target != -1
                         distance = abs(i - target)
@@ -646,8 +774,9 @@ def script0(use_gpt=False, allow_mut=False):
     end = time.time()
     print("Time: ", end-start) # regex: 118s
     exit(0)
+
 if __name__ == "__main__":
-    
+    script_offset_test()
     script0(use_gpt=True, allow_mut=False)
     
     mutants = ["Ala110Arg", "R120Z/R123W", "S124W", "Y126A"]
