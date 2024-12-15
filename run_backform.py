@@ -2,12 +2,12 @@
 import json
 import pandas as pd
 
-from kcatextract.backform.backform_utils import openai_batch_to_finetune, openai_crafted_batch_to_finetune, train_test_split, save_partitions
-from kcatextract.backform.quality_assure import quality_assure_finetune, quality_assure_for_enzyme_matching, quality_assure_for_explode
-from kcatextract.metrics.get_perfects import get_perfects_only
-from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import pmid_from_usual_cid
-from kcatextract.utils.md_management import read_md_by_pmid
+from enzyextract.backform.backform_utils import openai_batch_to_finetune, openai_crafted_batch_to_finetune, train_test_split, save_partitions
+from enzyextract.backform.quality_assure import quality_assure_finetune, quality_assure_for_enzyme_matching, quality_assure_for_explode
+from enzyextract.metrics.get_perfects import get_perfects_only
+from enzyextract.utils import prompt_collections
+from enzyextract.utils.construct_batch import pmid_from_usual_cid
+from enzyextract.utils.md_management import read_md_by_pmid
 
 # exclude: 15248782
 

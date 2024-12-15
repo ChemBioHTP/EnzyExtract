@@ -7,15 +7,15 @@ import glob
 import os
 from tqdm import tqdm
 
-from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
-from kcatextract.utils.fresh_version import next_available_version
-from kcatextract.utils.micro_fix import mM_corrected_text
-from kcatextract.utils.openai_management import process_env, submit_batch_file
-from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
-from kcatextract.utils.working import pmid_to_tables_from
-from kcatextract.utils.yaml_process import get_pmid_to_yaml_dict
-from kcatextract.utils.openai_schema import to_openai_batch_request_with_schema
+from enzyextract.utils import prompt_collections
+from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.utils.fresh_version import next_available_version
+from enzyextract.utils.micro_fix import mM_corrected_text
+from enzyextract.utils.openai_management import process_env, submit_batch_file
+from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
+from enzyextract.utils.working import pmid_to_tables_from
+from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
+from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
 
 
 # def obtain_yamls(file_path):
@@ -134,43 +134,10 @@ else:
 #     md_folder = 'C:/conjunct/tmp/brenda_rekcat_tables/md_v3'
 #     prompt = prompt_collections.table_oneshot_v1_1
 
-structured = False
-if namespace.endswith('-mini'):
-    
-    # prompt = prompt_collections.table_oneshot_v2 # v1
-    model_name = 'gpt-4o-mini' # 'ft:gpt-4o-mini-2024-07-18:personal:oneshot:9sZYBFgF' # gpt-4o
-elif namespace.endswith('-tuned'):
-    
-    prompt = prompt_collections.table_oneshot_v1
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:oneshot:9sZYBFgF' # gpt-4o
-elif namespace.endswith('-tuneboth'):
-        
-    prompt = prompt_collections.table_oneshot_v1_2
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:readboth:9wwLXS4i' # gpt-4o
-elif namespace.endswith('-t2neboth'):
-            
-    prompt = prompt_collections.table_oneshot_v3
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t2neboth:9zuhXZVV' # gpt-4o
+from enzyextract.utils.namespace_management import glean_model_name
+model_name, suggested_prompt, structured = glean_model_name(namespace)
 
-elif namespace.endswith('-t3neboth'):
-    prompt = prompt_collections.table_oneshot_v3
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t3neboth:AOpwZY6M'
-elif namespace.endswith('-t4neboth'):
-    prompt = prompt_collections.table_oneshot_v3
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t4neboth:AQOYyPCz'
-
-elif namespace.endswith('-oneshot') or namespace.endswith('-4o'):
-        
-    # prompt = prompt_collections.table_oneshot_v1
-    model_name = 'gpt-4o-2024-05-13'
-elif namespace.endswith('-4os'):
-    model_name = 'gpt-4o-2024-08-06' 
-elif namespace.endswith('-4o-str'): # structured output
-    model_name = 'gpt-4o-2024-08-06' 
-    structured = True
-    
-else:
-    raise ValueError("Unrecognized namespace", namespace)
+prompt = suggested_prompt if suggested_prompt else prompt
 
 batch = []
 

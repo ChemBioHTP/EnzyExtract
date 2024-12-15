@@ -1,10 +1,11 @@
 import os
 import polars as pl
 
-from kcatextract.hungarian.set_matching import match_by_unique_kcat_km
-from kcatextract.hungarian.csv_fix import pl_prep_brenda_for_hungarian
-from kcatextract.hungarian.csv_fix import widen_df, pl_widen_df, pl_remove_ranges
-from kcatextract.utils.pmid_management import pmids_from_cache
+from enzyextract.hungarian.set_matching import match_by_unique_kcat_km
+from enzyextract.hungarian.csv_fix import pl_prep_brenda_for_hungarian
+from enzyextract.hungarian.csv_fix import widen_df, pl_widen_df, pl_remove_ranges
+from enzyextract.utils.pmid_management import pmids_from_cache
+from enzyextract.utils.pmid_doi_convert import find_canonical
 
 
 
@@ -127,7 +128,11 @@ df1 = df1.filter(~pl.col('pmid').is_in(train_pmids))
 
 df2 = pl.read_csv(f'data/humaneval/runeem/runeem_20241125.csv', schema_overrides=so)
 
-write_dest = f"data/humaneval/comparisons/unordered_{namespace}_runeem.tsv"
+namespace = 'openelse-brenda-md-t2neboth-runeem'
+df1 = pl.read_csv('data/valid/_valid_openelse-brenda-md-t2neboth_2.csv', schema_overrides=so)
+# df2 = brenda
+
+write_dest = f"data/humaneval/comparisons/unordered/unordered_{namespace}_runeem.tsv"
 
 if write_dest and not os.path.exists(write_dest):
 

@@ -44,7 +44,7 @@ def script0():
     compile_jsonls(valid_paths, "apogee-brenda")
 
 def script1():
-    sources = [filename for filename in os.listdir('data/mbrenda') if filename.endswith('.csv')]
+    sources = [filename for filename in os.listdir('data/bmatched') if filename.endswith('.csv')]
     
     good = []
     for s in sources:
@@ -56,7 +56,7 @@ def script1():
         if s.endswith('-apogee-t2neboth_1.csv'):
             good.append(s)
             continue
-    compile_csvs([f'data/mbrenda/{s}' for s in good], "apogee-brenda")
+    compile_csvs([f'data/bmatched/{s}' for s in good], "apogee-brenda")
     
             
 if __name__ == "__main__":

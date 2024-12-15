@@ -1,10 +1,11 @@
 import os
 import pandas as pd
+import polars as pl
 
-from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
-from kcatextract.utils.pmid_management import pmids_from_cache, cache_pmids_to_disk, lift_pmids
-from kcatextract.utils.doi_management import doi_to_filename
-from relink.kcatextract.utils.pmid_management import pmids_from_directory
+from enzyextract.hungarian.csv_fix import prep_for_hungarian, widen_df
+from enzyextract.utils.pmid_management import pmids_from_cache, cache_pmids_to_disk, lift_pmids
+from enzyextract.utils.doi_management import doi_to_filename
+from relink.enzyextract.utils.pmid_management import pmids_from_directory
 
 
 def script_expand_brenda():
@@ -20,7 +21,7 @@ def script_collect_runeem_set():
     collect all pmids annotated by runeem so far
     """
 
-    brenda_wiley_tbl = pd.read_csv(r'data/humaneval/brenda_wiley_tbl .xlsx - clean_tbl.csv', dtype={'doi': str})
+    brenda_wiley_tbl = pd.read_csv(r'data/humaneval/runeem components/brenda_wiley_tbl .xlsx - clean_tbl.csv', dtype={'doi': str})
 
     brenda_wiley_notbl = """103713
 107026
@@ -90,7 +91,7 @@ def script_collect_runeem_set():
     # ground_truth_csv = 'C:/conjunct/vandy/yang/corpora/eval/rekcat/rekcat_checkpoint_5 - rekcat_ground_63.csv'
 
 
-    df_apogee = pd.read_csv('data/humaneval/apogee_runeem_20241025.csv', dtype={'pmid': str})
+    df_apogee = pd.read_csv('data/humaneval/runeem components/apogee_runeem_20241025.csv', dtype={'pmid': str})
 
     pmids = set(rekcat_df['pmid'].tolist())
     pmids.update(set(df_apogee['pmid'].tolist()))
@@ -219,16 +220,16 @@ def script_lift_runeem_set():
     
 def script_create_runeem_df():
     # create a dataframe of the runeem set
-    # brenda_wiley_tbl = pd.read_csv(r'data/humaneval/brenda_wiley_tbl .xlsx - clean_tbl.csv', dtype={'doi': str})
-    brenda_wiley_tbl = pd.read_csv(r'data/humaneval/brenda_wiley_tbl .xlsx - clean_tbl 20241125.csv', dtype={'doi': str})
-    brenda_wiley_notbl = pd.read_csv(r'data/humaneval/brenda_wiley_notbl_REFINED - Sheet1 20241125.csv', dtype={'doi': str})
+    # brenda_wiley_tbl = pd.read_csv(r'data/humaneval/runeem components/brenda_wiley_tbl .xlsx - clean_tbl.csv', dtype={'doi': str})
+    brenda_wiley_tbl = pd.read_csv(r'data/humaneval/runeem components/brenda_wiley_tbl .xlsx - clean_tbl 20241125.csv', dtype={'doi': str})
+    brenda_wiley_notbl = pd.read_csv(r'data/humaneval/runeem components/brenda_wiley_notbl_REFINED - Sheet1 20241125.csv', dtype={'doi': str})
     # rekcat_df = pd.read_csv(r'C:/conjunct/vandy/yang/corpora/eval/rekcat_checkpoint_v4_only_values_checked.csv', dtype={'pmid': str})
-    rekcat_df = pd.read_csv(r'data/humaneval/rekcat export - export 20241125.csv', dtype={'pmid': str})
-    rekcat_bottom_df = pd.read_csv(r'data/humaneval/rekcat export - export galen 20241125.csv', dtype={'pmid': str})
+    rekcat_df = pd.read_csv(r'data/humaneval/runeem components/rekcat export - export 20241125.csv', dtype={'pmid': str})
+    rekcat_bottom_df = pd.read_csv(r'data/humaneval/runeem components/rekcat export - export galen 20241125.csv', dtype={'pmid': str})
     # ground_truth_csv = 'C:/conjunct/vandy/yang/corpora/eval/rekcat/rekcat_checkpoint_5 - rekcat_ground_63.csv'
 
 
-    apogee_df = pd.read_csv(r'data/humaneval/apogee_runeem_20241125.csv', dtype={'pmid': str})
+    apogee_df = pd.read_csv(r'data/humaneval/runeem components/apogee_runeem_20241125.csv', dtype={'pmid': str})
 
     for df in [brenda_wiley_tbl, brenda_wiley_notbl, rekcat_df, apogee_df]:
         print(df.columns)
@@ -376,36 +377,23 @@ def script_count_pdfs():
 
 # Run the function
 
-def script_look_for_ecs(pdfs_folder="C:/conjunct/tmp/eval/arctic"):
-    # look for EC numbers in the PDFs
-    import pymupdf
-    import re
-    from tqdm import tqdm
-    ec_re = re.compile(r'EC\s*\d+\.\d+\.\d+\.\d+')
 
-    ec_matches = []
-    for filename in tqdm(os.listdir(pdfs_folder)):
-        if filename.endswith('.pdf'):
-            pmid = filename[:-4]
-            try:
-                pdf = pymupdf.open(os.path.join(pdfs_folder, filename))
-            except:
-                continue
-            for page in pdf:
-                text = page.get_text()
+def convert_parquet():
+    # convert shit to parquet
+    df = pl.read_csv('fetch_sequences/substrates/brenda_inchi_all.tsv', separator='\t', schema_overrides={'brenda_id': pl.Utf8})
 
-                matches = ec_re.findall(text)
-                for match in matches:
-                    ec_matches.append((pmid, match))
-                
-            pdf.close()
-    df = pd.DataFrame(ec_matches, columns=['pmid', 'ec'])
-    df.to_csv('C:/conjunct/tmp/eval/arctic_dev/ec_matches.csv', index=False)
-    
+    df = df.with_columns([
+        pl.col('brenda_id').replace('-', None).cast(pl.UInt32)
+    ])
 
+    df.write_parquet('data/substrates/brenda_inchi_all.parquet')
 
 if __name__ == "__main__":
     # script_count_pdfs()
-    script_create_runeem_df()
+    # script_create_runeem_df()
     # script_lift_runeem_set()
-    # script_look_for_ecs()
+    # df = script_look_for_ecs()
+    # exit(0)
+    convert_parquet()
+    pass
+    # script_ec_success_rate()

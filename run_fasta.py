@@ -7,8 +7,8 @@ import requests
 from tenacity import retry, wait_exponential
 from tqdm import tqdm
 
-from kcatextract.fetch_sequences.fasta_for_genbank import download_fasta_for_pdbs, download_fasta
-from kcatextract.fetch_sequences.query_idents import fetch_pdbs, fetch_uniprots, fetch_ncbis
+from enzyextract.fetch_sequences.fasta_for_genbank import download_fasta_for_pdbs, download_fasta
+from enzyextract.fetch_sequences.query_idents import fetch_pdbs, fetch_uniprots, fetch_ncbis
 
 # def main_script_for_pdb(df):
 #     # Example usage

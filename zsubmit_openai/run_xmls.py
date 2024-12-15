@@ -8,17 +8,17 @@ import glob
 import os
 from tqdm import tqdm
 
-from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
-from kcatextract.utils.fresh_version import next_available_version
-from kcatextract.utils.micro_fix import mM_corrected_text
-from kcatextract.utils.openai_management import process_env, submit_batch_file
-from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
-from kcatextract.utils.working import pmid_to_tables_from
-from kcatextract.utils.yaml_process import get_pmid_to_yaml_dict
-from kcatextract.utils.openai_schema import to_openai_batch_request_with_schema
-from kcatextract.utils.xml_pipeline import xml_get_soup, xml_abstract_processing, xml_raw_text_processing, xml_table_processing
-from kcatextract.utils.xml_cals import parse_cals_table
+from enzyextract.utils import prompt_collections
+from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.utils.fresh_version import next_available_version
+from enzyextract.utils.micro_fix import mM_corrected_text
+from enzyextract.utils.openai_management import process_env, submit_batch_file
+from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
+from enzyextract.utils.working import pmid_to_tables_from
+from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
+from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
+from enzyextract.utils.xml_pipeline import xml_get_soup, xml_abstract_processing, xml_raw_text_processing, xml_table_processing
+from enzyextract.utils.xml_cals import parse_cals_table
 
 def process_xml(filepath, original_tables=True):
     """
@@ -124,41 +124,12 @@ prompt = prompt_collections.table_oneshot_v3
 
 xml_root = "c:/conjunct/vandy/yang/dois/elsevier/downloads"
 
-structured = False
-if namespace.endswith('-mini'):
-    
-    model_name = 'gpt-4o-mini' # 'ft:gpt-4o-mini-2024-07-18:personal:oneshot:9sZYBFgF' # gpt-4o
-elif namespace.endswith('-tuned'):
-    
-    prompt = prompt_collections.table_oneshot_v1
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:oneshot:9sZYBFgF' # gpt-4o
-elif namespace.endswith('-tuneboth'):
-        
-    prompt = prompt_collections.table_oneshot_v1_2
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:readboth:9wwLXS4i' # gpt-4o
-elif namespace.endswith('-t2neboth'):
-            
-    prompt = prompt_collections.table_oneshot_v3
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t2neboth:9zuhXZVV' # gpt-4o
-elif namespace.endswith('-t3neboth'):
-    prompt = prompt_collections.table_oneshot_v3
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t3neboth:AOpwZY6M'
-elif namespace.endswith('-t4neboth'):
-    prompt = prompt_collections.table_oneshot_v3
-    model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t4neboth:AQOYyPCz'
+# get model name
+from enzyextract.utils.namespace_management import glean_model_name
+model_name, suggested_prompt, structured = glean_model_name(namespace)
 
-elif namespace.endswith('-oneshot') or namespace.endswith('-4o'):
-        
-    # prompt = prompt_collections.table_oneshot_v1
-    model_name = 'gpt-4o-2024-05-13'
-elif namespace.endswith('-4os'):
-    model_name = 'gpt-4o-2024-08-06' 
-elif namespace.endswith('-4o-str'): # structured output
-    model_name = 'gpt-4o-2024-08-06' 
-    structured = True
-    
-else:
-    raise ValueError("Unrecognized namespace", namespace)
+prompt = suggested_prompt if suggested_prompt else prompt
+
 
 batch = []
 
@@ -174,7 +145,7 @@ print("Using version: ", version)
 acceptable_pmids = pmids_from_directory(xml_root, filetype='.xml')
 
 # whitelist = pmids_from_cache("apogee_429")
-# blacklist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+# blacklist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
 # blacklist = set(blacklist_df['pmid'])
 whitelist = pmids_from_cache('brenda')
 

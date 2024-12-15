@@ -1,8 +1,8 @@
 import polars as pl
 from tqdm import tqdm
 import re
-from kcatextract.utils.pmid_management import pmids_from_cache
-from kcatextract.hungarian.hungarian_matching import parse_value_and_unit
+from enzyextract.utils.pmid_management import pmids_from_cache
+from enzyextract.hungarian.hungarian_matching import parse_value_and_unit
 
 def load_brenda_df(pmids):
     df = pl.read_csv('data/_compiled/apogee-brenda-and-nonbrenda.tsv', separator='\t', 
@@ -133,7 +133,7 @@ def count_boring_new_kcat(df_1pmid):
     ).height
     return count
 
-from kcatextract.metrics.polaric import mean_log_relative_ratio, precision_recall, get_accuracy_score, string_similarity
+from enzyextract.metrics.polaric import mean_log_relative_ratio, precision_recall, get_accuracy_score, string_similarity
 
     
 
@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     # off_by_kcat_unit_df.write_csv('data/_compiled/compare/brenda-off-by-kcat-unit-apogee.tsv', separator='\t')
 
-    from kcatextract.utils.pmid_management import lift_pmids
+    from enzyextract.utils.pmid_management import lift_pmids
     # lift_pmids(off_by_kcat_unit_pmids, 'D:/topoff', 'C:/conjunct/tmp/kcat_unit_apogee')
     # lift_pmids(off_by_kcat_unit_pmids, 'D:/wos', 'C:/conjunct/tmp/kcat_unit_apogee')
     # lift_pmids(off_by_kcat_unit_pmids, 'D:/brenda', 'C:/conjunct/tmp/kcat_unit_apogee')

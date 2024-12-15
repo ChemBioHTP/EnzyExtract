@@ -2,16 +2,16 @@
 import json
 import os
 import pandas as pd
-from kcatextract.backform.quality_assure import quality_assure_ai_message
-from kcatextract.metrics.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
-from kcatextract.backform.process_human_perfect import form_human_perfect
-from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
-from kcatextract.hungarian.hungarian_matching import match_dfs_by_pmid
-from kcatextract.hungarian.postmatched_utils import convenience_rearrange_cols
-from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
-from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
-from kcatextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_file
-from kcatextract.metrics.polaric import precision_recall, mean_log_relative_ratio
+from enzyextract.backform.quality_assure import quality_assure_ai_message
+from enzyextract.metrics.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
+from enzyextract.backform.process_human_perfect import form_human_perfect
+from enzyextract.hungarian.csv_fix import prep_for_hungarian, widen_df
+from enzyextract.hungarian.hungarian_matching import match_dfs_by_pmid
+from enzyextract.hungarian.postmatched_utils import convenience_rearrange_cols
+from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
+from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
+from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_file
+
 
 # brenwi-giveboth-tuneboth_2
 def print_stats(stats):
@@ -35,13 +35,13 @@ def print_stats(stats):
     # print("Of that, this number is ready for fine-tune:", stats.get('fine_tune_ready', 'NA'))
 
 
-def generate_mbrenda_csv(namespace = 'rekcat-giveboth-4o', 
+def generate_bmatched_csv(namespace = 'rekcat-giveboth-4o', 
         version = None, 
         compl_folder = 'completions/enzy',
         use_yaml=True,
         silence=True):
     """
-    Given a namespace, generate the mbrenda csv
+    Given a namespace, generate the bmatched csv
     """
     
     brenda_csv = 'C:/conjunct/vandy/yang/corpora/brenda/brenda_km_kcat_key_v2.csv'
@@ -50,7 +50,7 @@ def generate_mbrenda_csv(namespace = 'rekcat-giveboth-4o',
     filename, version = locate_correct_batch(compl_folder, namespace, version=version) # , version=1)
     print(f"Located {filename} version {version} in {compl_folder}")
     
-    matched_csv = f'data/mbrenda/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
+    matched_csv = f'data/bmatched/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
     _valid_csv = f'data/valid/_valid_{namespace}_{version}.csv'
     
     valids = []
@@ -154,7 +154,7 @@ def run_stats(*,
     filename, version = locate_correct_batch(compl_folder, namespace, version=version) # , version=1)
     print(f"Located {filename} version {version} in {compl_folder}")
     
-    matched_csv = f'data/mbrenda/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
+    matched_csv = f'data/bmatched/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
     _valid_csv = f'data/valid/_valid_{namespace}_{version}.csv'
     
     valids = []
@@ -414,12 +414,12 @@ if __name__ == "__main__":
     # whitelist = pmids_from_batch("C:/conjunct/table_eval/batches/enzy/brenda-rekcat-md-v1-2_1.jsonl")
     # whitelist = pmids_from_batch("C:/conjunct/table_eval/batches/enzy/tableless-oneshot_1.jsonl")
 
-    # read whitelist as the pmids from data/mbrenda/_cache_openelse-brenda-xml-4o
-    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
-    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-bucket-md-4o-str_1.csv', dtype={'pmid': str})
-    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-md-4o_1.csv', dtype={'pmid': str})
+    # read whitelist as the pmids from data/bmatched/_cache_openelse-brenda-xml-4o
+    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-bucket-md-4o-str_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-md-4o_1.csv', dtype={'pmid': str})
     # whitelist = set(whitelist_df['pmid'])
-    # whitelist_df = pd.read_csv('data/mbrenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
     # whitelist &= set(whitelist_df['pmid'])
     
     # namespace = 'brenda-rekcat-md-v1-2' 
@@ -444,7 +444,7 @@ if __name__ == "__main__":
         need_merge = True
     
     if need_merge:
-        from kcatextract.utils.openai_management import merge_chunked_completions
+        from enzyextract.utils.openai_management import merge_chunked_completions
         print(f"Merging all chunked completions for {filename} v{version}. Confirm? (y/n)")    
         if input() != 'y':
             exit(0)
@@ -454,38 +454,21 @@ if __name__ == "__main__":
               against_brenda=True,
               silence=False,
               use_yaml=not structured)
-    
-    # append stats to block_stats.tsv
-    # dest = 'data/block_stats.tsv'
-    # df = pd.DataFrame([stats])
-
-    # if not os.path.exists(dest):
-    #     df.to_csv(dest, index=False, sep='\t')
-    # else:
-    #     df.to_csv('data/block_stats.tsv', mode='a', header=False, index=False, sep='\t')
-    
 
         # convert to polars
     import polars as pl
-    df = pl.read_csv(f'data/mbrenda/_cache_{namespace}_1.csv', 
+    df = pl.read_csv(f'data/bmatched/_cache_{namespace}_1.csv', 
                      schema_overrides={'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8})
     
-    TP, FP, FN = precision_recall(df)
-    print("TP:", TP.height)
-    print("FP:", FP.height)
-    print("FN:", FN.height)
+    from enzyextract.metrics.quick_reports import report_precision_recall
+    report_precision_recall(df)
 
-    precision = TP.height / (TP.height + FP.height)
-    recall = TP.height / (TP.height + FN.height)
+    to_ec_df = pl.read_parquet('data/brenda/brenda_to_ec.parquet')
 
-    print("Precision:", precision)
-    print("Recall:", recall)
+    from enzyextract.metrics.es_metrics import compute_string_similarities
+    df = compute_string_similarities(df, to_ec_df)
 
-    # calculate percent error
-    kcat_error = mean_log_relative_ratio(df, 'kcat')
-    km_error = mean_log_relative_ratio(df, 'km')
-    print("kcat, Mean orders of magnitude error (perfect is 0):", kcat_error)
-    print("kM, Mean orders of magnitude error (perfect is 0):", km_error)
+    df.write_parquet(f'data/humaneval/comparisons/rich/rich_{namespace}_brenda.parquet')
         
     
     

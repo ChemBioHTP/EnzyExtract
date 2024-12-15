@@ -1,10 +1,10 @@
 
 import json
 import os
-from kcatextract.utils.construct_batch import preview_batches_in_folder
-from kcatextract.utils.openai_management import process_env, preview_batches_uploaded, check_undownloaded
+from enzyextract.utils.construct_batch import preview_batches_in_folder
+from enzyextract.utils.openai_management import process_env, preview_batches_uploaded, check_undownloaded
 
-from compare_brenda import run_stats
+# from generate_bmatched import run_stats
 def script0():
     # preview_batches_in_folder('C:/conjunct/table_eval/batches/enzy', 'C:/conjunct/table_eval/completions/enzy', undownloaded_only=True)
     
@@ -22,20 +22,20 @@ def script0():
                 print(f"{name} was {batch.id}.")
             else:
                 print(name)
-        print("Would you like to evaluate these? (y/n)")
-        if input() != 'y':
-            exit(0)
+        # print("Would you like to evaluate these? (y/n)")
+        # if input() != 'y':
+        #     exit(0)
         
-        # evaluate
-        for batch, name in redownloaded:
-            namespace, version = name.rsplit('_', 1)
-            run_stats(namespace=namespace, version=version, compl_folder='completions/enzy')
+        # # evaluate
+        # for batch, name in redownloaded:
+        #     namespace, version = name.rsplit('_', 1)
+        #     run_stats(namespace=namespace, version=version, compl_folder='completions/enzy')
     
 
 def script1():
     pass
     # just submit a few
-    from kcatextract.utils.openai_management import process_env, submit_batch_file
+    from enzyextract.utils.openai_management import process_env, submit_batch_file
     # stragglers = ['batches/enzy/wos-open-apogee-t2neboth_1.7000.jsonl', 'batches/enzy/wos-open-apogee-t2neboth_1.8000.jsonl']
     # stragglers = ['batches/enzy/brenda-hindawi-apogee-t2neboth_1.jsonl']
 
@@ -70,9 +70,18 @@ def script2(path_to_dir, pending_file='batches/pending.jsonl'):
                 os.rename(f'{path_to_dir}/{filename}', f'{path_to_dir}/{basename}.err.jsonl')
             else:
                 os.rename(f'{path_to_dir}/{filename}', f'{path_to_dir}/{basename}.jsonl')
-            
+
+def script_download_all_errors():
+    # download all errors, because oops I forgot
+    from enzyextract.utils.openai_management import iter_all_error_files
+    from tqdm import tqdm
+    for want_name, content in tqdm(iter_all_error_files()):
+        with open(f'completions/errors/length/{want_name}.err.jsonl', 'wb') as f:
+            f.write(content)
 
 if __name__ == '__main__':
     # script2(path_to_dir='completions/errors')
     # script1()
-    script0()
+    # script0()
+
+    script_download_all_errors()

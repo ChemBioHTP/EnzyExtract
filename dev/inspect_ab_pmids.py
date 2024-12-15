@@ -1,14 +1,14 @@
 import pandas as pd
 
-from kcatextract.metrics.get_perfects import get_perfects_only
-from kcatextract.utils.construct_batch import get_batch_input, pmid_from_usual_cid
+from enzyextract.metrics.get_perfects import get_perfects_only
+from enzyextract.utils.construct_batch import get_batch_input, pmid_from_usual_cid
 
 a = 'openelse-brenda-md-4o'
 b = 'openelse-brenda-xml-4o'
 
 
-a_df = pd.read_csv(f'data/mbrenda/_cache_{a}_1.csv', dtype={'pmid': str})
-b_df = pd.read_csv(f'data/mbrenda/_cache_{b}_1.csv', dtype={'pmid': str})
+a_df = pd.read_csv(f'data/bmatched/_cache_{a}_1.csv', dtype={'pmid': str})
+b_df = pd.read_csv(f'data/bmatched/_cache_{b}_1.csv', dtype={'pmid': str})
 
 common_pmids = set(a_df['pmid']) & set(b_df['pmid'])
 a_df = a_df[a_df['pmid'].isin(common_pmids)]

@@ -4,11 +4,11 @@
 import os
 
 import pandas as pd
-from kcatextract.utils.pmid_doi_convert import find_canonical
-from kcatextract.utils.pmid_management import cache_pmids_to_disk
-from kcatextract.utils.pmid_management import pmids_from_cache
-from kcatextract.utils.pmid_management import pmids_from_file
-from kcatextract.utils.pmid_management import pmids_from_directory
+from enzyextract.utils.pmid_doi_convert import find_canonical
+from enzyextract.utils.pmid_management import cache_pmids_to_disk
+from enzyextract.utils.pmid_management import pmids_from_cache
+from enzyextract.utils.pmid_management import pmids_from_file
+from enzyextract.utils.pmid_management import pmids_from_directory
 
 # NOTE: doi to pmid mapping was originally provided at C:/conjunct/vandy/yang/dois/openaccess/create_openalex.py
 # and C:/conjunct/vandy/yang/dois/openaccess/extract_wos_pmid_map.py
@@ -191,7 +191,7 @@ def read_csv(filepath): # i wish pandas would just deal with int columns
 #         df['preferred'] = df['pmid'].fillna(df['doi'].str.lower())
 #         df = df.dropna(subset=['preferred'])
 #         # apply doi_management.doi_to_filename
-#         from  kcatextract.utils.doi_management import doi_to_filename
+#         from  enzyextract.utils.doi_management import doi_to_filename
 #         df['filename'] = df['preferred'].apply(lambda x: doi_to_filename(x, file_extension=''))
 #         builder.append(df[['filename', 'preferred']])
 
@@ -216,7 +216,7 @@ def read_csv(filepath): # i wish pandas would just deal with int columns
 #     pmids = set()
 
 #     not_sure_where = set()
-#     from kcatextract.utils.doi_management import filename_to_doi
+#     from enzyextract.utils.doi_management import filename_to_doi
 #     for filename in filenames:
 #         if filename in filename_to_pmid:
 #             pmids.add(filename_to_pmid[filename])

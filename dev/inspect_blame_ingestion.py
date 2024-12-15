@@ -1,18 +1,19 @@
 # Purpose: look at how a document was ingested by GPT, to see why some documents fare better than others
 
-from kcatextract.utils.locate_batch import locate_by_pmid
-from kcatextract.utils.construct_batch import get_batch_input
-from kcatextract.utils.construct_batch import pmid_from_usual_cid
+from enzyextract.utils.locate_batch import locate_by_pmid
+from enzyextract.utils.construct_batch import get_batch_input
+from enzyextract.utils.construct_batch import pmid_from_usual_cid
 
 # recover namespace, if unknown
 
-pmid = '10801893'
-ingest_folder = 'batches/enzy'
+pmid = '12766158'
+ingest_folder = 'batches/enzy/bucket'
 
 known_filename = None
 filename_whitelist = None
 
-filename_whitelist = lambda x: x.startswith('beluga')
+# filename_whitelist = lambda x: x.startswith('beluga')
+filename_whitelist = lambda x: x.startswith('openelse-')
 # known_namespace = 'brenda-asm-apogee-t2neboth'
 # known_version = '1'
 # known_filename = f"brenda-jbc-apogee-t2neboth_1.0.jsonl"

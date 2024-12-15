@@ -2,8 +2,8 @@
 import os
 import re
 
-from kcatextract.fetch_sequences.query_idents import fetch_pdbs
-from kcatextract.fetch_sequences.read_pdfs_for_idents import search_folder_for_enzyme_idents, search_folder_for_mutants
+from enzyextract.fetch_sequences.query_idents import fetch_pdbs
+from enzyextract.fetch_sequences.read_pdfs_for_idents import search_folder_for_enzyme_idents, search_folder_for_mutants
 import pandas as pd
 from tqdm import tqdm
 
@@ -57,7 +57,7 @@ def read_pdfs_for_db_idents(namespace, src_folder, dest_df_path=None):
    
     uniprot_path = "fetch_sequences/results/rekcat_uniprots.tsv"
     if not os.path.exists(uniprot_path):
-        from kcatextract.fetch_sequences.query_idents import fetch_uniprots
+        from enzyextract.fetch_sequences.query_idents import fetch_uniprots
         
         uniprot_df = pd.DataFrame(columns=['uniprot', 'enzyme', 'organism'])
 

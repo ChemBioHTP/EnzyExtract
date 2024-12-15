@@ -1,7 +1,7 @@
 # process organisms and get canonical
-from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
-from kcatextract.utils import prompt_collections
-from kcatextract.utils.openai_management import process_env, submit_batch_file
+from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.utils import prompt_collections
+from enzyextract.utils.openai_management import process_env, submit_batch_file
 
 import pandas as pd
 

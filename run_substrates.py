@@ -1,5 +1,5 @@
 import pandas as pd
-from kcatextract.fetch_sequences.get_closest_substrate import infuse_with_substrates
+from enzyextract.fetch_sequences.get_closest_substrate import infuse_with_substrates
 
 def script0():
     # given a validation df, obtain substrates

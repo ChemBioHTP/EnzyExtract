@@ -10,10 +10,10 @@ from typing import TypedDict
 import pandas as pd
 from tqdm import tqdm
 
-from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
-from kcatextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
+from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
+from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
-from kcatextract.fetch_sequences.confirm_enzyme_sequences import idents_for_pmid, load_yaml_enzymes, form_mutant_codes, to_regex, does_sequence_corroborate, sequence_search_regex, MutantCodes, to_amino_sequence, find_offset, find_p, find_p_offset
+from enzyextract.fetch_sequences.confirm_enzyme_sequences import idents_for_pmid, load_yaml_enzymes, form_mutant_codes, to_regex, does_sequence_corroborate, sequence_search_regex, MutantCodes, to_amino_sequence, find_offset, find_p, find_p_offset
 
 def load_df_from_folder(dirpath):
     ret = []
