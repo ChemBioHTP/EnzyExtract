@@ -91,19 +91,79 @@ def get_last_n_batches(n: int = 10):
     # for some reason, this method tends to give all batches
     for i, batch in enumerate(last_n):
         yield batch
-        if i >= 9:
+        if i > n:
             break
 
 def preview_batches_uploaded():
     
     for batch in get_last_n_batches():
         print(f"{batch.id}, {batch.status}, {batch.metadata}")
+
+
+def load_id2name(path_to_pending:str = 'batches/pending.jsonl'):
+    """
+    Constructs _all_batch2name
+    """
+    _all_batch2name = {}
+    if path_to_pending is not None and os.path.exists(path_to_pending):
+        # read from pending.jsonl
+        with open(path_to_pending, 'r') as f:
+            for line in f:
+                obj = json.loads(line)
+                
+                val = obj['input']
+
+                dirname = os.path.dirname(val)
+                dirname = dirname.replace('batches', 'completions')
+
+                basename = os.path.basename(val)
+                basename = os.path.splitext(basename)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
+                _all_batch2name[obj['output']] = (dirname, basename)
+    else:
+        # take from the last 10 batches
+        batches = list(get_last_n_batches())
+        # try to retain the name from the metadata
+        for batch in batches:
+            name = batch.metadata.get('filepath', batch.metadata.get('description'))
+            if name is None:
+                write_dest = ('', batch.id)
+            else:
+
+                dirname = os.path.dirname(name)
+                dirname = dirname.replace('batches', 'completions')
+
+                # get the basename, remove the extension
+                basename = os.path.basename(name)
+                basename = os.path.splitext(basename)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
+                write_dest = (dirname, basename)
+            _all_batch2name[batch.id] = write_dest
+    return _all_batch2name
+
+_glob_batch2name = {}
+def get_id2name():
+    global _glob_batch2name
+    if not _glob_batch2name:
+        _glob_batch2name = load_id2name()
+    return _glob_batch2name
+
+def preferred_name(batch_id, translator=None):
+    if translator is None:
+        translator = get_id2name()
+    return translator.get(batch_id, batch_id + '_output')[1]
+
+def preferred_dirname(batch_id, translator=None):
+    if translator is None:
+        translator = get_id2name()
+    return translator.get(batch_id, batch_id + '_output')[0]
         
 def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl', 
-                       all_download_folders=['completions/enzy', 'completions/explode', 'completions/gptclose', 'completions/_cache', 'C:/conjunct/table_eval/completions/enzy',
-                                             'completions/enzy/apogee', 'completions/enzy/bucket', 'completions/enzy/cobble'], 
+                    #    all_download_folders=['completions/enzy', 'completions/_cache/explode', 'completions/_cache/gptclose', 'completions/_cache', 'C:/conjunct/table_eval/completions/enzy',
+                    #                          'completions/enzy/apogee', 'completions/enzy/bucket', 'completions/enzy/cobble',
+                    #                          'completions/similarity'], 
+                       all_download_folders=['C:/conjunct/table_eval/completions/enzy'],
+                       _walkable_download_folder='completions',
                        _default_download_folder='completions/enzy', # 'completions/enzy',
-                       errors_folder='completions/errors',
+                       errors_folder='completions/errors/length',
                        printme=True, autodownload=True, y_for_autodownload=False,
                        _all_batch2name: dict[str, tuple[str, str]] | None = None):
     """
@@ -117,54 +177,22 @@ def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl',
     downloaded_files = set()
     for fdr in all_download_folders:
         downloaded_files.update(os.listdir(fdr))
+    
+    if _walkable_download_folder is not None:
+        for dirpath, dirnames, filenames in os.walk(_walkable_download_folder):
+            for filename in filenames:
+                if filename.endswith('.jsonl'):
+                    downloaded_files.add(filename)
+            # downloaded_files.update(filenames)
         
     # determine the batch names in question
     batches = []
-    if _all_batch2name is None:
-        _all_batch2name = {}
-        if path_to_pending is not None and os.path.exists(path_to_pending):
-            # read from pending.jsonl
-            with open(path_to_pending, 'r') as f:
-                for line in f:
-                    obj = json.loads(line)
-                    
-                    val = obj['input']
-
-                    dirname = os.path.dirname(val)
-                    dirname = dirname.replace('batches', 'completions')
-
-                    basename = os.path.basename(val)
-                    basename = os.path.splitext(basename)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
-                    _all_batch2name[obj['output']] = (dirname, basename)
-        else:
-            # take from the last 10 batches
-            batches = list(get_last_n_batches())
-            # try to retain the name from the metadata
-            for batch in batches:
-                name = batch.metadata.get('filepath', batch.metadata.get('description'))
-                if name is None:
-                    write_dest = ('', batch.id)
-                else:
-
-                    dirname = os.path.dirname(name)
-                    dirname = dirname.replace('batches', 'completions')
-
-                    # get the basename, remove the extension
-                    basename = os.path.basename(name)
-                    basename = os.path.splitext(basename)[0] # this preserves chunk names; ie. name = my_chunked_file.1000
-                    write_dest = (dirname, basename)
-                _all_batch2name[batch.id] = write_dest
-    
-    def preferred_name(batch_id):
-        return _all_batch2name.get(batch_id, batch_id + '_output')[1]
-    
-    def preferred_dirname(batch_id):
-        return _all_batch2name.get(batch_id, batch_id + '_output')[0]
+    translator = _all_batch2name if _all_batch2name is not None else get_id2name()
     
     # we are only interested in batches not yet downloaded
     batch2name = {}
     for batch_id, name in _all_batch2name.items():
-        if preferred_name(batch_id) + '.jsonl' not in downloaded_files and \
+        if preferred_name(batch_id, translator) + '.jsonl' not in downloaded_files and \
                      batch_id + '_output.jsonl' not in downloaded_files:
             batch2name[batch_id] = name
     
@@ -181,7 +209,7 @@ def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl',
     
     
     undownloaded = [batch for batch in batches if batch.status in ['completed', 'cancelled'] and 
-                    (preferred_name(batch.id) + '.jsonl' not in downloaded_files and
+                    (preferred_name(batch.id, translator) + '.jsonl' not in downloaded_files and
                      batch.id + '_output.jsonl' not in downloaded_files # legacy
                      )]
     
@@ -211,7 +239,7 @@ def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl',
                     
                     jsonl = openai_client.files.content(batch.output_file_id)
                     
-                    correct_name = preferred_name(batch.id)
+                    correct_name = preferred_name(batch.id, translator)
 
                     download_folder = preferred_dirname(batch.id)
                     if not os.path.exists(download_folder):
@@ -228,13 +256,17 @@ def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl',
                     freshly_downloaded.append((batch, correct_name))
                     
                     # deposit the errors
-                    if batch.errors:
-                        with open(f'{errors_folder}/{correct_name}.err.jsonl', 'w') as f:
-                            # f.write(json.dumps(batch.errors.data))
-                            for error in batch.errors.data:
-                                f.write(json.dumps(error) + '\n')
+                    # if batch.errors:
+                    #     with open(f'{errors_folder}/{correct_name}.err.jsonl', 'w') as f:
+                    #         # f.write(json.dumps(batch.errors.data))
+                    #         for error in batch.errors.data:
+                    #             f.write(json.dumps(error) + '\n')
+                    if batch.error_file_id:
+                        error_jsonl = openai_client.files.content(batch.error_file_id)
+                        with open(f'{errors_folder}/{correct_name}.err.jsonl', 'wb') as f:
+                            f.write(error_jsonl.content)
         return freshly_downloaded
-    return [(batch, preferred_name(batch.id)) for batch in undownloaded]
+    return [(batch, preferred_name(batch.id, translator)) for batch in undownloaded]
     # undownloaded
     
     
@@ -299,4 +331,25 @@ def merge_all_chunked_completions(compl_folder, dest_folder):
             merge_chunked_completions(namespace, version, compl_folder=compl_folder, dest_folder=dest_folder)
     
 
-    
+def iter_all_error_files():
+    """
+    Oops, I forgot to download the error files.
+    """
+
+    openai_client = get_openai_client()
+    batches = list(get_last_n_batches(100))
+    import time
+
+    for batch in batches:
+        if batch.error_file_id:
+            try:
+                error_jsonl = openai_client.files.retrieve(batch.error_file_id)
+            except Exception as e:
+                print(f"Error on batch {batch.id}")
+                # print(e)
+                # wait 0.1s
+                
+                time.sleep(0.1)
+                continue
+            yield preferred_name(batch.id), error_jsonl.content
+

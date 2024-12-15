@@ -1,5 +1,5 @@
 [project]
-name = "kcatextract"
+name = "enzyextract"
 version = "0.0.1"
 description = "EnzyExtract successor"
 authors = [

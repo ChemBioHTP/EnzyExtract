@@ -1,5 +1,5 @@
 
-from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
+from enzyextract.hungarian.csv_fix import prep_for_hungarian, widen_df
 
 
 def form_human_perfect(ground_df): # , whitelist: set=None):

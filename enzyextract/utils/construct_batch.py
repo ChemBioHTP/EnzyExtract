@@ -56,7 +56,29 @@ def write_to_jsonl(batch, filename):
     with open(filename, 'w') as f:
         for item in batch:
             f.write(json.dumps(item) + '\n')
-            
+
+def chunked_write_to_jsonl(batch, filepath, chunk_size=1000):
+    """
+    Need to enforce chunk size, since OpenAI has data size limit
+    Returns list of filenames written to, so they can be opened and submitted in sequence
+    """
+    chunk_size = 1000
+    have_multiple = len(batch) > chunk_size # need to enforce chunk size, since OpenAI has data size limit
+
+    write_dests = []
+    for i in range(0, len(batch), chunk_size):
+        chunk = batch[i:i+chunk_size]
+        if have_multiple:
+            if filepath.endswith('.jsonl'):
+                will_write_to = f'{filepath[:-6]}.{i}.jsonl'
+            else:
+                will_write_to = f'{filepath}.{i}.jsonl'
+            # will_write_to = f'{dest_folder}/{namespace}_{version}.{i}.jsonl'
+        else:
+            will_write_to = filepath
+        write_to_jsonl(chunk, will_write_to)
+        write_dests.append(will_write_to)
+    return write_dests
 
 import json
 import os

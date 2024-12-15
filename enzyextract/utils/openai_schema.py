@@ -3,7 +3,7 @@ from openai import OpenAI
 
 from openai.lib._pydantic import to_strict_json_schema
 
-from kcatextract.utils.construct_batch import to_openai_dict_message
+from enzyextract.utils.construct_batch import to_openai_dict_message
 
 client = OpenAI()
 
@@ -76,7 +76,10 @@ class RootModel(BaseModel):
     context: Context
 
 
-def to_openai_batch_request_with_schema(uuid: str, system_prompt: str, docs: list[str], model_name='gpt-4o-mini') -> dict:
+def to_openai_batch_request_with_schema(uuid: str, system_prompt: str, docs: list[str], model_name='gpt-4o-mini', schema=None) -> dict:
+
+    if schema is None:
+        schema = RootModel
     if isinstance(docs, str):
         docs = [docs]
     messages = [to_openai_dict_message("system", system_prompt)] + [to_openai_dict_message("user", doc) for doc in docs]
@@ -93,8 +96,8 @@ def to_openai_batch_request_with_schema(uuid: str, system_prompt: str, docs: lis
                 "type": "json_schema",
                 "json_schema": {
                     "strict": True,
-                    "schema": to_strict_json_schema(RootModel),
-                    "name": RootModel.__name__,
+                    "schema": to_strict_json_schema(schema),
+                    "name": schema.__name__,
                 }
             }
         },

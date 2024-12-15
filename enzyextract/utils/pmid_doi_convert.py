@@ -6,7 +6,7 @@ Very hacky, there should be no need for this module if you get it right the firs
 
 import pandas as pd
 
-from kcatextract.utils.doi_management import doi_to_filename
+from enzyextract.utils.doi_management import doi_to_filename
 def _read_csv(filepath):
     return pd.read_csv(filepath, dtype={'pmid': str, 'ids.pmid': str})
 def _roundup_doi_pmid_dict():

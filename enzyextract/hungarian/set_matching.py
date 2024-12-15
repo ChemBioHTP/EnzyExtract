@@ -9,7 +9,7 @@ This is because BRNEDA does not always provide tuples (kcat, km) due to variatio
 import math
 import polars as pl
 
-from kcatextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
+from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
 
 def mantissa_exponent_similarity(a, b, alpha=0.9, beta=0.2, base=10):
     

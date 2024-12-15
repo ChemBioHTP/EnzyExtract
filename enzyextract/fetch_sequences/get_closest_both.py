@@ -1,8 +1,8 @@
 
 import pandas as pd
 
-from kcatextract.fetch_sequences import get_closest_enzyme
-from kcatextract.fetch_sequences.get_closest_substrate import infuse_with_substrates
+from enzyextract.fetch_sequences import get_closest_enzyme
+from enzyextract.fetch_sequences.get_closest_substrate import infuse_with_substrates
 
 
 def infuse_enzyme_substrate_sequences(checkpoint_df, dists_df, brenda_df, brenda_substrate_df, redo_inchi=False):

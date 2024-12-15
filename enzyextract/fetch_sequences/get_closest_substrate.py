@@ -3,9 +3,9 @@ import os
 import pandas as pd
 from rapidfuzz import fuzz
 
-from kcatextract.fetch_sequences.get_smiles import pubchem_main, rdkit_inchi, rdkit_main
-from kcatextract.utils import prompt_collections
-from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.fetch_sequences.get_smiles import pubchem_main, rdkit_inchi, rdkit_main
+from enzyextract.utils import prompt_collections
+from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
 
 def find_similar_substrates(df, substrate_name: str, substrate_col_name='name', n=5, fuzzy=True):
     # Step 1: Check for case-insensitive exact matches

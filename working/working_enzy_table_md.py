@@ -3,10 +3,10 @@ import os
 import pandas as pd
 import pymupdf
 
-from kcatextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
-from kcatextract.utils.fresh_version import next_available_version
-import kcatextract.utils.prompt_collections as prompt_collections
-from kcatextract.utils.working import pmid_to_tables_from
+from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.utils.fresh_version import next_available_version
+import enzyextract.utils.prompt_collections as prompt_collections
+from enzyextract.utils.working import pmid_to_tables_from
     
 # setup
 md_folder = 'C:/conjunct/tmp/brenda_rekcat_tables/md_v3'

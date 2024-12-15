@@ -1,8 +1,8 @@
 import json
 
-from kcatextract.backform.backform_utils import openai_crafted_batch_to_finetune
-from kcatextract.utils.construct_batch import pmid_from_usual_cid
-from kcatextract.utils.md_management import read_md_by_pmid
+from enzyextract.backform.backform_utils import openai_crafted_batch_to_finetune
+from enzyextract.utils.construct_batch import pmid_from_usual_cid
+from enzyextract.utils.md_management import read_md_by_pmid
 
 
 def script2():

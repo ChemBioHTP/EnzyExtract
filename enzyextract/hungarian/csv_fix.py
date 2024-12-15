@@ -154,74 +154,37 @@ def widen_df(df: pd.DataFrame, brenda=True) -> pd.DataFrame:
     use_new_values(df, 'temperature', df[target].apply(extract_temp))
     return df
 
-def pl_widen_df(df: pl.DataFrame, brenda=True) -> pl.DataFrame:
+def pl_widen_df(df: pl.DataFrame) -> pl.DataFrame:
     """
-    Widen df, by expanding the "comments" column into "mutant", "pH", and "temperature" columns.
+    Widen brenda df, by expanding the "comments" column into "mutant", "pH", and "temperature" columns.
     """
-    def extract_mutant(comment: str, brenda=False) -> str | None:
-        if comment and not pl.Series([comment]).is_null().item():
-            if not brenda or "mutant" in comment or "recombinant" in comment:
-                mutants = re.findall(r"\b[A-Z]\d{2,4}[A-Z]\b", comment)
-                out = '/'.join(mutants)
-                if out:
-                    return out
-            # look for WT
-            wildtype = re.findall(r"\bwild[\- ]?type?\b", comment, flags=re.IGNORECASE)
-            if wildtype:
-                return 'wild-type'
-            wildtype = re.findall(r"\bWT\b", comment)
-            if wildtype:
-                return 'WT'
-        return None
 
-    def extract_mutant_brenda(comment: str) -> str | None:
-        return extract_mutant(comment, brenda=True)
+    # mutant regexes, in order of specificity (most to least):
+    # \b([A-Z]\d{2,4}[A-Z](?:\/[A-Z]\d{2,4}[A-Z])*)\b
+    # mutant ([A-Z]\d{1,4}[A-Z](?:\/[A-Z]\d{1,4}[A-Z])*)\b
+    # r"\bwild[\- ]?type?\b"
+    # r"\bWT\b"
+    r_mutant_1 = r"\b([A-Z]\d{1,4}[A-Z](?:\/[A-Z]\d{1,4}[A-Z])*)\b"
+    # r_mutant_2 = r"mutant ([A-Z]\d{1,4}[A-Z](?:\/[A-Z]\d{1,4}[A-Z])*)\b"
+    r_wildtype = r"(?i)\bwild[\- ]?type?\b"
+    r_wt = r"\bWT\b"
 
-    def extract_pH(comment: str) -> str | None:
-        if comment and not pl.Series([comment]).is_null().item() and "pH" in comment:
-            pH = re.findall(r"pH (\b\d+(?:\.\d+)?\b)", comment)
-            if pH:
-                return pH[0]
-        return None
-
-    def extract_temp(comment: str) -> str | None:
-        if comment and not pl.Series([comment]).is_null().item() and "°C" in comment:
-            temp = re.findall(r"\b(\d+(?:\.\d+)?) ?°C\b", comment)
-            if temp:
-                return temp[0]
-        return None
-
-    # Determine which column to use
-    target = 'comments'
-    if 'comments' not in df.columns:
-        target = 'variant'
-        if 'variant' not in df.columns:
-            target = 'descriptor'
-
-    # Create expressions for each extraction
-    def create_extraction_expr(col_name: str, extract_fn, existing_col: str) -> pl.Expr:
-        if col_name in df.columns:
-            return pl.col(col_name).fill_null(
-                pl.col(target).map_elements(extract_fn, return_dtype=pl.Utf8)
-            )
-        else:
-            return pl.col(target).map_elements(extract_fn, return_dtype=pl.Utf8).alias(col_name)
-
-    # Build expressions based on whether it's brenda or not
-    mutant_expr = create_extraction_expr(
-        'mutant',
-        extract_mutant_brenda if brenda else extract_mutant,
-        target
-    )
-    ph_expr = create_extraction_expr('pH', extract_pH, target)
-    temp_expr = create_extraction_expr('temperature', extract_temp, target)
-
-    # Apply all transformations at once
-    return df.with_columns([
-        mutant_expr,
-        ph_expr,
-        temp_expr
+    df = df.with_columns([
+        pl.col('comments').str.extract(r"pH (\b\d+(?:\.\d+)?\b)", 1).alias('pH'),
+        pl.col('comments').str.extract(r"\b(\d+(?:\.\d+)?) ?°C\b", 1).alias('temperature'),
+        pl.coalesce([
+            pl.when(
+                pl.col("comments").str.contains("(?i)mutant|recombinant")
+            ).then(
+                pl.col('comments').str.extract_all(r_mutant_1).list.join('; ').replace('', None)
+            ),
+            # pl.col('comments').str.extract(r_mutant_2, 1),
+            pl.when(pl.col('comments').str.contains(r_wildtype)).then(pl.lit('wild-type')),
+            pl.when(pl.col('comments').str.contains(r_wt)).then(pl.lit('WT'))
+        ]).alias('mutant')
     ])
+
+    return df
 
 def pl_prep_brenda_for_hungarian(df: pl.DataFrame) -> pl.DataFrame:
     return (df

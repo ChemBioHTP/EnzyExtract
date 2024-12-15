@@ -1,6 +1,6 @@
 import os
 
-from kcatextract.utils.fresh_version import latest_version, next_available_version
+from enzyextract.utils.fresh_version import latest_version, next_available_version
 
 
 def pmids_from_file(filename) -> set[str]:

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from kcatextract.backform.backform_utils import split_checkpoint
+from enzyextract.backform.backform_utils import split_checkpoint
 
 
 # def construct_context(checkpoint_df: pd.DataFrame):

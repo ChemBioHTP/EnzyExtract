@@ -4,9 +4,9 @@ from scipy.optimize import linear_sum_assignment
 from difflib import SequenceMatcher
 import re
 
-from kcatextract.hungarian.postmatched_utils import left_shift_pmid
+from enzyextract.hungarian.postmatched_utils import left_shift_pmid
 
-from kcatextract.hungarian.csv_fix import courtesy_fix_pmids, lengthen_enzyme_name
+from enzyextract.hungarian.csv_fix import courtesy_fix_pmids, lengthen_enzyme_name
 
 
 

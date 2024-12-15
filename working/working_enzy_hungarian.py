@@ -1,9 +1,9 @@
 import pandas as pd
-from kcatextract.hungarian.csv_fix import prep_for_hungarian, widen_df
-from kcatextract.hungarian.hungarian_matching import match_dfs_by_pmid
-from kcatextract.utils.yaml_process import YamlVersions
-from kcatextract.utils.fresh_version import next_available_version
-from kcatextract.utils.yaml_process import fix_multiple_yamls, yaml_to_df
+from enzyextract.hungarian.csv_fix import prep_for_hungarian, widen_df
+from enzyextract.hungarian.hungarian_matching import match_dfs_by_pmid
+from enzyextract.utils.yaml_process import YamlVersions
+from enzyextract.utils.fresh_version import next_available_version
+from enzyextract.utils.yaml_process import fix_multiple_yamls, yaml_to_df
 
 
 YAMLS_A = "completions/enzy_tuned/tableless-oneshot-mini_1.md"

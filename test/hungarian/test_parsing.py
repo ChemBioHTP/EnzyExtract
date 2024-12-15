@@ -1,5 +1,5 @@
 import pytest
-from kcatextract.hungarian.hungarian_matching import parse_value_and_unit
+from enzyextract.hungarian.hungarian_matching import parse_value_and_unit
 
 
 def test_scinot():

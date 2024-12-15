@@ -2,7 +2,7 @@
 import re
 import yaml
 
-from kcatextract.backform.backform_utils import fix_the_yaml, isolate_the_yaml
+from enzyextract.backform.backform_utils import fix_the_yaml, isolate_the_yaml
 
 
 def quality_assure_ai_message(ai_msg: str):

@@ -1,7 +1,7 @@
 import json
 import os
 
-from kcatextract.utils.construct_batch import get_batch_output, locate_correct_batch
+from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch
 
 
 

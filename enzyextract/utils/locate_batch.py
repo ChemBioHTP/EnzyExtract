@@ -1,4 +1,4 @@
-from kcatextract.utils.construct_batch import locate_correct_batch, pmid_from_usual_cid
+from enzyextract.utils.construct_batch import locate_correct_batch, pmid_from_usual_cid
 import os
 
 def locate_by_pmid(src_folder, pmid, namespace=None, version=None, iscompletion=True,

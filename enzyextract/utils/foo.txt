@@ -1,0 +1,35 @@
+    structured = False
+    if namespace.endswith('-mini'):
+        
+        model_name = 'gpt-4o-mini' # 'ft:gpt-4o-mini-2024-07-18:personal:oneshot:9sZYBFgF' # gpt-4o
+    elif namespace.endswith('-tuned'):
+        
+        prompt = prompt_collections.table_oneshot_v1
+        model_name = 'ft:gpt-4o-mini-2024-07-18:personal:oneshot:9sZYBFgF' # gpt-4o
+    elif namespace.endswith('-tuneboth'):
+            
+        prompt = prompt_collections.table_oneshot_v1_2
+        model_name = 'ft:gpt-4o-mini-2024-07-18:personal:readboth:9wwLXS4i' # gpt-4o
+    elif namespace.endswith('-t2neboth'):
+                
+        prompt = prompt_collections.table_oneshot_v3
+        model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t2neboth:9zuhXZVV' # gpt-4o
+    elif namespace.endswith('-t3neboth'):
+        prompt = prompt_collections.table_oneshot_v3
+        model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t3neboth:AOpwZY6M'
+    elif namespace.endswith('-t4neboth'):
+        prompt = prompt_collections.table_oneshot_v3
+        model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t4neboth:AQOYyPCz'
+
+    elif namespace.endswith('-oneshot') or namespace.endswith('-4o'):
+            
+        # prompt = prompt_collections.table_oneshot_v1
+        model_name = 'gpt-4o-2024-05-13'
+    elif namespace.endswith('-4os'):
+        model_name = 'gpt-4o-2024-08-06' 
+    elif namespace.endswith('-4o-str'): # structured output
+        model_name = 'gpt-4o-2024-08-06' 
+        structured = True
+        
+    else:
+        raise ValueError("Unrecognized namespace", namespace)
