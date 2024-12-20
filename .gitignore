@@ -2,7 +2,7 @@
 relink/**
 relink
 *.jsonl
-__pycache__/**
+**/__pycache__/**
 _debug/**
 backform/**
 completions/**
@@ -14,3 +14,4 @@ zrun_legacy/**
 dev/data/**
 dev/debug/**
 legacy/**
+*.parquet

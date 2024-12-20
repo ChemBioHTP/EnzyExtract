@@ -93,8 +93,8 @@ if __name__ == "__main__":
             'a_input', 'b_input', 'confidence', 'are_equivalent'
         ]).rename({'confidence': 'gpt_substrate_confidence', 'are_equivalent': 'gpt_substrate_equivalent'})
 
-        from enzyextract.thesaurus.convert_es import confer_es_preferred
-        df = confer_es_preferred(df )
+        from enzyextract.thesaurus.convert_es import add_columns_es_preferred
+        df = add_columns_es_preferred(df )
         df = df.join(gpt_df_enzyme, left_on=['enzyme_preferred', 'enzyme_preferred_2'], 
                 right_on=['a_input', 'b_input'], how='left')
         df = df.join(gpt_df_substrate, left_on=['substrate_preferred', 'substrate_preferred_2'], 

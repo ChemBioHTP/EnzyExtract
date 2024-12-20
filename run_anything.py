@@ -380,13 +380,29 @@ def script_count_pdfs():
 
 def convert_parquet():
     # convert shit to parquet
-    df = pl.read_csv('fetch_sequences/substrates/brenda_inchi_all.tsv', separator='\t', schema_overrides={'brenda_id': pl.Utf8})
+    # df = pl.read_csv('fetch_sequences/substrates/brenda_inchi_all.tsv', separator='\t', schema_overrides={'brenda_id': pl.Utf8})
+    so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
+    df = pl.read_csv('data/_compiled/apogee-all.tsv', separator='\t', schema_overrides=so)
 
-    df = df.with_columns([
-        pl.col('brenda_id').replace('-', None).cast(pl.UInt32)
-    ])
 
-    df.write_parquet('data/substrates/brenda_inchi_all.parquet')
+    # df = df.with_columns([
+    #     pl.col('brenda_id').replace('-', None).cast(pl.UInt32)
+    # ])
+
+    # df.write_parquet('data/substrates/brenda_inchi_all.parquet')
+    df.write_parquet('data/_compiled/apogee_all.parquet')
+
+def determine_mutants():
+    # check to see how many rows have valid mutants
+    from enzyextract.fetch_sequences.read_pdfs_for_idents import mutant_pattern, mutant_v3_pattern
+    df = pl.read_parquet('data/_compiled/apogee_all.parquet')
+    df = df.filter(
+        pl.col("mutant").str.contains(mutant_pattern.pattern)
+        | pl.col("mutant").str.contains(mutant_v3_pattern.pattern)
+
+    )
+    print(df.shape)
+    exit(0)
 
 if __name__ == "__main__":
     # script_count_pdfs()
@@ -394,6 +410,11 @@ if __name__ == "__main__":
     # script_lift_runeem_set()
     # df = script_look_for_ecs()
     # exit(0)
+    determine_mutants()
     convert_parquet()
     pass
+    exit(0)
+
+    df = pl.read_parquet('data/_compiled/apogee_all.parquet')
+    print(df)
     # script_ec_success_rate()

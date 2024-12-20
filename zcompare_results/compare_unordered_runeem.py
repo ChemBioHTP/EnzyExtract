@@ -102,7 +102,7 @@ def compute_metrics(df_paired):
 
 # write_dest = None #'data/_compiled/apogee-brenda-unordered.tsv'
 
-# df1 = pl.read_csv('data/_compiled/apogee-brenda-and-nonbrenda.tsv', separator='\t', 
+# df1 = pl.read_csv('data/_compiled/apogee-all.tsv', separator='\t', 
 #                     schema_overrides={'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8})
 
 # df2 = pl.read_csv('C:/conjunct/vandy/yang/corpora/brenda/brenda_km_kcat_key_v2.csv', 

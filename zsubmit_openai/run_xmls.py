@@ -145,7 +145,7 @@ print("Using version: ", version)
 acceptable_pmids = pmids_from_directory(xml_root, filetype='.xml')
 
 # whitelist = pmids_from_cache("apogee_429")
-# blacklist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+# blacklist_df = pd.read_csv('data/matched/with_brenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
 # blacklist = set(blacklist_df['pmid'])
 whitelist = pmids_from_cache('brenda')
 

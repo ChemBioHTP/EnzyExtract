@@ -74,15 +74,15 @@ def script_look_for_all_ecs():
     whitelist = set(pl.read_parquet('data/pmids/apogee_nonbrenda_numerical.fn.parquet')['pmid'])
     # dfs = []
     # df = look_for_mutants("D:/papers/brenda", recursive=True)
-    # df.write_parquet('data/aminos/ec/brenda_ec_matches.parquet')
+    # df.write_parquet('data/enzymes/ec/brenda_ec_matches.parquet')
     df = look_for_mutants("D:/papers/scratch", recursive=True, pmid_whitelist=whitelist)
     print(df)
     return df
-    # df.write_parquet('data/aminos/ec/scratch_ec_matches.parquet')
+    # df.write_parquet('data/enzymes/ec/scratch_ec_matches.parquet')
     # df = script_look_for_ecs("D:/papers/topoff", recursive=True)
-    # df.write_parquet('data/aminos/ec/topoff_ec_matches.parquet')
+    # df.write_parquet('data/enzymes/ec/topoff_ec_matches.parquet')
     # df = script_look_for_ecs("D:/papers/wos", recursive=True)
-    # df.write_parquet('data/aminos/ec/wos_ec_matches.parquet')
+    # df.write_parquet('data/enzymes/ec/wos_ec_matches.parquet')
 
 def script_look_for_mutants_plified():
     dfs = []
@@ -111,12 +111,12 @@ def script_look_for_mutants_plified():
         )
         
         df = df.collect() # .unique(maintain_order=True)
-        df.write_parquet(f'data/aminos/mutants/{name}_mutant_matches.parquet')
+        df.write_parquet(f'data/enzymes/mutants/{name}_mutant_matches.parquet')
         del df
         # dfs.append(df)
-        # df.write_parquet(f'data/aminos/mutants/{name}_mutant_matches.parquet')
+        # df.write_parquet(f'data/enzymes/mutants/{name}_mutant_matches.parquet')
     # big_df = pl.concat(dfs)
-    # big_df.write_parquet('data/aminos/mutants/apogee_mutants.parquet')
+    # big_df.write_parquet('data/enzymes/mutants/apogee_mutants.parquet')
 
 def script_look_for_full_sequences():
     dfs = []
@@ -146,7 +146,7 @@ def script_look_for_full_sequences():
         ])
         
         df = df.collect() # .unique(maintain_order=True)
-        df.write_parquet(f'data/aminos/mutants/{name}_mutant_matches.parquet')
+        df.write_parquet(f'data/enzymes/mutants/{name}_mutant_matches.parquet')
         del df
 
 if __name__ == "__main__":

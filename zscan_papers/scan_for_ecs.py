@@ -54,22 +54,22 @@ def script_look_for_ecs(pdfs_folder="C:/conjunct/tmp/eval/arctic", recursive=Fal
 def script_look_for_all_ecs():
     # dfs = []
     df = script_look_for_ecs("D:/papers/brenda", recursive=True)
-    df.write_parquet('data/aminos/ec/brenda_ec_matches.parquet')
+    df.write_parquet('data/enzymes/ec/brenda_ec_matches.parquet')
     df = script_look_for_ecs("D:/papers/scratch", recursive=True)
-    df.write_parquet('data/aminos/ec/scratch_ec_matches.parquet')
+    df.write_parquet('data/enzymes/ec/scratch_ec_matches.parquet')
     df = script_look_for_ecs("D:/papers/topoff", recursive=True)
-    df.write_parquet('data/aminos/ec/topoff_ec_matches.parquet')
+    df.write_parquet('data/enzymes/ec/topoff_ec_matches.parquet')
     df = script_look_for_ecs("D:/papers/wos", recursive=True)
-    df.write_parquet('data/aminos/ec/wos_ec_matches.parquet')
+    df.write_parquet('data/enzymes/ec/wos_ec_matches.parquet')
     
     # df = pl.concat(dfs)
-    # df.to_csv('data/aminos/ec/pdf_ec_matches.csv', index=False)
-    # df.write_parquet('data/aminos/ec/pdf_ec_matches.parquet')
+    # df.to_csv('data/enzymes/ec/pdf_ec_matches.csv', index=False)
+    # df.write_parquet('data/enzymes/ec/pdf_ec_matches.parquet')
 
 
 def script_ec_success_rate():
 
-    pmid2ec = pl.read_parquet('data/aminos/ec/ec_matches.parquet')
+    pmid2ec = pl.read_parquet('data/enzymes/ec/ec_matches.parquet')
     # filter to only capture \d+\.\d+\.\d+\.\d+
     pmid2ec = pmid2ec.with_columns(
         pl.col('ec').str.extract(r'(\d+\.\d+\.\d+\.\d+)', group_index=1).alias('ec')
@@ -91,7 +91,7 @@ def script_ec_success_rate():
             .list.len() > 0).alias('has_common_ecs'),
     ])
 
-    mydata.write_parquet('data/aminos/ec/runeem_20241205_ec_counts.parquet')
+    mydata.write_parquet('data/enzymes/ec/runeem_20241205_ec_counts.parquet')
 
     print(mydata)
 

@@ -76,7 +76,7 @@ def create_tried():
     content = []
     content.append(df.copy())
 
-    df = pd.read_csv('data/_compiled/apogee-brenda-and-nonbrenda.tsv', sep='\t')
+    df = pd.read_csv('data/_compiled/apogee-all.tsv', sep='\t')
     # perform the rename enzyme_full --> enzyme_name, and organism --> organism_name
 
     # enzyme_preferred: enzyme_full, fill na with enzyme, then enzyme_2
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     
     # create_tried()
     # df = pd.read_csv('data/_compiled/nonbrenda.tsv', sep='\t')
-    df = pd.read_csv('data/_compiled/apogee-brenda-and-nonbrenda.tsv', sep='\t')
+    df = pd.read_csv('data/_compiled/apogee-all.tsv', sep='\t')
     # perform the rename enzyme_full --> enzyme_name, and organism --> organism_name
 
     # enzyme_preferred: enzyme_full, fill na with enzyme, then enzyme_2

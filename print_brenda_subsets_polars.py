@@ -5,7 +5,7 @@ from enzyextract.utils.pmid_management import pmids_from_cache
 from enzyextract.hungarian.hungarian_matching import parse_value_and_unit
 
 def load_brenda_df(pmids):
-    df = pl.read_csv('data/_compiled/apogee-brenda-and-nonbrenda.tsv', separator='\t', 
+    df = pl.read_csv('data/_compiled/apogee-all.tsv', separator='\t', 
                      schema_overrides={'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8})
     # df = df.with_columns(pl.col('pmid').cast(pl.Utf8))
     df = df.filter(pl.col('pmid').is_in(pmids))

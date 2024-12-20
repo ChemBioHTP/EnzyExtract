@@ -50,7 +50,7 @@ def generate_bmatched_csv(namespace = 'rekcat-giveboth-4o',
     filename, version = locate_correct_batch(compl_folder, namespace, version=version) # , version=1)
     print(f"Located {filename} version {version} in {compl_folder}")
     
-    matched_csv = f'data/bmatched/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
+    matched_csv = f'data/matched/with_brenda/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
     _valid_csv = f'data/valid/_valid_{namespace}_{version}.csv'
     
     valids = []
@@ -154,7 +154,7 @@ def run_stats(*,
     filename, version = locate_correct_batch(compl_folder, namespace, version=version) # , version=1)
     print(f"Located {filename} version {version} in {compl_folder}")
     
-    matched_csv = f'data/bmatched/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
+    matched_csv = f'data/matched/with_brenda/_cache_{namespace}_{version}.csv' # 'completions/enzy_tuned/tableless-oneshot-tuned_1.csv'
     _valid_csv = f'data/valid/_valid_{namespace}_{version}.csv'
     
     valids = []
@@ -414,12 +414,12 @@ if __name__ == "__main__":
     # whitelist = pmids_from_batch("C:/conjunct/table_eval/batches/enzy/brenda-rekcat-md-v1-2_1.jsonl")
     # whitelist = pmids_from_batch("C:/conjunct/table_eval/batches/enzy/tableless-oneshot_1.jsonl")
 
-    # read whitelist as the pmids from data/bmatched/_cache_openelse-brenda-xml-4o
-    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
-    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-bucket-md-4o-str_1.csv', dtype={'pmid': str})
-    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-md-4o_1.csv', dtype={'pmid': str})
+    # read whitelist as the pmids from data/matched/with_brenda/_cache_openelse-brenda-xml-4o
+    # whitelist_df = pd.read_csv('data/matched/with_brenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/matched/with_brenda/_cache_openelse-bucket-md-4o-str_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/matched/with_brenda/_cache_openelse-brenda-md-4o_1.csv', dtype={'pmid': str})
     # whitelist = set(whitelist_df['pmid'])
-    # whitelist_df = pd.read_csv('data/bmatched/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
+    # whitelist_df = pd.read_csv('data/matched/with_brenda/_cache_openelse-brenda-xml-4o_1.csv', dtype={'pmid': str})
     # whitelist &= set(whitelist_df['pmid'])
     
     # namespace = 'brenda-rekcat-md-v1-2' 
@@ -457,7 +457,7 @@ if __name__ == "__main__":
 
         # convert to polars
     import polars as pl
-    df = pl.read_csv(f'data/bmatched/_cache_{namespace}_1.csv', 
+    df = pl.read_csv(f'data/matched/with_brenda/_cache_{namespace}_1.csv', 
                      schema_overrides={'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8})
     
     from enzyextract.metrics.quick_reports import report_precision_recall
