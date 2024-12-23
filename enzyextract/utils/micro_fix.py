@@ -20,6 +20,11 @@ def _iob(bbox1: tuple[float, float, float, float], bbox2: tuple[float, float, fl
     return 0
 
 def build_paragraph(words: Generator[tuple, None, None]):
+    """
+    Alas, this turns all weird unicode control characters like \\u0001 into spaces.
+
+    full_page_text is the full text of the page, if available. 
+    """
     result = ""
     prev_block = 0
     for x0, y0, x1, y1, word, blockno, lineno, wordno in words:
@@ -58,14 +63,24 @@ def fix_generator(gen: Generator[tuple, None, None], subset: pd.DataFrame, allow
                         word = _re.sub('mM', word)
                         break
         yield x0, y0, x1, y1, word, blockno, lineno, wordno
+
         
 
 def mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pd.DataFrame, allow_lowercase=True) -> list[str]:
     pmid_subset = micro_df[micro_df['pdfname'] == pdfname]
     result = []
     for pageno, page in enumerate(doc):
-        subset = pmid_subset[pmid_subset['pageno'] == pageno]
-        result.append(build_paragraph(fix_generator(page.get_text('words'), subset, allow_lowercase=allow_lowercase)))
+        subset = pmid_subset[(pmid_subset['pageno'] == pageno)]
+        if subset[subset['real_char'] == 'mu'].empty:
+            result.append(page.get_text('text'))
+        else:
+            # TODO: unfortunately, this gets rid of weird unicode control characters
+            # which could be a useful indicator of bad OCR or the micromolar symbol. *sigh*
+            result.append(
+                build_paragraph(
+                    fix_generator(
+                        page.get_text('words', flags=pymupdf.TEXTFLAGS_WORDS), #  & ~pymupdf.TEXT_CID_FOR_UNKNOWN_UNICODE),
+                        subset, allow_lowercase=allow_lowercase)))
     return result
                   
     # apply redaction
@@ -76,6 +91,76 @@ def mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pd.DataFram
     # only necessary when visualizing
     # page.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_NONE)  # don't touch images
 
+
+def determine_replacement(gen: Generator[tuple, None, None], subset: pd.DataFrame, allow_lowercase=True, _re: re.Pattern=None) -> Generator[tuple, None, None]:
+    """
+    Turns a generator of 8-tuples (*bbox, word, *paragraphno) into a generator of 9-tuples, 
+    with the last element being the replacement or the original word.
+    """
+    if _re is None:
+        _re = _re_mM_i if allow_lowercase else _re_mM
+
+    micro_subset = subset[subset['real_char'] == 'mu']
+    mM_subset = subset[subset['real_char'] == 'm']
+    for x0, y0, x1, y1, word, blockno, lineno, wordno in gen:
+        if _re.search(word):
+            for _, row in micro_subset.iterrows():
+                bbox = (row['x0'], row['y0'], row['x1'], row['y1'])
+                if _iob(bbox, (x0, y0, x1, y1)) > 0.5:
+                    yield x0, y0, x1, y1, word, blockno, lineno, wordno, _re.sub('µM', word) # print("Swapped")
+                    break
+            else:
+                # TODO: warning: yielding is very tricky
+                yield x0, y0, x1, y1, word, blockno, lineno, wordno, None
+        else:
+            yield x0, y0, x1, y1, word, blockno, lineno, wordno, None
+
+def duplex_mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pd.DataFrame, allow_lowercase=True, _re=None) -> list[str]:
+    """
+    Correct text, with help of both get_text('text') (necessary for the weird unicode control characters) and get_text('words') (necessary for the bbox).
+    """
+    pmid_subset = micro_df[micro_df['pdfname'] == pdfname] # type: pymupdf.Page
+    result = []
+    for pageno, page in enumerate(doc):
+        subset = pmid_subset[(pmid_subset['pageno'] == pageno)]
+        orig_text = page.get_text('text')
+        if subset[subset['real_char'] == 'mu'].empty:
+            result.append(orig_text)
+        else:
+            new_text = ""
+            scrolling_cursor = 0 # keep track of where we are in the original text
+            for x0, y0, x1, y1, word, blockno, lineno, wordno, replacement in determine_replacement(
+                page.get_text('words', flags=pymupdf.TEXTFLAGS_WORDS), subset, allow_lowercase=allow_lowercase,
+                _re=_re):
+
+                up_to = orig_text.index(word, scrolling_cursor)
+                # up_to = orig_text.find(word)
+                # whitespace = orig_text[:up_to]
+                whitespace = orig_text[scrolling_cursor:up_to]
+
+                # these are things it could by, according to pymupdf (JM_is_word_delimiter)
+                if whitespace:
+                    for w in whitespace:
+                        ch = ord(w)
+                        if not (0
+                            or ch <= 32
+                            or ch == 160
+                            or 0x007f <= ch <= 0x009f
+                            or 0x202a <= ch <= 0x202e
+                            or 0x008A == ch
+                        ):
+                            print(f"Whitespace is not whitespace: >{whitespace}<")
+                if replacement is None:
+                    # no replacement. simply fill in from the original text
+                    new_text += whitespace + word
+                    # orig_text = orig_text[up_to + len(word):]
+                    scrolling_cursor = up_to + len(word)
+                else:
+                    new_text += whitespace + replacement
+                    # orig_text = orig_text[up_to + len(word):]
+                    scrolling_cursor = up_to + len(word)
+            result.append(new_text)
+    return result
 
 def script0():
     # goal: compare manual building versus pymupdf default newline insert

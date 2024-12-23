@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from enzyextract.utils.fragment_utils import needs_rebuild, latest_parquet
 
-def rebuild_smiles_df(fragments_folder='fetch_sequences/results/smiles_fragments') -> pl.DataFrame:
+def _rebuild_smiles_df(fragments_folder='fetch_sequences/results/smiles_fragments') -> pl.DataFrame:
     """
     Given many fragments, create a single dataframe with all the smiles
     
@@ -86,12 +86,12 @@ def latest_smiles_df(latest_folder='data/substrates/smiles', fragments_folder='f
         fragments_folder: the folder where the fragments are stored
     
     Returns:
-        a polars.DataFrame with columns ['name', 'smiles']
+        a polars.DataFrame with columns ['name', 'smiles', 'src']
     """
     latest, latest_at = latest_parquet(latest_folder)
     if needs_rebuild(latest_at, fragments_folder):
         print("Rebuilding smiles dataframe")
-        df = rebuild_smiles_df(fragments_folder)
+        df = _rebuild_smiles_df(fragments_folder)
         # write to latest folder
         now = datetime.now().strftime("%Y%m%d-%H%M%S")
         df.write_parquet(f'{latest_folder}/latest_{now}.parquet')
@@ -100,7 +100,7 @@ def latest_smiles_df(latest_folder='data/substrates/smiles', fragments_folder='f
     return df
 
 
-def rebuild_inchi_df(fragments_folder='fetch_sequences/results/inchi_fragments') -> pl.DataFrame:
+def _rebuild_inchi_df(fragments_folder='fetch_sequences/results/inchi_fragments') -> pl.DataFrame:
     
     result = []
     so = {'Name': pl.Utf8, 'InChI': pl.Utf8, 'Smiles': pl.Utf8}
@@ -138,7 +138,7 @@ def latest_inchi_df(latest_folder='data/substrates/inchi', fragments_folder='fet
     latest, latest_at = latest_parquet(latest_folder)
     if needs_rebuild(latest_at, fragments_folder):
         print("Rebuilding InChI dataframe")
-        df = rebuild_inchi_df(fragments_folder)
+        df = _rebuild_inchi_df(fragments_folder)
         # write to latest folder
         now = datetime.now().strftime("%Y%m%d-%H%M%S")
         df.write_parquet(f'{latest_folder}/latest_{now}.parquet')

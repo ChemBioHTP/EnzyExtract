@@ -132,8 +132,11 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
                 #     if any(re.search(query, tag, re.IGNORECASE) for tag in tags):
                 #         obj[k] = eors
                 #         break
+                targets = context.get(key + 's') or []
+                targets.sort(key=len, reverse=True) 
+                # longest first (most specific to least specific)
                 queries = []
-                for eors in context.get(key + 's') or []:
+                for eors in targets:
                     queries.append((r'\b' + re.escape(eors) + r'\b', eors))
                 for tag in tags: # this will be in tag order
                     if "(with" in tag:

@@ -74,6 +74,8 @@ def find_canonical(filename: str):
     # check if it's a doim tbe  return
     if filename in doi_to_canonical:
         return doi_to_canonical[filename]
+    if filename.isnumeric():
+        return filename
     # don't know
     return None
 

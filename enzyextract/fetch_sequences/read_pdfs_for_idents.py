@@ -49,6 +49,8 @@ amino3 = "Ala|Cys|Asp|Glu|Phe|Gly|His|Ile|Lys|Leu|Met|Asn|Pro|Gln|Arg|Ser|Thr|Va
 mutant_pattern = re.compile(r'\b([ACDEFGHIKLMNPQRSTVWY][1-9]\d{1,3}[ACDEFGHIKLMNPQRSTVWY])\b')
 mutant_v2_pattern = re.compile(rf'\b(?:{amino3})[1-9]\d{{1,3}}(?:{amino3})\b', re.IGNORECASE)
 mutant_v3_pattern = re.compile(rf'\b((?:{amino3})[1-9]\d{{0,3}}(?:{amino3}))\b', re.IGNORECASE)
+
+mutant_v4_pattern = re.compile(rf'\b((?:{amino3})-?[1-9]\d{{1,3}})\b', re.IGNORECASE)
 def search_mutants(all_txt: str):
     # search text for mutant codes
     mutant_matches = mutant_pattern.findall(all_txt) + mutant_v2_pattern.findall(all_txt)

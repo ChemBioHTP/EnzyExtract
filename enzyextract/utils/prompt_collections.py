@@ -801,6 +801,66 @@ Nuances:
 If there is ambiguity, then use the "±" symbol; for example, "5 x 10^±4".
 """
 
+
+for_manifold = """You are a helpful and diligent assistant responsible for extracting Km and kcat data from tables from pdfs.
+For each data point, you extract the kcat (turnover number), Km (Michaelis constant), kcat/Km (catalytic efficiency), substrate, and descriptor. 
+When extracting, you are primarily interested in kcat with units time^-1, and Km with units of molarity. (ie. mM, nmol/mL, etc.) \
+Therefore, you must exclude Vmax, specific activity, Ki, etc.
+
+kcat and Km should be formatted like so: "33 ± 0.3 s^-1" or "2.3 mM", with the error if present. \
+Keep original units and values (do not convert units), but attempt to clean up OCR errors. Be thorough and extract all data points present, including wild-type. 
+
+The kcat and Km value must correspond to the descriptor. The descriptor and substrate fields must together contain all the information to uniquely identify the entry. \
+The descriptor will most likely contain the enzyme, but it may also contain conditions like mutant code, organism, pH, temperature, etc. \
+The substrate should be whatever corresponds to the Km value.
+
+At the end, contextualize the data. Report all described enzymes, substrates, mutants, organisms, temperatures, pHs, etc. Mention descriptor fragments exactly.
+In the context, also include information common to all the entries in the table. For instance, if all the entries share the same enzyme and organism, report that in the context rather than in every descriptor.
+
+Before your final answer, you may write thoughts and comments, like observing which enzymes, substrates and conditions to report and how the table entries vary.
+
+Then, format your final answer with this schema:
+```yaml
+data:
+    - descriptor: wild-type cat-1
+      substrate: H2O2
+      kcat: 1 min^-1
+      Km: null
+      kcat/Km: null
+    - descriptor: R190Q cat-1; 25°C
+      substrate: H2O2
+      kcat: 33 ± 0.3 s^-1
+      Km: 2.3 mM
+      kcat/Km: null
+    - descriptor: R203Q cat-1; with NADPH; 25°C
+      substrate: H2O2
+      kcat: null
+      Km: 9.9 ± 0.1 µM
+      kcat/Km: 4.4 s^-1 mM^-1
+context:
+    enzymes:
+        - fullname: catalase
+          synonyms: cat-1
+          mutants: wild-type; R190Q; R203Q
+          organisms: Escherichia coli
+    substrates: 
+        - fullname: hydrogen peroxide
+          synonyms: H2O2
+        - fullname: water
+    temperatures: 25°C; 30°C
+    pHs: 7.4
+    other: NADPH
+```
+
+Additional Information:
+- Only extract primary source data, not data from referenced papers.
+- The Km should correspond to the substrate field. Put additional cofactors, inhibitors etc. in the descriptor.
+- Scientific notation:
+  - If a factor of 10 is reported next to the value (for example 4.4 x 10^4), report it as such.
+  - However, if the factor of 10 is reported next to the unit or parameter (for example, kcat x 10^3 or 10^4 x M) then report the exponent after the unit.
+- If a paper's poor text quality hinders your ability to extract Km or kcat values, mention the phrases "distorted" or "OCR is needed".
+"""
+
 backform_eval_v1 = """You are a diligent assistant specialized in enzyme catalysis. 
 Given a list of descriptors, you must identify equivalent descriptors and synonyms. For each numbered item, you must find the matching descriptor in the lettered list.
 

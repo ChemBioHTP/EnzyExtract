@@ -1,7 +1,17 @@
 import json
 
+import PIL
+from PIL import Image
 
-def to_openai_dict_message(role: str, content: str) -> dict:
+import base64
+from io import BytesIO
+
+def image_to_base64(image: PIL.Image.Image) -> str:
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG")
+    return base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+def to_openai_dict_message(role: str, content: str | PIL.Image.Image) -> dict:
     # if isinstance(lc_msg, SystemMessage):
         # role = "system"
     # elif isinstance(lc_msg, HumanMessage):
@@ -12,13 +22,29 @@ def to_openai_dict_message(role: str, content: str) -> dict:
         # raise ValueError(f"Unknown message type: {type(lc_msg)}")
     if role not in ["system", "user", "assistant"]:
         raise ValueError(f"Unknown role: {role}")
+    if isinstance(content, PIL.Image.Image):
+        base64_image = image_to_base64(content)
+        return { 
+            "role": role,
+            "content": [ # TODO: with images, the openai API supports a list of content (e.g. text and image)
+                {
+                    "type": "image_url", 
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }
+            ]
+        }
     return {
         "role": role,
         "content": content
     }
 
 
-def to_openai_batch_request(uuid: str, system_prompt: str, docs: list[str], model_name='gpt-4o-mini'):  # gpt-4-turbo-2024-04-09
+def to_openai_batch_request(uuid: str, system_prompt: str, docs: list[str | PIL.Image.Image], model_name='gpt-4o-mini'):  # gpt-4-turbo-2024-04-09
+    """
+    To get content, do: obj['body']['messages'][x]['content']
+    """
     if isinstance(docs, str):
         docs = [docs]
     messages = [to_openai_dict_message("system", system_prompt)] + [to_openai_dict_message("user", doc) for doc in docs]

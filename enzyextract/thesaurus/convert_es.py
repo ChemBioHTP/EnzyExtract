@@ -1,5 +1,5 @@
 import polars as pl
-def confer_es_preferred(df):
+def add_columns_es_preferred(df):
     """
     Put columns 'enzyme_preferred', 'enzyme_preferred_2', 
     'substrate_preferred', 'substrate_preferred_2' in the dataframe.
