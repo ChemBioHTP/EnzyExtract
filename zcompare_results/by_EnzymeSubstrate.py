@@ -29,7 +29,7 @@ replace_amino_acids = protein_letters_3to1_extended
 
 def script_substrate_idents(base_df, abbr_df, gpt_df):
     """
-    load up substrate idents
+    load up substrate idents. form a thesaurus
     """
     print("Regenerating substrate thesaurus (will cache)")
     
@@ -234,12 +234,18 @@ def mutant_objective(gpt_dict, base_dict):
     Reward if the mutants are the same
     """
 
+    a = gpt_dict['clean_mutant']
+    b = base_dict['clean_mutant']
+    if a and b:
+        if set(a) == set(b):
+            return 9
+
     a = gpt_dict['mutant']
     b = base_dict['mutant']
     
     if a and b:
         # if both not empty
-        if a and b and set(a) == set(b): # .lower() == b.lower():
+        if a.lower() == b.lower(): # .lower() == b.lower():
             return 9
             # ensure it is a mutant format
             # if re.match(r"\b[A-Z]\d+[A-Z]\b", a): 
@@ -311,7 +317,7 @@ def parse_col(col: str, suffix='') -> pl.Expr:
         return convert_to_true_value(value, unit)
     return pl.col(col).map_elements(to_true, return_dtype=pl.Float64)
 
-def _remove_duplicate_es_and_calc_kinetic_value(df: pl.DataFrame):
+def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
     """
     Perform various data cleaning with 
 
@@ -319,19 +325,28 @@ def _remove_duplicate_es_and_calc_kinetic_value(df: pl.DataFrame):
     2. remove enzyme_full if it is the same as enzyme
     3. convert km and kcat to float
     """
+    if 'substrate_full' in df.columns and 'enzyme_full' in df.columns:
+        df = df.with_columns([
+            pl.when(pl.col('substrate_full') == pl.col('substrate'))
+            .then(None)
+            .otherwise(pl.col('substrate_full')).alias('substrate_full'),
+            pl.when(pl.col('enzyme_full') == pl.col('enzyme'))
+            .then(None)
+            .otherwise(pl.col('enzyme_full')).alias('enzyme_full'),
+        ])
+    if 'km_value' not in df.columns:
+        df = df.with_columns([
+            parse_col("km").alias("km_value"),
+        ])
+    if 'kcat_value' not in df.columns:
+        df = df.with_columns([
+            parse_col("kcat").alias("kcat_value"),
+        ])
     df = df.with_columns([
-        pl.when(pl.col('substrate_full') == pl.col('substrate'))
-        .then(None)
-        .otherwise(pl.col('substrate_full')).alias('substrate_full'),
-        pl.when(pl.col('enzyme_full') == pl.col('enzyme'))
-        .then(None)
-        .otherwise(pl.col('enzyme_full')).alias('enzyme_full'),
-        parse_col("km").alias("km_value"),
-        parse_col("kcat").alias("kcat_value"),
-
         pl.col("mutant").str.extract_all(mutant_pattern.pattern).alias("mutant1"),
         pl.col("mutant").str.extract_all(mutant_v3_pattern.pattern).alias("mutant3"),
     ])
+
     df = df.with_columns([
         pl.col("mutant3").list.eval(pl.element().str.replace_many(replace_amino_acids)).alias("mutant3"),
     ]).with_columns([
@@ -366,8 +381,8 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
 
 
     # if substrate_full is same as substrate, then we don't need it
-    base_df = _remove_duplicate_es_and_calc_kinetic_value(base_df)
-    gpt_df = _remove_duplicate_es_and_calc_kinetic_value(gpt_df)
+    base_df = _remove_bad_es_calc_kcat_value_and_clean_mutants(base_df)
+    gpt_df = _remove_bad_es_calc_kcat_value_and_clean_mutants(gpt_df)
 
 
     ### add cid and brenda_id to base_df
@@ -417,11 +432,33 @@ def finalize_df(matched_df):
         # parse_col('kcat_1').alias('kcat_value_1'),
         # parse_col('kcat_2').alias('kcat_value_2'),
     ]).with_columns([
-        ((pl.col('clean_mutant_1').list.len() > 0) & (pl.col('clean_mutant_2').list.len() > 0) & ~pl.col('same_mutant')).alias('different_mutant'),
+        ((pl.col('clean_mutant_1').list.len() > 0) 
+         & (pl.col('clean_mutant_2').list.len() > 0) 
+         & ~pl.col('same_mutant')).alias('different_mutant'),
+    ]).with_columns([
+        # same_mutant is True -> different_mutant is False
+
+        # same_mutant is True -> True
+        # same_mutant is False and different_mutant if False -> None
+        # same_mutant is False and different_mutant is False -> False
+        # different_mutant is None -> None
+        pl.when(
+            (~pl.col("same_mutant") & ~pl.col("different_mutant"))
+            | pl.col("different_mutant").is_null()
+        ).then(None).otherwise(
+            pl.col("same_mutant")
+        ).alias("same_mutant"),
     ])
+
+    
+
+    matched_view = add_diff(matched_view)
+    # 
         
     selectors = [
-        'pmid', 'organism_1', 'organism_2', 'mutant_1', 'mutant_2', 
+        'pmid', 'organism_1', 'organism_2', 
+        'mutant_1', 'clean_mutant_1',
+        'mutant_2', 'clean_mutant_2',
         'enzyme_1', 'enzyme_2', 'enzyme_full_1', 'enzyme_full_2',
         'substrate_1', 'substrate_2', 'substrate_full_1', 'substrate_full_2', 
         'km_1', 'km_2', 'km_value_1', 'km_value_2', 
@@ -429,7 +466,10 @@ def finalize_df(matched_df):
         'src_2', 'objective',
         'enzyme_ecs_1', 'enzyme_ecs_2',
         'cid_1', 'cid_2', 'brenda_id_1', 'brenda_id_2',
-        'different_mutant', 'same_mutant', 'same_enzyme', 'same_substrate',
+        # 'different_mutant', 
+        'same_mutant', # 'same_mutant_dev', 
+        'same_enzyme', 'same_substrate',
+        'km_diff', 'kcat_diff',
     ]
     selectors = [s for s in selectors if s in matched_view.columns]
     matched_view = matched_view.select(selectors)
@@ -442,7 +482,9 @@ def finalize_df(matched_df):
 
 
         # Create expression to parse both columns
-    return add_diff(matched_view)
+    return matched_view
+
+
     # matched_view.write_parquet('_debug/cache/beluga_matched_based_on_EnzymeSubstrate.parquet')
 
 
@@ -478,7 +520,8 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
 
     # if substrate_full is same as substrate, then we don't need it
     # brenda_df is OK
-    gpt_df = _remove_duplicate_es_and_calc_kinetic_value(gpt_df)
+    gpt_df = _remove_bad_es_calc_kcat_value_and_clean_mutants(gpt_df)
+    brenda_df = _remove_bad_es_calc_kcat_value_and_clean_mutants(brenda_df)
 
     ### add cid and brenda_id to base_df
     want_view = want_df.select(['name', 'cid', 'brenda_id'])
@@ -556,14 +599,14 @@ if __name__ == '__main__':
     else: want_df = pl.read_parquet(want_dest)
 
     # exit(0)
-    # working = 'apogee'
-    working = 'beluga'
+    working = 'apogee'
+    # working = 'beluga'
 
-    against = 'runeem'
-    # against = 'brenda'
+    # against = 'runeem'
+    against = 'brenda'
 
-    exclude_scino = True
-    # exclude_scino = False
+    # exclude_scino = True
+    exclude_scino = False
 
     # step 2: matching
     # '_debug/cache/beluga_matched_based_on_EnzymeSubstrate.parquet'

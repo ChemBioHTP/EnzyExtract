@@ -263,7 +263,7 @@ def pixmap_to_PIL(pixmap: pymupdf.Pixmap) -> PILImage:
     img = PIL.Image.frombytes("RGB", (pixmap.width, pixmap.height), pixmap.samples)
     return img
 
-def yield_all_millimolar(doc, target='mM', allow_lowercase=False, terminating_chars=None, initial_chars=None):
+def yield_all_millimolar(doc, target='mM', allow_lowercase=False, initial_chars=None, terminating_condition=None):
     """
     Note: this is VERY hard-coded for the specific case of 'mM' only.
     Initial chars: a string of characters that can kick off the search. Allows multiple chars to start the search. If None, then defer to target.
@@ -275,8 +275,6 @@ def yield_all_millimolar(doc, target='mM', allow_lowercase=False, terminating_ch
         initial_chars = target[0] # m
     else:
         assert isinstance(initial_chars, str)
-    if terminating_chars is None:
-        terminating_chars = ''
     final_chars = target[1:] # M
     
     def is_candidate_good(candidate):
@@ -291,6 +289,9 @@ def yield_all_millimolar(doc, target='mM', allow_lowercase=False, terminating_ch
         if allow_lowercase:
             return candidate[0] in initial_chars and candidate[1:].lower().startswith(final_chars.lower())
         return target.startswith(candidate)
+    if terminating_condition is None:
+        terminating_condition = lambda ch: not ch or not ch.isalnum() #  or ch in terminating_chars
+
 
     for pageno, page in enumerate(doc):
         tp = page.get_textpage(flags=pymupdf.TEXTFLAGS_TEXT) # type: pymupdf.TextPage
@@ -339,12 +340,8 @@ def yield_all_millimolar(doc, target='mM', allow_lowercase=False, terminating_ch
                                     subsequent_char = span['chars'][i+1]['c']
 
                                 # check that we are at a word boundary
-                                if (
-                                    (not subsequent_char)
-                                    or (not subsequent_char.isalnum())
-                                    or (subsequent_char in terminating_chars)
-                                ):
-                                    yield pageno, ctr, candidate, m_rect, rect, angle
+                                if terminating_condition(subsequent_char):
+                                    yield pageno, ctr, candidate, m_rect, rect, angle, subsequent_char
                                     ctr += 1
                                     candidate = ""
                             elif not is_candidate_on_track(candidate):
@@ -354,8 +351,8 @@ def yield_all_millimolar(doc, target='mM', allow_lowercase=False, terminating_ch
                         i += 1
                 
                 # Check for 'mM' at the end of a line
-                if candidate and is_candidate_good(candidate):
-                    yield pageno, ctr, candidate, m_rect, rect, angle
+                if candidate and is_candidate_good(candidate) and terminating_condition(None):
+                    yield pageno, ctr, candidate, m_rect, rect, angle, None
                     ctr += 1
         
 def _iter_concat(a, b):
@@ -367,7 +364,7 @@ def obtain_true_m_dataset(root, all_pdfs):
     # sneaky: search for "mean" and capture these m to build a true dataset
     for pdfname in all_pdfs:
         doc = pymupdf.open(f'{root}/{pdfname}.pdf')
-        for pageno, ctr, builder, m_rect, rect, angle in yield_all_millimolar(doc, target="more"): # mean, more, much
+        for pageno, ctr, builder, m_rect, rect, angle, after in yield_all_millimolar(doc, target="more"): # mean, more, much
             page = doc[pageno]
             # Get the page pixmap
             dpi = 288
@@ -391,7 +388,7 @@ def obtain_true_mu_dataset(root, all_pdfs, write_dest):
             doc = pymupdf.open(f'{root}/{pdfname}.pdf')
         except Exception as e:
             continue
-        for pageno, ctr, builder, m_rect, rect, angle in _iter_concat(
+        for pageno, ctr, builder, m_rect, rect, angle, after in _iter_concat(
                     yield_all_millimolar(doc, target="µM"), # \u00B5, micro sign
                     yield_all_millimolar(doc, target="μM") # \u03BC, greek letter mu
         ): # mean, more, much
@@ -437,11 +434,13 @@ def dump_images_too(root, all_pdfs, path_to_dest, target="mM", allow_lowercase=T
         # if i < dkip_to:
         #     continue
         try:
-            doc = pymupdf.open(f'{root}/{pdfname}.pdf')
+            if not pdfname.endswith(".pdf"):
+                pdfname = pdfname + ".pdf"
+            doc = pymupdf.open(f'{root}/{pdfname}')
         except Exception as e:
-            print(f"Error opening {pdfname}: {e}")
+            # print(f"Error opening {pdfname}: {e}")
             continue
-        for pageno, ctr, builder, m_rect, rect, angle in yield_all_millimolar(doc, target=target, allow_lowercase=allow_lowercase, **kwargs): # mean, more, much
+        for pageno, ctr, builder, m_rect, rect, angle, after in yield_all_millimolar(doc, target=target, allow_lowercase=allow_lowercase, **kwargs): # mean, more, much
             
             page = doc[pageno]
             dpi = 288
@@ -467,7 +466,7 @@ def dump_images_too(root, all_pdfs, path_to_dest, target="mM", allow_lowercase=T
             m_bbox = (m_rect.x0, m_rect.y0, m_rect.x1, m_rect.y1)
             
             # if real_char != 'm': # only save the micros
-            data.append((pdfname, pageno, ctr, builder, real_char, prob, angle, *m_bbox, *big_bbox))
+            data.append((pdfname, pageno, ctr, builder, after, real_char, prob, angle, *m_bbox, *big_bbox))
             
             if not save_imgs:
                 continue
@@ -482,7 +481,61 @@ def dump_images_too(root, all_pdfs, path_to_dest, target="mM", allow_lowercase=T
     
     df = pl.DataFrame(data, 
                       orient='row',
-                      schema=['pdfname', 'pageno', 'ctr', 'orig_char', 'real_char', 'confidence', 'angle', 'letter_x0', 'letter_y0', 'letter_x1', 'letter_y1', 'x0', 'y0', 'x1', 'y1'])
+                      schema=['pdfname', 'pageno', 'ctr', 'orig_char', 'orig_after', 'real_char', 'confidence', 'angle', 'letter_x0', 'letter_y0', 'letter_x1', 'letter_y1', 'x0', 'y0', 'x1', 'y1'])
+    return df
+
+
+def special_dump(root, all_pdfs, path_to_dest, target="mM", allow_lowercase=True, save_imgs=True, **kwargs):
+    """
+    Special dump to save time.
+    """
+
+    data = []
+    # sneaky: search for "mean" and capture these m to build a true dataset
+    # dkip_to = 1680
+    for i, pdfname in tqdm(enumerate(all_pdfs), total=len(all_pdfs)):
+        # if i < dkip_to:
+        #     continue
+        if not pdfname.endswith(".pdf"):
+            pdfname = pdfname + ".pdf"
+        try:
+            doc = pymupdf.open(f'{root}/{pdfname}')
+        except Exception as e:
+            # print(f"Error opening {pdfname}: {e}")
+            continue
+        for pageno, ctr, builder, m_rect, rect, angle, after in yield_all_millimolar(doc, target=target, allow_lowercase=allow_lowercase, **kwargs): # mean, more, much
+            if not ((builder[0] != 'm' and builder[0] != 'M') or after == 'o' or after == 'O' or after == '2'):
+                # only look at special
+                continue
+            page = doc[pageno]
+            dpi = 288
+
+            # CHANGE: now obtain the full rect
+            margin = 2
+            wider_rect = pymupdf.Rect(rect.x0 - margin, rect.y0 - margin, rect.x1 + margin, rect.y1 + margin)
+            pixmap = page.get_pixmap(dpi=dpi, clip=wider_rect)
+            
+            img = pixmap_to_PIL(pixmap)
+            
+            # skip empty images
+            if img.size[0] == 0 or img.size[1] == 0:
+                continue
+            img = img.rotate(angle, expand=True)
+            
+            # OCR the image
+            # real_char = svm_reocr_milli(img)
+            real_char, prob = resnet_reocr_milli(img, mu_score=True)
+            
+            # store the rect of entire mM (rect)
+            big_bbox = (rect.x0, rect.y0, rect.x1, rect.y1)
+            m_bbox = (m_rect.x0, m_rect.y0, m_rect.x1, m_rect.y1)
+            
+            data.append((pdfname, pageno, ctr, builder, after, real_char, prob, angle, *m_bbox, *big_bbox))
+        doc.close()
+    
+    df = pl.DataFrame(data, 
+                      orient='row',
+                      schema=['pdfname', 'pageno', 'ctr', 'orig_char', 'orig_after', 'real_char', 'confidence', 'angle', 'letter_x0', 'letter_y0', 'letter_x1', 'letter_y1', 'x0', 'y0', 'x1', 'y1'])
     return df
 
 
@@ -510,9 +563,7 @@ def reocr_all_mM(root, all_pdfs, allow_lowercase=True):
     return dump_images_too(root, all_pdfs, None, allow_lowercase=allow_lowercase, save_imgs=False)
             
           
-def script1_5():
-    # toplevel = 'topoff'
-    # suffix = 'hindawi' # local_shim
+def script_inspect_images():
     root = rf'C:\conjunct\tmp\eval\arctic'
     all_pdfs = set()
     for pdfname in os.listdir(root):
@@ -520,15 +571,108 @@ def script1_5():
             realname = pdfname[:-4]
             all_pdfs.add(realname)
     
-    initial_chars = '\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f'
-    df = dump_images_too(root, all_pdfs, 'zpreprocessing/reocr/unicode/dev', target='mM', initial_chars=initial_chars,
-                         allow_lowercase=True, save_imgs=True)
+    initial_chars = 'm\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f'
+    # initial_chars = None
+    terminating_condition = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum() #  or ch in terminating_chars
+    terminating_condition=None
     
-    df.to_parquet(rf'zpreprocessing/reocr/unicode/unicode_bizarros.csv', index=False, float_format='%.8f')
+    save_imgs=False
+    # terminating_condition=lambda ch: ch == '2'
+
+    # working='unicode'
+    # filepath = f'zpreprocessing/reocr/reocr_examples/{working}'
+    write_dir = 'C:/conjunct/tmp/eval/cherry_dev'
+    os.makedirs(write_dir, exist_ok=True)
+    df = dump_images_too(root, all_pdfs, write_dir, target='mM', initial_chars=initial_chars,
+                         allow_lowercase=True, save_imgs=save_imgs, terminating_condition=terminating_condition) # ch == '2'
+    
+    # additional terminating conditions: [\u0001]m[\b2o]
+    
+    df.write_parquet(rf'{write_dir}/mMall.parquet')
     exit(0)
 
+def script_federated_inference():
+    """
+    
+    """
+    former = [
+        # ('brenda', 'asm'),
+        # ('brenda', 'hindawi'),
+        # ('brenda', 'jbc'),
+        # ('brenda', 'open'),
+        # ('brenda', 'pnas'),
+        # ('brenda', 'scihub'),
+        # ('brenda', 'wiley'),
+
+        # ('scratch', 'asm'),
+        # ('scratch', 'hindawi'),
+        # ('scratch', 'open'),
+        # ('scratch', 'wiley'),
+
+        # ('topoff', 'hindawi'),
+        ('topoff', 'open'),
+        ('topoff', 'open-part1'),
+        ('topoff', 'open-part2'),
+        ('topoff', 'open-part3'),
+        ('topoff', 'wiley'),
+
+        ('wos', 'asm'),
+        ('wos', 'hindawi'),
+        ('wos', 'jbc'),
+        ('wos', 'local_shim'),
+        ('wos', 'open'),
+        ('wos', 'wiley'),
+    ]
+
+    # only missing: wos/remote_all
+    manifest = pl.read_parquet('zpreprocessing/data/manifest.parquet')
+    manifest = manifest.filter(
+        pl.col('readable')
+    ).unique('canonical') # only need readable and canonical
+
+
+    # stage 1: we only need to fix what was done before
+    initial_chars = 'm\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f'
+    # initial_chars = None
+    # inclusive_end = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum() #  or ch in terminating_chars
+    inclusive_end = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum()#  or ch in terminating_chars
+
+    destination = "C:/conjunct/tmp/eval/cherry_prod/mM"
+
+    # the singular one which needs to be processed uninterrupted
+    uninterrupted = [
+        # ('wos', 'remote_all'),
+    ]
+
+
+    # these ones are curated
+    for group, is_special in [(uninterrupted, False), (former, True)]:
+        for toplevel, secondlevel in group:
+            
+            subset = manifest.filter(
+                (pl.col('toplevel') == toplevel) & (pl.col('secondlevel') == secondlevel)
+            )
+            all_pdfs = (subset['filename']).to_list()
+
+            write_dir = f'{destination}/{toplevel}_{secondlevel}'
+            os.makedirs(write_dir, exist_ok=True)
+
+            root = f"D:/papers/{toplevel}/{secondlevel}"
+            if is_special:
+                print(f"Special: {toplevel}-{secondlevel}")
+                df = special_dump(root, all_pdfs, None, target='mM', initial_chars=initial_chars,
+                                allow_lowercase=True, save_imgs=False, terminating_condition=inclusive_end) # ch == '2'
+                df.write_parquet(f'{write_dir}/mMcurated.parquet')
+            else:
+                print("All: ", toplevel, secondlevel)
+                df = dump_images_too(root, all_pdfs, None, target='mM', initial_chars=initial_chars,
+                                allow_lowercase=True, save_imgs=False, terminating_condition=inclusive_end)
+                df.write_parquet(f'{write_dir}/mMall.parquet')
+    print("Done")
+    pass
 
 if __name__ == '__main__':
     
-    script1_5()
+    # script_inspect_images()
+    script_federated_inference()
     

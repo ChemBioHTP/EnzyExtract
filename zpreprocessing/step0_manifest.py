@@ -54,7 +54,7 @@ kinetic_df = kinetic_df.with_columns([
 kinetic_filenames = kinetic_df.select("filename").unique()
 
 manifest_df = manifest_df.with_columns([
-    (pl.col("filename").is_in(kinetic_filenames) #  | (pl.col("canonical") + '.pdf').is_in(kinetic_filenames)
+    (pl.col("filename").is_in(kinetic_filenames) | pl.col("canonical_filename").is_in(kinetic_filenames)
     #  | pl.col("filepath").str.starts_with("D:/papers/brenda")
     ).alias("kinetic"),
 ])
@@ -67,7 +67,26 @@ gpt_filenames = gpt_df.select(
     (pl.col("pmid").map_elements(lambda x: doi_to_filename(x, '.pdf'), return_dtype=pl.Utf8)).alias("filename"),
 ).unique().collect()
 manifest_df = manifest_df.with_columns([
-    pl.col("filename").is_in(gpt_filenames).alias("apogee_processed"),
+    (pl.col("filename").is_in(gpt_filenames) | pl.col("canonical_filename").is_in(gpt_filenames)
+    ).alias("apogee_processed"),
 ])
+
+# add if valid
+so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
+
+valid_df = pl.scan_csv('data/_compiled/apogee-nonbrenda.tsv', separator='\t', schema_overrides=so)
+valid_filenames = valid_df.select(
+    (pl.col("pmid").map_elements(lambda x: doi_to_filename(x, '.pdf'), return_dtype=pl.Utf8)).alias("filename"),
+).unique().collect()
+manifest_df = manifest_df.with_columns([
+    (pl.col("filename").is_in(valid_filenames) | pl.col("canonical_filename").is_in(valid_filenames)
+    ).alias("apogee_valid"),
+])
+
+
+manifest_df = manifest_df.with_columns([
+    pl.col('filepath').str.extract_groups(r"^D:/papers/([-\w]+)/([-\w]+)").alias('namespace'),
+]).unnest('namespace').rename({'1': 'toplevel', '2': 'secondlevel'})
+# manifest.drop_in_place('namespace')
 
 manifest_df.write_parquet('zpreprocessing/data/manifest.parquet')

@@ -224,8 +224,8 @@ def script_create_runeem_df():
     brenda_wiley_tbl = pd.read_csv(r'data/humaneval/runeem components/brenda_wiley_tbl .xlsx - clean_tbl 20241125.csv', dtype={'doi': str})
     brenda_wiley_notbl = pd.read_csv(r'data/humaneval/runeem components/brenda_wiley_notbl_REFINED - Sheet1 20241125.csv', dtype={'doi': str})
     # rekcat_df = pd.read_csv(r'C:/conjunct/vandy/yang/corpora/eval/rekcat_checkpoint_v4_only_values_checked.csv', dtype={'pmid': str})
-    rekcat_df = pd.read_csv(r'data/humaneval/runeem components/rekcat export - export 20241125.csv', dtype={'pmid': str})
-    rekcat_bottom_df = pd.read_csv(r'data/humaneval/runeem components/rekcat export - export galen 20241125.csv', dtype={'pmid': str})
+    rekcat_df = pd.read_csv(r'data/humaneval/runeem components/rekcat export - export 20241219.tsv', dtype={'pmid': str}, sep='\t')
+    rekcat_bottom_df = pd.read_csv(r'data/humaneval/runeem components/rekcat export - export galen 20241219.tsv', dtype={'pmid': str}, sep='\t')
     # ground_truth_csv = 'C:/conjunct/vandy/yang/corpora/eval/rekcat/rekcat_checkpoint_5 - rekcat_ground_63.csv'
 
 
@@ -358,7 +358,7 @@ def script_create_runeem_df():
     runeem_df = runeem_df[~runeem_df['pmid'].isin(blacklist)]
 
     runeem_df = prep_for_hungarian(runeem_df)
-    runeem_df.to_csv('data/humaneval/runeem/runeem_20241125.csv', index=False)
+    runeem_df.to_csv('data/humaneval/runeem/runeem_20241219.csv', index=False)
 
 def script_count_pdfs():
     root_directory = "D:\\"
@@ -404,14 +404,55 @@ def determine_mutants():
     print(df.shape)
     exit(0)
 
+def check_for_u0001():
+    import pymupdf
+    # import pymupdf4llm
+
+    doc = pymupdf.open('D:/papers/brenda/jbc/11948179.pdf')
+    # md_text = pymupdf4llm.to_markdown("D:/papers/brenda/jbc/11948179.pdf")  # get markdown for all pages
+    # print(md_text)
+    page = None # type: pymupdf.Page
+    txt = '' 
+    for page in doc: 
+        # txt += page.get_text()
+        for _,_,_,_,word,_,_,_ in page.get_text('words'):
+            txt += word + ' '
+    assert '\u0001' in txt
+    # at = txt.index('\u0001')
+    # print(txt[at-10:at+10])
+
+    # see if it survives json load/dump. it does.
+
+    # assert txt == txt2
+    # df = pl.scan_parquet('data/scans/brenda.parquet').select(['pmid', 'text']).filter(
+    #     pl.col('pmid') == '11948179'
+    # ).collect()
+
+    # txt2 = df['text'].str.join('').item()
+    # assert '\u0001' in txt2
+    # assert txt == txt2 # true!
+
+    # now check for it in apogee_ingest
+    df = pl.read_parquet('data/ingest/beluga_ingest.parquet')
+    df2 = df.filter(
+        pl.col('pmid') == '11948179'
+        # pl.col('content').str.contains('\u0001')
+    )
+    print(df2.shape)
+
+    # print(txt2[0]['text'])
+    exit(0)
+
 if __name__ == "__main__":
     # script_count_pdfs()
     # script_create_runeem_df()
     # script_lift_runeem_set()
     # df = script_look_for_ecs()
     # exit(0)
-    determine_mutants()
-    convert_parquet()
+    check_for_u0001()
+    script_create_runeem_df()
+    # determine_mutants()
+    # convert_parquet()
     pass
     exit(0)
 

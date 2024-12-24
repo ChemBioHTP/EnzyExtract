@@ -18,6 +18,7 @@ def analyze_correlations(matched_view: pl.DataFrame, title: str):
     corr_view = matched_view.filter(
         pl.col('same_substrate') 
         & pl.col('same_enzyme')
+        & (pl.col('same_mutant').is_null() | pl.col('same_mutant'))
     ).select([
         'pmid', 'km_value_1', 'km_value_2', 'kcat_value_1', 'kcat_value_2'
     ])
@@ -147,12 +148,12 @@ def analyze_correlations(matched_view: pl.DataFrame, title: str):
 
 if __name__ == '__main__':
 
-    # readme = 'data/matched/EnzymeSubstrate/brenda/brenda_apogee.parquet'
+    readme = 'data/matched/EnzymeSubstrate/brenda/brenda_apogee.parquet'
     # readme = 'data/matched/EnzymeSubstrate/brenda/brenda_apogee_no_scientific_notation.parquet'
     # readme = 'data/matched/EnzymeSubstrate/runeem/runeem_apogee_no_scientific_notation.parquet'
     # readme = 'data/matched/EnzymeSubstrate/runeem/runeem_apogee.parquet'
     # readme = 'data/matched/EnzymeSubstrate/runeem/runeem_beluga.parquet'
-    readme = 'data/matched/EnzymeSubstrate/runeem/runeem_beluga_no_scientific_notation.parquet'
+    # readme = 'data/matched/EnzymeSubstrate/runeem/runeem_beluga_no_scientific_notation.parquet'
     matched_view = pl.read_parquet(readme)
     print(readme)
     analyze_correlations(matched_view, readme)

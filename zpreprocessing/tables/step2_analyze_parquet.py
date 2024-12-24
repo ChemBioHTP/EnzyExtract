@@ -29,14 +29,19 @@ manifest_df = manifest_df.with_columns([
     pl.col("filename").is_in(table_filenames).alias("had_gmft"),
 ])
 
-total_counts = manifest_df.group_by("filepath").agg([
+total_counts = manifest_df.with_columns([
+    (pl.col("filename").rank().over("filepath").alias("filename_rank")),
+]).group_by("filepath").agg([
     # pl.col("filename").count().alias("pdf_count"),
     pl.col("readable").replace(False, None).count().alias("readable_count"),
     pl.col("had_gmft").replace(False, None).count().alias("table_count"),
-    pl.col("filename").filter(pl.col("had_gmft")).max().alias("latest_table")
+    pl.col("filename").filter(pl.col("had_gmft")).max().alias("latest_table"),
+    pl.col("filename_rank").filter(pl.col("had_gmft")).max().alias("latest_rank"),
+    pl.col("filename_rank").max().alias("max_rank"),
 ])
 
 total_counts = total_counts.with_columns([
+    (pl.col("latest_rank") / pl.col("max_rank")).alias("pct_rank"),
     (pl.col("table_count") / pl.col("readable_count")).alias("pct_table"),
 ]).sort("filepath") # , descending=True)
 

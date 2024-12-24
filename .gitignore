@@ -15,3 +15,4 @@ dev/data/**
 dev/debug/**
 legacy/**
 *.parquet
+zpreprocessing/reocr/**/*.png
