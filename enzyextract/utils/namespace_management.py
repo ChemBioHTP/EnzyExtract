@@ -33,6 +33,10 @@ def glean_model_name(namespace, task='ingestion'):
     elif namespace.endswith('-t4neboth'):
         prompt = prompt_collections.table_oneshot_v3
         model_name = 'ft:gpt-4o-mini-2024-07-18:personal:t4neboth:AQOYyPCz'
+    
+    elif namespace.endswith('-manifold'):
+        prompt = prompt_collections.for_manifold
+        model_name = 'ft:gpt-4o-mini-2024-07-18:personal:manifold:AhVt9j8B'
 
     elif namespace.endswith('-oneshot') or namespace.endswith('-4o'):
             
@@ -43,6 +47,7 @@ def glean_model_name(namespace, task='ingestion'):
     elif namespace.endswith('-4o-str') or namespace.endswith('-4ostruct'): # structured output
         model_name = 'gpt-4o-2024-08-06' 
         structured = True
+    
         
     else:
         raise ValueError("Unrecognized namespace", namespace)

@@ -1067,3 +1067,15 @@ Homo sapiens
 Acidaminococcus fermentans
 ```
 """
+
+for_vision = """
+Given a table image, identify and correct mistakes in the yaml. 
+Only correct these mistakes: 
+1. Identify any differences in the Km, kcat, and kcat/Km units
+2. Identify any mistakes in the use of scientific notation
+3. Identify missing substrates
+4. Identify any instances where "±" is not encoded properly
+Finally, provide your final answer. If the yaml is all correct, simply respond "All correct". Otherwise, provide the yaml with mistakes corrected. 
+To express scientific notation, write "× 10^n". Do NOT add fields to the schema. 
+"""
+

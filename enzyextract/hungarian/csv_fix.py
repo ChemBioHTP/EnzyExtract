@@ -4,8 +4,42 @@ import re
 import pandas as pd
 import polars as pl
 
+from enzyextract.fetch_sequences.read_pdfs_for_idents import mutant_pattern, mutant_v3_pattern, mutant_v4_pattern, amino3, amino1
+
 _strange_kcat_units = set()
 _strange_km_units = set()
+
+def fix_scientific_notation(x: str) -> str:
+    """
+    Convert Unicode scientific notation to ASCII format.
+    
+    Examples:
+        >>> fix_scientific_notation("10³")
+        "10^3"
+        >>> fix_scientific_notation("2²")
+        "2^2"
+    """
+    # Dictionary mapping Unicode superscript digits to regular digits
+    superscript_map = {
+        '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+        '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
+        '⁺': '+', '⁻': '-'
+    }
+    
+    result = []
+    in_superscript = False
+    
+    for char in x:
+        if char in superscript_map:
+            if not in_superscript:
+                result.append('^')
+                in_superscript = True
+            result.append(superscript_map[char])
+        else:
+            in_superscript = False
+            result.append(char)
+            
+    return ''.join(result)
 
 def fix_km(x: str) -> str:
     # match \bmm\b
@@ -13,6 +47,8 @@ def fix_km(x: str) -> str:
         return None
     if not isinstance(x, str):
         x = str(x)
+    
+    x = fix_scientific_notation(x)
     
     x = re.sub(',', '', x) # destroy commas, which interfere with matching
     x = re.sub(r'\bmm\b', 'mM', x)
@@ -45,6 +81,8 @@ def fix_kcat(x: str) -> str:
         return None
     if not isinstance(x, str):
         x = str(x)
+    
+    x = fix_scientific_notation(x)
     
     x = re.sub(',', '', x) # destroy commas, which interfere with matching
     x = re.sub('μ', 'µ', x) # greek mu \u03BC --> \u00B5
@@ -81,6 +119,8 @@ def fix_kcat(x: str) -> str:
     for unit in acceptable_units:
         x = re.sub(r'\b' + f'{unit}' + r'-1\b', unit + '^-1', x)
     return x
+
+standardize_mutants1_re = re.compile(rf"({amino3})-?(\d{{1,4}})(\s?→\s?| to |\s?>\s?|!)[ -]?({amino3})") # if arrow or "to", then it is unambiguously a point mutation.
     
 
 def lengthen_enzyme_name(short: str, longer: str) -> str:
@@ -214,13 +254,15 @@ def pl_remove_ranges(df: pl.DataFrame) -> pl.DataFrame:
     
     return filtered_df
     
-def prep_for_hungarian(df: pd.DataFrame, printme=True) -> pd.DataFrame:
+def clean_columns_for_valid(df: pd.DataFrame, printme=True) -> pd.DataFrame:
     """
+    Main cleaning operation.
+
     Prepares df for hungarian algorithm.
 
     If BRENDA, then units are added to km and kcat.
 
-    If not BRENDA, then km and kcat are fixed (we strictly only accept ).
+    If not BRENDA, then km and kcat are fixed (we strictly only accept time^-1 and mM).
 
 
     converts df pmid to str, if necessary
@@ -258,7 +300,7 @@ def prep_for_hungarian(df: pd.DataFrame, printme=True) -> pd.DataFrame:
 
     return df
 
-# def prep_for_hungarian(df: pd.DataFrame) -> pd.DataFrame:
+# def clean_columns_for_valid(df: pd.DataFrame) -> pd.DataFrame:
 #     df.dropna(subset=["kcat", "km"], how='all', inplace=True)
 #     # df.reset_index(drop=True, inplace=True)
 #     df.fillna("", inplace=True)

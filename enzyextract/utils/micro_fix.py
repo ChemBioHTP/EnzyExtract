@@ -2,6 +2,7 @@
 import re
 from typing import Generator
 import pandas as pd
+import polars as pl
 import pymupdf
 
 _re_mM = re.compile(r"\bmM\b")
@@ -92,7 +93,7 @@ def mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pd.DataFram
     # page.apply_redactions(images=pymupdf.PDF_REDACT_IMAGE_NONE)  # don't touch images
 
 
-def determine_replacement(gen: Generator[tuple, None, None], subset: pd.DataFrame, allow_lowercase=True, _re: re.Pattern=None) -> Generator[tuple, None, None]:
+def determine_replacement(gen: Generator[tuple, None, None], subset: pl.DataFrame, allow_lowercase=True, _re: re.Pattern=None) -> Generator[tuple, None, None]:
     """
     Turns a generator of 8-tuples (*bbox, word, *paragraphno) into a generator of 9-tuples, 
     with the last element being the replacement or the original word.
@@ -100,31 +101,46 @@ def determine_replacement(gen: Generator[tuple, None, None], subset: pd.DataFram
     if _re is None:
         _re = _re_mM_i if allow_lowercase else _re_mM
 
-    micro_subset = subset[subset['real_char'] == 'mu']
-    mM_subset = subset[subset['real_char'] == 'm']
+    # micro_subset = subset[subset['real_char'] == 'mu']
+    # mM_subset = subset[subset['real_char'] == 'm']
+    micro_subset = subset.filter(pl.col('real_char') == 'mu')
+    mM_subset = subset.filter(pl.col('real_char') == 'm')
     for x0, y0, x1, y1, word, blockno, lineno, wordno in gen:
         if _re.search(word):
-            for _, row in micro_subset.iterrows():
-                bbox = (row['x0'], row['y0'], row['x1'], row['y1'])
+            for bbox in micro_subset.select(['x0', 'y0', 'x1', 'y1']).iter_rows():
+                # bbox = (row['x0'], row['y0'], row['x1'], row['y1'])
+                # bbox = (row['letter_x0'], row['letter_y0'], row['letter_x1'], row['letter_y1'])
                 if _iob(bbox, (x0, y0, x1, y1)) > 0.5:
                     yield x0, y0, x1, y1, word, blockno, lineno, wordno, _re.sub('µM', word) # print("Swapped")
                     break
             else:
                 # TODO: warning: yielding is very tricky
-                yield x0, y0, x1, y1, word, blockno, lineno, wordno, None
+                for bbox in mM_subset.select(['x0', 'y0', 'x1', 'y1']).iter_rows():
+                    # bbox = (row['letter_x0'], row['letter_y0'], row['letter_x1'], row['letter_y1'])
+                    if _iob(bbox, (x0, y0, x1, y1)) > 0.5:
+                        yield x0, y0, x1, y1, word, blockno, lineno, wordno, _re.sub('mM', word) # print("Swapped")
+                        break
+                else:
+                    # TODO: warning: yielding is very tricky
+                    yield x0, y0, x1, y1, word, blockno, lineno, wordno, None
+                # yield x0, y0, x1, y1, word, blockno, lineno, wordno, None
         else:
             yield x0, y0, x1, y1, word, blockno, lineno, wordno, None
 
-def duplex_mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pd.DataFrame, allow_lowercase=True, _re=None) -> list[str]:
+import polars as pl
+def duplex_mM_corrected_text(doc: pymupdf.Document, pdfname: str, micro_df: pl.DataFrame, allow_lowercase=True, _re=None) -> list[str]:
     """
     Correct text, with help of both get_text('text') (necessary for the weird unicode control characters) and get_text('words') (necessary for the bbox).
     """
-    pmid_subset = micro_df[micro_df['pdfname'] == pdfname] # type: pymupdf.Page
+    # pmid_subset = micro_df[micro_df['pdfname'] == pdfname] # type: pymupdf.Page
+    pmid_subset = micro_df.filter(pl.col('pdfname') == pdfname)
     result = []
     for pageno, page in enumerate(doc):
-        subset = pmid_subset[(pmid_subset['pageno'] == pageno)]
+        # subset = pmid_subset[(pmid_subset['pageno'] == pageno)]
+        subset = pmid_subset.filter(pl.col('pageno') == pageno)
         orig_text = page.get_text('text')
-        if subset[subset['real_char'] == 'mu'].empty:
+        # if subset[subset['real_char'] == 'mu'].empty:
+        if subset.filter(pl.col('real_char') == 'mu').is_empty():
             result.append(orig_text)
         else:
             new_text = ""

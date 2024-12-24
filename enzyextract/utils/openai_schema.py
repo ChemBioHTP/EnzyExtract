@@ -76,13 +76,13 @@ class RootModel(BaseModel):
     context: Context
 
 
-def to_openai_batch_request_with_schema(uuid: str, system_prompt: str, docs: list[str], model_name='gpt-4o-mini', schema=None) -> dict:
+def to_openai_batch_request_with_schema(uuid: str, system_prompt: str, docs: list[str], model_name='gpt-4o-mini', schema=None, detail='auto') -> dict:
 
     if schema is None:
-        schema = RootModel
+        raise ValueError("schema is required")
     if isinstance(docs, str):
         docs = [docs]
-    messages = [to_openai_dict_message("system", system_prompt)] + [to_openai_dict_message("user", doc) for doc in docs]
+    messages = [to_openai_dict_message("system", system_prompt)] + [to_openai_dict_message("user", doc, detail=detail) for doc in docs]
     return {
         "custom_id": uuid,
         "method": "POST",

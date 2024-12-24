@@ -191,7 +191,7 @@ def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl',
     
     # we are only interested in batches not yet downloaded
     batch2name = {}
-    for batch_id, name in _all_batch2name.items():
+    for batch_id, name in translator.items():
         if preferred_name(batch_id, translator) + '.jsonl' not in downloaded_files and \
                      batch_id + '_output.jsonl' not in downloaded_files:
             batch2name[batch_id] = name
