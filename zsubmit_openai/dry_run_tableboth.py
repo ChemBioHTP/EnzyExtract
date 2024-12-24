@@ -1,6 +1,7 @@
 # working_enzy_table_md, but tableless
 
 import json
+import re
 import polars as pl
 import pandas as pd
 import pymupdf
@@ -10,49 +11,49 @@ from tqdm import tqdm
 
 from enzyextract.utils import prompt_collections
 from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
-from enzyextract.utils.fresh_version import next_available_version
 from enzyextract.utils.micro_fix import duplex_mM_corrected_text
-from enzyextract.utils.openai_management import process_env, submit_batch_file
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from
-from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
 from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
+from enzyextract.utils.namespace_management import glean_model_name
 
-namespace = 'beluga-t2neboth' # 'brenda-pnas-apogee-4o-str' # 'wos-open-apogee-429d-t2neboth'
+namespace = 'dry-run-t2neboth' # 'brenda-pnas-apogee-4o-str' # 'wos-open-apogee-429d-t2neboth'
 
 # defaults
-dest_folder = 'batches/enzy'
-prompt = prompt_collections.table_oneshot_v3 # 1_2
+prompt = prompt_collections.table_oneshot_v3 # 1_2 # doesn't matter
 # md_folder = 'C:/conjunct/tmp/brenda_rekcat_tables/md_v3'
 
 
+# tables_from = r'C:\conjunct\tmp\eval\beluga_dev\tables'
+tables_from = r"C:\conjunct\tmp\eval\manifold_tune\tables"
+pdf_root = 'C:/conjunct/tmp/eval/manifold_tune/pdfs'
+# micro_path = "C:/conjunct/tmp/eval/beluga_dev/mM.csv"
+micro_path = "C:/conjunct/tmp/eval/cherry_dev/mM/mMcurated.parquet"
+# micro_path = 'zpreprocessing/data/pdf_mM.parquet'
 
-table_info_root = None
-table_md_src = None
-md_folder = None
-pdf_root = 'C:/conjunct/tmp/eval/arctic'
-micro_path = "C:/conjunct/tmp/eval/beluga_dev/mM.csv"
+# keep pages separate, or not?
+keep_pages = False
+# keep_pages = False
 
 
-from enzyextract.utils.namespace_management import glean_model_name
+# will_write_to = f'_debug/dry_run.jsonl'
+will_write_to = f'zfinetune/inputs/manifold_tune.jsonl'
+
+
+
 model_name, suggested_prompt, structured = glean_model_name(namespace)
-
 prompt = suggested_prompt if suggested_prompt else prompt
 
 batch = []
 
 # setup
-version = next_available_version(dest_folder, namespace, '.jsonl')
+version = 1
 print("Namespace: ", namespace)
 print("Using version: ", version)
 
-pmid_to_yaml = {}
-if table_md_src is not None:
-    pmid_to_yaml = get_pmid_to_yaml_dict(table_md_src)
-
 pmid_to_tables = {}
-if md_folder is not None:
-    pmid_to_tables = pmid_to_tables_from(md_folder)
+if tables_from is not None:
+    pmid_to_tables = pmid_to_tables_from(tables_from)
     assert pmid_to_tables, "No tables found"
 
 
@@ -90,8 +91,11 @@ assert _intersect >= 0, "No intersection of tables found"
 REDACT = False
 
 # apply micro fix
-micro_df = pd.read_csv(micro_path)
-micro_df = micro_df.astype({'pdfname': 'str'})
+if micro_path.endswith('.parquet'):
+    micro_df = pl.read_parquet(micro_path).to_pandas()
+else:
+    micro_df = pd.read_csv(micro_path)
+    micro_df = micro_df.astype({'pdfname': 'str'})
 
 # only want 
 true_micro_df = micro_df[(micro_df['real_char'] == "mu") & (micro_df['confidence'] > 0.98)]
@@ -105,8 +109,17 @@ _num_in_micro = 0
 for pmid in target_pmids:
     if pmid in micro_df['pdfname'].values:
         _num_in_micro += 1
+
+
+if _num_in_micro == 0:
+    # try removing '.pdf' from the pdfname
+    micro_df['pdfname'] = micro_df['pdfname'].str.replace("\.pdf$", "", regex=True)
+
+for pmid in target_pmids:
+    if pmid in micro_df['pdfname'].values:
+        _num_in_micro += 1
 print(f"Intersection of {_num_in_micro} pmids with micro corrections")
-assert _num_in_micro >= 0, "No intersection of micro corrections found"
+assert _num_in_micro > 0, "No intersection of micro corrections found"
 
 _pmid_with_tables = 0
 for filepath in tqdm(glob.glob(f"{pdf_root}/*.pdf")):
@@ -124,13 +137,6 @@ for filepath in tqdm(glob.glob(f"{pdf_root}/*.pdf")):
         print(e)
         continue
     
-    tables = {}
-    for info in os.listdir(table_info_root):
-        if info.startswith(pmid + '_') and info.endswith('.info'):
-            obj = json.load(open(f"{table_info_root}/{info}", 'r'))
-            if obj['page_no'] not in tables:
-                tables[obj['page_no']] = []
-            tables[obj['page_no']].append(obj)
     # now we have tables
     # actually exclude text 
     # use the redact function of pymupdf
@@ -149,25 +155,30 @@ for filepath in tqdm(glob.glob(f"{pdf_root}/*.pdf")):
     # now obtain texts
     docs = []
     
-    # provide original yaml
-    if pmid in pmid_to_yaml:
-        # continue # skip those with tables. Expect N=1078
-        # docs.append(pmid_to_yaml[pmid])
-        continue
-    else:
-        pass
-        # no yaml available
     
     if pmid_to_tables and pmid in pmid_to_tables:
         for filename in pmid_to_tables.get(pmid, []):
-            with open(f'{md_folder}/{filename}', 'r', encoding='utf-8') as f:
+            with open(f'{tables_from}/{filename}', 'r', encoding='utf-8') as f:
                 docs.append(f.read())
         _pmid_with_tables += 1
     
     # 
     # for page in doc:
         # docs.append(page.get_text())
-    docs.extend(duplex_mM_corrected_text(doc, pmid, micro_df))
+    # best micro re
+    widest_mM_re = re.compile(r'\bmm(?=$|[\Wo2])', re.IGNORECASE)
+    # \u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f
+    ascii_control_re = re.compile(r'(?<!\w)[\x00-\x08\x11\x12\x14-\x1F]M\b') # \x7F-\x9F
+    pages = duplex_mM_corrected_text(doc, pmid, micro_df, _re=widest_mM_re)
+    # post-processing
+    for i, page in enumerate(pages):
+        if 'µMo' in page:
+            pass
+            # print("Warning: funny looking capitalization issue in", pmid)
+        txt = page.replace('µMo', 'µmo') # fix funny looking capitalization issue in post
+        txt = ascii_control_re.sub('µM', txt)
+        pages[i] = txt
+    docs.extend(pages)
     
 
     # obtain original annotation from part A
@@ -193,10 +204,35 @@ else:
 print("Using model", model_name)
 
     
-will_write_to = f'_debug/dry_run.jsonl'
 
 # get content 
-contents = [''.join(y['content'] for y in x['body']['messages']) for x in batch]
-df = pl.DataFrame({'pmid': [x['custom_id'] for x in batch], 'content': contents})
+prompts = [(x['body']['messages'][0]['content']) for x in batch]
+if keep_pages:
+    contents = [] # list of lists of strings
+    for x in batch:
+        builder = []
+        for y in x['body']['messages'][1:]:
+            builder.append(y['content'])
+        contents.append(builder)
+else:
+    contents = ['\n'.join(y['content'] for y in x['body']['messages'][1:]) for x in batch] # list of strings
+# pagess = [(y['content'] for y in x['body']['messages'][1:]) for x in batch]
+
+if keep_pages:
+    so = {
+        'content': pl.List(pl.Utf8),
+    }
+else:
+    so = {
+        'content': pl.Utf8,
+    }
+df = pl.DataFrame({'custom_id': [x['custom_id'] for x in batch], 
+                   'pmid': [x['custom_id'].split('_', 2)[2] for x in batch], 
+                   'content': contents,
+                    # 'pages': pagess,
+                   'prompt': prompts}, schema_overrides=so)
 df.write_parquet(will_write_to + '.parquet')
+with open(will_write_to, 'w') as f:
+    for x in batch:
+        f.write(json.dumps(x) + '\n')
 # write in chunks

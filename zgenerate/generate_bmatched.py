@@ -5,7 +5,7 @@ import pandas as pd
 from enzyextract.backform.quality_assure import quality_assure_ai_message
 from enzyextract.metrics.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
 from enzyextract.backform.process_human_perfect import form_human_perfect
-from enzyextract.hungarian.csv_fix import prep_for_hungarian, widen_df
+from enzyextract.hungarian.csv_fix import clean_columns_for_valid, widen_df
 from enzyextract.hungarian.hungarian_matching import match_dfs_by_pmid
 from enzyextract.hungarian.postmatched_utils import convenience_rearrange_cols
 from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
@@ -92,7 +92,7 @@ def generate_bmatched_csv(namespace = 'rekcat-giveboth-4o',
                 valids.append(df)
                 valid_pmids.add(pmid) # needs to be a set
         
-        valid_df = prep_for_hungarian(pd.concat(valids)) # bad units for km and kcat are rejected here
+        valid_df = clean_columns_for_valid(pd.concat(valids)) # bad units for km and kcat are rejected here
         # valid_df = valid_df.astype({'pmid': 'str'})
         
         if _valid_csv and not os.path.exists(_valid_csv):
@@ -111,7 +111,7 @@ def generate_bmatched_csv(namespace = 'rekcat-giveboth-4o',
     # Match2: need to match with BRENDA
     # stage 2: hungarian matching
         
-    brenda_df = prep_for_hungarian(pd.read_csv(brenda_csv))
+    brenda_df = clean_columns_for_valid(pd.read_csv(brenda_csv))
     brenda_df = widen_df(brenda_df)
     
     # ground_truth_df = ground_truth_df.astype({'pmid': 'str'})
@@ -210,7 +210,7 @@ def run_stats(*,
         stats['total_ingested'] = total_ingested
         stats['valid_pmids'] = len(valid_pmids)
         
-        valid_df = prep_for_hungarian(pd.concat(valids)) # bad units for km and kcat are rejected here
+        valid_df = clean_columns_for_valid(pd.concat(valids)) # bad units for km and kcat are rejected here
         valid_df = valid_df.astype({'pmid': 'str'})
         # print(valid_df.dtypes)
         
@@ -307,7 +307,7 @@ def run_stats(*,
             matched_df = matched_df[matched_df['pmid'].isin(valid_pmids)]
         else:
             
-            brenda_df = prep_for_hungarian(pd.read_csv(brenda_csv))
+            brenda_df = clean_columns_for_valid(pd.read_csv(brenda_csv))
             brenda_df = widen_df(brenda_df)
             
             # ground_truth_df = ground_truth_df.astype({'pmid': 'str'})
@@ -383,7 +383,7 @@ def script1():
         }
     
     brenda_csv = 'C:/conjunct/vandy/yang/corpora/brenda/brenda_km_kcat_key_v2.csv'
-    brenda_df = prep_for_hungarian(pd.read_csv(brenda_csv))
+    brenda_df = clean_columns_for_valid(pd.read_csv(brenda_csv))
     brenda_df = widen_df(brenda_df)
     
     # ground_truth_csv = 'C:/conjunct/vandy/yang/corpora/eval/brenwi_runeem.csv' 

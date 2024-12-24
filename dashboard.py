@@ -5,7 +5,7 @@ from enzyextract.utils.construct_batch import preview_batches_in_folder
 from enzyextract.utils.openai_management import process_env, preview_batches_uploaded, check_undownloaded
 
 # from generate_bmatched import run_stats
-def script0():
+def script_fetch_undownloaded():
     # preview_batches_in_folder('C:/conjunct/table_eval/batches/enzy', 'C:/conjunct/table_eval/completions/enzy', undownloaded_only=True)
     
     # view pending batches
@@ -32,20 +32,22 @@ def script0():
         #     run_stats(namespace=namespace, version=version, compl_folder='completions/enzy')
     
 
-def script1():
-    pass
+def script_submit_stragglers():
     # just submit a few
     from enzyextract.utils.openai_management import process_env, submit_batch_file
     # stragglers = ['batches/enzy/wos-open-apogee-t2neboth_1.7000.jsonl', 'batches/enzy/wos-open-apogee-t2neboth_1.8000.jsonl']
     # stragglers = ['batches/enzy/brenda-hindawi-apogee-t2neboth_1.jsonl']
+    filedests = ['batches/enzy/apatch/wos-localshim-t2neboth_1.0.jsonl', 'batches/enzy/apatch/wos-localshim-t2neboth_1.1000.jsonl'] # f'batches/enzy/apatch/topoff-open-apatch-t2neboth_1.0.jsonl'
+    for filedest in filedests:
+        submit_batch_file(filedest, pending_file='batches/pending.jsonl')
 
-    splits = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000]
-    splits = [split + 30000 for split in splits]
-    for split in splits:
-        filedest = f'batches/enzy/bucket/openelse-bucket-md-t2neboth_1.{split}.jsonl'
-    # for filedest in stragglers: # ['batches/enzy/scratch-open-apogee-t2neboth_2.0.jsonl', 'batches/enzy/scratch-open-apogee-t2neboth_2.1000.jsonl', 'batches/enzy/scratch-open-apogee-t2neboth_2.2000.jsonl']:	
-        batchname = submit_batch_file(filedest, pending_file='batches/pending.jsonl') # will ask for confirmation
-        print(batchname)
+    # splits = [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000]
+    # splits = [split + 30000 for split in splits]
+    # for split in splits:
+    #     filedest = f'batches/enzy/bucket/openelse-bucket-md-t2neboth_1.{split}.jsonl'
+    # # for filedest in stragglers: # ['batches/enzy/scratch-open-apogee-t2neboth_2.0.jsonl', 'batches/enzy/scratch-open-apogee-t2neboth_2.1000.jsonl', 'batches/enzy/scratch-open-apogee-t2neboth_2.2000.jsonl']:	
+    #     batchname = submit_batch_file(filedest, pending_file='batches/pending.jsonl') # will ask for confirmation
+    #     print(batchname)
 
 def script2(path_to_dir, pending_file='batches/pending.jsonl'):
     """rename hashed batch file names"""
@@ -82,6 +84,7 @@ def script_download_all_errors():
 if __name__ == '__main__':
     # script2(path_to_dir='completions/errors')
     # script1()
-    # script0()
+    # script_submit_stragglers()
+    script_fetch_undownloaded()
 
-    script_download_all_errors()
+    # script_download_all_errors()

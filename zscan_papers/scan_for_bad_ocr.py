@@ -7,7 +7,7 @@ def script_look_for_bad_ocr():
     in_df_names = ['scratch', 'brenda', 'wos', 'topoff']  # adjust as needed
     
     for name in in_df_names:
-        print(f"Looking for abbreviations in {name}")
+        print(f"Looking for bad ocr in {name}")
         df = pl.scan_parquet(f'data/scans/{name}.parquet')
         
         # bad ocr: get count of unicode control codes such as \x02, \x03, \x04, etc.
@@ -20,6 +20,7 @@ def script_look_for_bad_ocr():
                 # Count control characters (Unicode ranges 0x00-0x1F and 0x7F-0x9F)
                 pl.col('text').str.count_matches(r'[\x00-\x1F\x7F-\x9F]').alias('control_ct'),
                 pl.col('text').str.replace_all(r'[^ -~]', '').str.len_chars().alias('ascii_ct'),
+                pl.lit(name).alias('toplevel')
             ]).with_columns([
                 # Calculate percentage of control characters
                 (pl.col('control_ct') / pl.col('text_length')).alias('control_pct'),
@@ -60,5 +61,17 @@ def script_horrible_ocr():
 
 if __name__ == '__main__':
     # script_horrible_ocr()
-    final_df = script_look_for_bad_ocr()
-    final_df.write_parquet('data/scans/ocr/bad_ocr.parquet')
+    # final_df = script_look_for_bad_ocr()
+    # final_df.write_parquet('data/scans/ocr/bad_ocr.parquet')
+
+    # browse manifest
+    manifest = pl.read_parquet('data/manifest.parquet')
+    bad_ocr = pl.read_parquet('data/scans/ocr/bad_ocr.parquet').with_columns([
+        (pl.col('pmid') + '.pdf').alias('filename')
+    ])
+    manifest = manifest.join(bad_ocr, on=['filename', 'toplevel'], how='left')
+    print(manifest)
+
+    # look at indistinct
+    indistinct = manifest.filter(manifest.select('filename').is_duplicated())
+    pass

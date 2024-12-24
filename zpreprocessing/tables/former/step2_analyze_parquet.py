@@ -23,7 +23,7 @@ tables_df = tables_df.with_columns([
 table_filenames = tables_df.select("filename").unique()
 
 # now, get true pdf counts of each of those locations
-manifest_df = pl.read_parquet('zpreprocessing/data/manifest.parquet')
+manifest_df = pl.read_parquet('data/manifest.parquet')
 
 manifest_df = manifest_df.with_columns([
     pl.col("filename").is_in(table_filenames).alias("had_gmft"),

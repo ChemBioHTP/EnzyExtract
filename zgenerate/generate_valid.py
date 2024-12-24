@@ -4,10 +4,10 @@ import os
 import pandas as pd
 from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
-from enzyextract.hungarian.csv_fix import prep_for_hungarian
+from enzyextract.hungarian.csv_fix import clean_columns_for_valid
 
 
-def generate_valid_csv(namespace, # tuned # tableless-oneshot # brenda-rekcat-md-v1-2
+def generate_valid_parquet(namespace, # tuned # tableless-oneshot # brenda-rekcat-md-v1-2
         *,
         version = None, # None
         compl_folder = 'completions/enzy', # C:/conjunct/table_eval/completions/enzy
@@ -22,7 +22,7 @@ def generate_valid_csv(namespace, # tuned # tableless-oneshot # brenda-rekcat-md
     filename, version = locate_correct_batch(compl_folder, namespace, version=version) # , version=1)
     print(f"Located {filename} version {version} in {compl_folder}")
     
-    validated_csv = f'data/valid/_valid_{namespace}_{version}.csv'
+    validated_csv = f'data/valid/_valid_{namespace}_{version}.parquet'
     
     valids = []
     valid_pmids = set()
@@ -62,19 +62,23 @@ def generate_valid_csv(namespace, # tuned # tableless-oneshot # brenda-rekcat-md
     stats['total_ingested'] = total_ingested
     stats['valid_pmids'] = len(valid_pmids)
     
-    valid_df = prep_for_hungarian(pd.concat(valids)) # bad units for km and kcat are rejected here
+    valid_df = clean_columns_for_valid(pd.concat(valids)) # bad units for km and kcat are rejected here
     valid_df = valid_df.astype({'pmid': 'str'})
     
     if validated_csv and not os.path.exists(validated_csv):
         print("Writing to", validated_csv)
-        valid_df.to_csv(validated_csv, index=False)
+        if validated_csv.endswith('.parquet'):
+            import polars as pl
+            pl.from_pandas(valid_df).write_parquet(validated_csv)
+        else:
+            valid_df.to_csv(validated_csv, index=False)
     
     return valid_df, stats
 
 if __name__ == "__main__":
     blacklist = whitelist = None
 
-    namespace = 'beluga-t2neboth'
+    namespace = 'cherry-dev-manifold'
 
     structured = namespace.endswith('-str')
     version = None
@@ -94,6 +98,6 @@ if __name__ == "__main__":
             exit(0)
         merge_chunked_completions(namespace, version=version, compl_folder=compl_folder, dest_folder=compl_folder)
 
-    df, stats = generate_valid_csv(namespace=namespace, version=version, compl_folder=compl_folder, 
+    df, stats = generate_valid_parquet(namespace=namespace, version=version, compl_folder=compl_folder, 
               silence=False,
               use_yaml=not structured)

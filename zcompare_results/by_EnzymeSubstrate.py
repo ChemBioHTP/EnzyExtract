@@ -4,6 +4,7 @@ import re
 from Bio.Data.IUPACData import protein_letters_3to1_extended
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from enzyextract.thesaurus.substrates_io import latest_smiles_df, latest_inchi_df
+from enzyextract.fetch_sequences.read_pdfs_for_idents import amino3
 from datetime import datetime
 import polars as pl
 import polars.selectors as cs
@@ -129,10 +130,18 @@ def sequenced():
 
 
 ### Begin methods for use for hungarian matching
+def is_subset_match(list1: list, list2: list):
+    """
+    Returns True if list1 is a subset of list2, or vice versa.
+    Is symmetric
+    """
+    if not(list1) or not(list2):
+        return False
+    return set(list1) <= set(list2) or set(list2) <= set(list1)
+
 def is_one_to_many_match(list1: list, list2: list):
     """
     Returns True if WLOG list1 has only one element, and it is in list2
-    Is symmetric
     """
     if len(list1) == 1 and list1[0] in list2:
         return True
@@ -163,7 +172,7 @@ def enzyme_objective(gpt_dict, base_dict):
     ### One-to-many match: this is okay
     for gpt_ec in gpt_ecs:
         for base_ec in base_ecs:
-            if is_one_to_many_match(gpt_ec, base_ec):
+            if is_subset_match(gpt_ec, base_ec):
                 return 8
 
     ### A high string similarity is also in this calibre
@@ -206,11 +215,11 @@ def substrate_objective(gpt_dict, base_dict):
     ### One-to-many match: this is okay
     for gpt_cid in gpt_cids:
         for base_cid in base_cids:
-            if is_one_to_many_match(gpt_cid, base_cid):
+            if is_subset_match(gpt_cid, base_cid):
                 return 8
     for gpt_brenda in gpt_brendas:
         for base_brenda in base_brendas:
-            if is_one_to_many_match(gpt_brenda, base_brenda):
+            if is_subset_match(gpt_brenda, base_brenda):
                 return 8
     
     ### A high string similarity is slightly worse - eg. NAD vs NAD+
@@ -342,6 +351,10 @@ def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
         df = df.with_columns([
             parse_col("kcat").alias("kcat_value"),
         ])
+    standardize_mutants1_re = re.compile(rf"({amino3})-?(\d{{1,4}})(\s?→\s?| to |\s?>\s?|!)[ -]?({amino3})") # if arrow or "to", then it is unambiguously a point mutation.
+    df = df.with_columns([
+        pl.col("mutant").str.replace_all(standardize_mutants1_re.pattern, r"\1\2\4").alias("mutant")
+    ])
     df = df.with_columns([
         pl.col("mutant").str.extract_all(mutant_pattern.pattern).alias("mutant1"),
         pl.col("mutant").str.extract_all(mutant_v3_pattern.pattern).alias("mutant3"),
@@ -589,10 +602,12 @@ if __name__ == '__main__':
     # step 1: thesaurus
     if not os.path.exists((want_dest := 'data/synonyms/thesaurus/apogee_substrate_thesaurus.parquet')): #  or True:
         
-        base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
+        # base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
+        base_df = pl.read_parquet('data/humaneval/runeem/runeem_20241219.parquet')
         abbr_df = pl.read_parquet('data/synonyms/abbr/beluga-abbrs-4ostruct_20241213.parquet')
         # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
-        gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
+        # gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
+        gpt_df = pl.read_parquet('data/valid/_valid_apogee-rebuilt.parquet')
 
         want_df = script_substrate_idents(gpt_df, abbr_df, gpt_df) # thesaurus
         want_df.write_parquet(want_dest)
@@ -601,38 +616,68 @@ if __name__ == '__main__':
     # exit(0)
     working = 'apogee'
     # working = 'beluga'
+    # working = 'cherry-dev'
 
     # against = 'runeem'
     against = 'brenda'
 
-    # exclude_scino = True
-    exclude_scino = False
+    scino_only = True
+    # scino_only = False
+    # scino_only = None
+
+    whitelist = None
+    # whitelist = 'wide_tables_only'
+    # whitelist = 'hallucinated_micro'
 
     # step 2: matching
     # '_debug/cache/beluga_matched_based_on_EnzymeSubstrate.parquet'
     if working == 'beluga':
         gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
     elif working == 'apogee':
-        gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
+        # gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
+        gpt_df = pl.read_parquet('data/valid/_valid_apogee-rebuilt.parquet')
+    elif working == 'cherry-dev' and against == 'runeem':
+        gpt_df = pl.read_parquet('data/valid/_valid_cherry-dev-manifold_1.parquet')
     else:
         raise ValueError("Invalid working")
-    base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
+    base_df = pl.read_csv('data/humaneval/runeem/runeem_20241219.csv', schema_overrides=so)
 
     # exclude scientific notation: exclude "10^" to see if it improves acc like I think
     
-    if exclude_scino:
+    if scino_only is True:
+        gpt_df = gpt_df.filter(
+            pl.col('kcat').str.contains('10\^')
+            | pl.col('km').str.contains('10\^')
+        )
+        working += '_scientific_notation'
+    elif scino_only is False:
         gpt_df = gpt_df.filter(
             ~pl.col('kcat').str.contains('10\^')
             & ~pl.col('km').str.contains('10\^')
         )
         working += '_no_scientific_notation'
 
+    
+    if whitelist is not None:
+        if whitelist == 'hallucinated_micro':
+            pmids_df = pl.read_parquet('data/pmids/apogee_hallucinated_micro.parquet')
+        elif whitelist == 'wide_tables_only':
+            pmids_df = pl.read_parquet('data/pmids/apogee_wide_tables_7plus.parquet')
+        else:
+            raise ValueError("Invalid whitelist")
+        pmids = set(pmids_df['pmid'].unique())
+        base_df = base_df.filter(pl.col('pmid').is_in(pmids))
+        gpt_df = gpt_df.filter(pl.col('pmid').is_in(pmids))
+        working += '_' + whitelist
+
     if against == 'runeem':
         matched_view = script_match_base_gpt(want_df, base_df, gpt_df) # matching
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/runeem/runeem_{working}.parquet')
+        print("Wrote to", f'data/matched/EnzymeSubstrate/runeem/runeem_{working}.parquet')
     else:
         matched_view = script_match_brenda_gpt(want_df, gpt_df) # matching
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/brenda/brenda_{working}.parquet')
+        print("Wrote to", f'data/matched/EnzymeSubstrate/brenda/brenda_{working}.parquet')
 
 
     # step 2b: match with brenda

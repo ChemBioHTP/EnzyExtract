@@ -6,7 +6,7 @@ import polars as pl
 from enzyextract.backform.quality_assure import quality_assure_ai_message
 from enzyextract.metrics.get_perfects import count_enzyme_substrate_all_matched, get_agreement_score, get_perfects_only
 from enzyextract.backform.process_human_perfect import form_human_perfect
-from enzyextract.hungarian.csv_fix import prep_for_hungarian, widen_df
+from enzyextract.hungarian.csv_fix import clean_columns_for_valid, widen_df
 from enzyextract.hungarian.hungarian_matching import match_dfs_by_pmid
 from enzyextract.hungarian.postmatched_utils import convenience_rearrange_cols
 from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     compl_folder = 'completions/enzy'
 
     brenda_csv = 'C:/conjunct/vandy/yang/corpora/brenda/brenda_km_kcat_key_v2.csv'
-    brenda_df = prep_for_hungarian(pd.read_csv(brenda_csv, dtype={'pmid': str}))
+    brenda_df = clean_columns_for_valid(pd.read_csv(brenda_csv, dtype={'pmid': str}))
     brenda_df = widen_df(brenda_df)
 
     runeem_df = pd.read_csv('data/humaneval/runeem/runeem_20241125_ec.csv', dtype={'pmid': str})

@@ -574,21 +574,23 @@ def script_inspect_images():
     initial_chars = 'm\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f'
     # initial_chars = None
     terminating_condition = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum() #  or ch in terminating_chars
-    terminating_condition=None
+    # terminating_condition=None
     
     save_imgs=False
     # terminating_condition=lambda ch: ch == '2'
 
     # working='unicode'
     # filepath = f'zpreprocessing/reocr/reocr_examples/{working}'
-    write_dir = 'C:/conjunct/tmp/eval/cherry_dev'
+    write_dir = 'C:/conjunct/tmp/eval/cherry_dev/mM'
     os.makedirs(write_dir, exist_ok=True)
-    df = dump_images_too(root, all_pdfs, write_dir, target='mM', initial_chars=initial_chars,
-                         allow_lowercase=True, save_imgs=save_imgs, terminating_condition=terminating_condition) # ch == '2'
+    df = special_dump(root, all_pdfs, None, target='mM', initial_chars=initial_chars,
+                allow_lowercase=True, save_imgs=False, terminating_condition=terminating_condition)
+    # df = dump_images_too(root, all_pdfs, write_dir, target='mM', initial_chars=initial_chars,
+                        #  allow_lowercase=True, save_imgs=save_imgs, terminating_condition=terminating_condition) # ch == '2'
     
     # additional terminating conditions: [\u0001]m[\b2o]
     
-    df.write_parquet(rf'{write_dir}/mMall.parquet')
+    df.write_parquet(rf'{write_dir}/mMcurated.parquet')
     exit(0)
 
 def script_federated_inference():
@@ -610,22 +612,22 @@ def script_federated_inference():
         # ('scratch', 'wiley'),
 
         # ('topoff', 'hindawi'),
-        ('topoff', 'open'),
-        ('topoff', 'open-part1'),
-        ('topoff', 'open-part2'),
-        ('topoff', 'open-part3'),
-        ('topoff', 'wiley'),
+        # ('topoff', 'open'),
+        # ('topoff', 'open-part1'),
+        # ('topoff', 'open-part2'),
+        # ('topoff', 'open-part3'),
+        # ('topoff', 'wiley'),
 
-        ('wos', 'asm'),
-        ('wos', 'hindawi'),
-        ('wos', 'jbc'),
-        ('wos', 'local_shim'),
+        # ('wos', 'asm'),
+        # ('wos', 'hindawi'),
+        # ('wos', 'jbc'),
+        # ('wos', 'local_shim'),
         ('wos', 'open'),
         ('wos', 'wiley'),
     ]
 
     # only missing: wos/remote_all
-    manifest = pl.read_parquet('zpreprocessing/data/manifest.parquet')
+    manifest = pl.read_parquet('data/manifest.parquet')
     manifest = manifest.filter(
         pl.col('readable')
     ).unique('canonical') # only need readable and canonical
@@ -673,6 +675,6 @@ def script_federated_inference():
 
 if __name__ == '__main__':
     
-    # script_inspect_images()
-    script_federated_inference()
+    script_inspect_images()
+    # script_federated_inference()
     

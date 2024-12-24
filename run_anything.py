@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import polars as pl
 
-from enzyextract.hungarian.csv_fix import prep_for_hungarian, widen_df
+from enzyextract.hungarian.csv_fix import clean_columns_for_valid, widen_df
 from enzyextract.utils.pmid_management import pmids_from_cache, cache_pmids_to_disk, lift_pmids
 from enzyextract.utils.doi_management import doi_to_filename
 from relink.enzyextract.utils.pmid_management import pmids_from_directory
@@ -11,7 +11,7 @@ from relink.enzyextract.utils.pmid_management import pmids_from_directory
 def script_expand_brenda():
     # produce a wide brenda to peruse 
     brenda_df = pd.read_csv(r'C:\conjunct\vandy\yang\corpora\brenda\brenda_km_kcat_key_v2.csv')
-    brenda_df = prep_for_hungarian(brenda_df)
+    brenda_df = clean_columns_for_valid(brenda_df)
     brenda_df = widen_df(brenda_df)
 
     brenda_df.to_csv(r'C:\conjunct\vandy\yang\corpora\brenda\brenda_km_kcat_20241109_widened.csv', index=False)
@@ -357,7 +357,7 @@ def script_create_runeem_df():
 
     runeem_df = runeem_df[~runeem_df['pmid'].isin(blacklist)]
 
-    runeem_df = prep_for_hungarian(runeem_df)
+    runeem_df = clean_columns_for_valid(runeem_df)
     runeem_df.to_csv('data/humaneval/runeem/runeem_20241219.csv', index=False)
 
 def script_count_pdfs():
@@ -443,12 +443,62 @@ def check_for_u0001():
     # print(txt2[0]['text'])
     exit(0)
 
+def check_for_km():
+    # check whenever WE have less km than them (suggests overzealous insertion of micro)
+    df = pl.read_parquet('data/matched/EnzymeSubstrate/brenda/brenda_apogee_no_scientific_notation.parquet')
+    df = df.filter(
+        (pl.col('km_value_1') < pl.col('km_value_2'))
+        # & (pl.col('km_diff') > 999) #
+        # & (pl.col('km_diff') < 1001)
+        & (pl.col('km_diff') > 999999)
+        & (pl.col('km_diff') < 1000001) # check for the error that M is mistaken as microM
+        # it's only the one paper, 5073324!
+        # & (pl.col('same_enzyme'))
+        # & (pl.col('same_substrate'))
+        # & (pl.col('same_mutant').is_null() | pl.col('same_mutant'))
+    ).select(['pmid', 'km_1', 'km_2', 'km_value_1', 'km_value_2', 'km_diff'])
+    print(df)
+    exit(0)
+
+def generate_ascii_ctrl():
+    # txt = ""
+    # for i in range(0, 32):
+    #     txt += chr(i)
+    # with open('_debug/ascii_ctrl.txt', 'w') as f:
+    #     f.write(txt)
+
+    txt = """"""
+
+    print(txt)
+    print("".join(txt.split()))
+    import string
+    print(string.whitespace) # ' \t\n\r\v\f'
+
+
+    exit(0)
+
+def generate_sabiork():
+    # generate sabiork
+    so = {
+        'Temperature': pl.Utf8,
+        'pH': pl.Utf8,
+    }
+    df1 = pl.read_csv('data/sabiork/sabioExport (1).tsv', separator='\t', schema_overrides=so)
+    df2 = pl.read_csv('data/sabiork/sabioExport (2).tsv', separator='\t', schema_overrides=so)
+    df3 = pl.read_csv('data/sabiork/sabioExport (4).tsv', separator='\t', schema_overrides=so)
+    df = pl.concat([df1, df2, df3], how='diagonal')
+    df.write_parquet('data/sabiork/sabiork.parquet')
+    exit(0)
+
 if __name__ == "__main__":
     # script_count_pdfs()
     # script_create_runeem_df()
     # script_lift_runeem_set()
     # df = script_look_for_ecs()
     # exit(0)
+    generate_sabiork()
+    generate_ascii_ctrl()
+    check_for_km()
     check_for_u0001()
     script_create_runeem_df()
     # determine_mutants()

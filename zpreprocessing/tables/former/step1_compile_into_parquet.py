@@ -24,4 +24,11 @@ for root, filename in tqdm(pdfs):
     collector.append(info)
 df = pl.DataFrame(collector)
 print(df)
+
+df = df.rename({"filename": "filepath"}).with_columns([
+    pl.col("filepath").map_elements(lambda s: s.rsplit('/', 1)[1], return_dtype=pl.Utf8).alias("filename"),
+    # pl.col("filepath").map_elements(lambda s: s.rsplit('/', 1)[0], return_dtype=pl.Utf8).alias("filepath")
+])
+df.drop_in_place('filepath')
+
 df.write_parquet('zpreprocessing/data/pdf_tables.parquet')
