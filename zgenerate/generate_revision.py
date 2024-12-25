@@ -16,6 +16,7 @@ df = df.with_columns(
     (pl.col('kcat_exponents').is_null()
     | (pl.col('kcat_exponents').list.len() == 0)
     | pl.col('kcat_exponents').list.eval(pl.element().is_in(["10^0", "0"])).list.all()
-    ).alias('no_kcat_scientific_notation'),
+    ).not_().alias('kcat_scientific_notation'),
 )
+df.write_parquet('data/revision/apogee-revision.parquet')
 print(df)

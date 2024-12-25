@@ -149,6 +149,12 @@ def is_one_to_many_match(list1: list, list2: list):
         return True
     return False
 
+def organism_objective(gpt_dict, base_dict):
+    if gpt_dict.get('organism') and base_dict.get('organism'):
+        if gpt_dict['organism'].lower() == base_dict['organism'].lower():
+            return 1
+    return 0
+
 def enzyme_objective(gpt_dict, base_dict):
     # Objective function. Tries to maximize the number of enzyme-substrate pairs that are the same
     gpt_names = [x for x in [gpt_dict['enzyme'], gpt_dict.get('enzyme_full')] if x]
@@ -299,6 +305,7 @@ def enzyme_substrate_objective(gpt_dict, base_dict):
     """
     
     """
+    organism_coeff = 10000
     enzyme_coeff = 1000
     mutant_coeff = 100
     
@@ -307,8 +314,8 @@ def enzyme_substrate_objective(gpt_dict, base_dict):
     temperature_coeff = 1
     kinetic_coeff = 0.1
     z = (
-        
-        enzyme_coeff * enzyme_objective(gpt_dict, base_dict)
+        organism_coeff * organism_objective(gpt_dict, base_dict)
+        + enzyme_coeff * enzyme_objective(gpt_dict, base_dict)
         + mutant_coeff * mutant_objective(gpt_dict, base_dict)
         + substrate_coeff * substrate_objective(gpt_dict, base_dict)
         + ph_coeff * pH_objective(gpt_dict, base_dict)
@@ -514,7 +521,8 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
     those_pmids = set(gpt_df['pmid'].unique())
 
-    brenda_df = pl.read_parquet('data/brenda/brenda_kcat_v3slim.parquet')
+    # brenda_df = pl.read_parquet('data/brenda/brenda_kcat_v3slim.parquet')
+    brenda_df = pl.read_parquet('data/brenda/brenda_kcat_cleanest.parquet')
     brenda_df = brenda_df.filter(pl.col('pmid').is_in(those_pmids))
     brenda_df = brenda_df.rename({'organism_name': 'organism', 'turnover_number': 'kcat', 'km_value': 'km'})
 
@@ -554,8 +562,9 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     brenda_df = brenda_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
 
     ### add ecs to gpt_df
-    gpt_df = gpt_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
-    gpt_df = gpt_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
+    if 'enzyme' in gpt_df.columns:
+        gpt_df = gpt_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
+        gpt_df = gpt_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
     # now, give 
     
 
@@ -613,17 +622,25 @@ if __name__ == '__main__':
         want_df.write_parquet(want_dest)
     else: want_df = pl.read_parquet(want_dest)
 
+
+
     # exit(0)
-    working = 'apogee'
+    # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
+    # working = 'sabiork'
+    # working = 'bucket'
+    # working = 'apatch'
+    working = 'everything'
 
-    # against = 'runeem'
-    against = 'brenda'
+    against = 'runeem'
+    # against = 'brenda'
+    # against = 'sabiork'
 
-    scino_only = True
+    scino_only = None
+    # scino_only = True
     # scino_only = False
-    # scino_only = None
+    # scino_only = 'false_revised'
 
     whitelist = None
     # whitelist = 'wide_tables_only'
@@ -633,11 +650,19 @@ if __name__ == '__main__':
     # '_debug/cache/beluga_matched_based_on_EnzymeSubstrate.parquet'
     if working == 'beluga':
         gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
+    elif working == 'bucket':
+        gpt_df = pl.read_parquet('data/valid/_valid_bucket-rebuilt.parquet')
     elif working == 'apogee':
         # gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
         gpt_df = pl.read_parquet('data/valid/_valid_apogee-rebuilt.parquet')
+    elif working == 'apatch':
+        gpt_df = pl.read_parquet('data/valid/_valid_apatch-rebuilt.parquet')
     elif working == 'cherry-dev' and against == 'runeem':
         gpt_df = pl.read_parquet('data/valid/_valid_cherry-dev-manifold_1.parquet')
+    elif working == 'sabiork':
+        gpt_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
+    elif working == 'everything':
+        gpt_df = pl.read_parquet('data/valid/_valid_everything.parquet')
     else:
         raise ValueError("Invalid working")
     base_df = pl.read_csv('data/humaneval/runeem/runeem_20241219.csv', schema_overrides=so)
@@ -656,6 +681,17 @@ if __name__ == '__main__':
             & ~pl.col('km').str.contains('10\^')
         )
         working += '_no_scientific_notation'
+    elif scino_only == 'false_revised':
+
+        bad_pmids = pl.read_parquet('data/revision/apogee-revision.parquet').filter(
+            pl.col('kcat_scientific_notation')
+        )
+        gpt_df = gpt_df.filter(~pl.col('pmid').is_in(bad_pmids['pmid']))
+        gpt_df = gpt_df.filter(
+            ~pl.col('kcat').str.contains('10\^')
+            & ~pl.col('km').str.contains('10\^')
+        )
+        working += '_no_scientific_revised'
 
     
     if whitelist is not None:
@@ -670,10 +706,16 @@ if __name__ == '__main__':
         gpt_df = gpt_df.filter(pl.col('pmid').is_in(pmids))
         working += '_' + whitelist
 
+    
+
     if against == 'runeem':
         matched_view = script_match_base_gpt(want_df, base_df, gpt_df) # matching
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/runeem/runeem_{working}.parquet')
         print("Wrote to", f'data/matched/EnzymeSubstrate/runeem/runeem_{working}.parquet')
+    elif against == 'sabiork':
+        base_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
+        matched_view = script_match_base_gpt(want_df, base_df, gpt_df)
+        matched_view.write_parquet(f'data/matched/EnzymeSubstrate/sabiork/sabiork_{working}.parquet')
     else:
         matched_view = script_match_brenda_gpt(want_df, gpt_df) # matching
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/brenda/brenda_{working}.parquet')

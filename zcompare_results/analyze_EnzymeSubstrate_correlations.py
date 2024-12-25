@@ -116,6 +116,13 @@ def visualize_sns_scatter(df: pl.DataFrame, title, log_ratio_threshold=2):
         (pl.col('km_diff') < 100).alias('km_valid'),
         (pl.col('kcat_diff') < 100).alias('kcat_valid'),
     ])
+
+    df = df.filter(
+        (pl.col('log_km_1').is_null() | pl.col('log_km_1').is_between(-10, 10))
+        & (pl.col('log_km_2').is_null() | pl.col('log_km_2').is_between(-10, 10))
+        & (pl.col('log_kcat_1').is_null() | pl.col('log_kcat_1').is_between(-10, 10))
+        & (pl.col('log_kcat_2').is_null() | pl.col('log_kcat_2').is_between(-10, 10))
+    )
     
     # Create figure with subplots
     fig, axes = plt.subplots(2, 2, figsize=(15, 15))
@@ -149,8 +156,8 @@ def visualize_sns_scatter(df: pl.DataFrame, title, log_ratio_threshold=2):
     # kcat scatter plot
     sns.scatterplot(data=df, x="log_kcat_1", y="log_kcat_2", hue="kcat_valid", 
                     alpha=0.5, ax=ax3)
-    ax3.plot([df["log_kcat_1"].min(), df["log_kcat_1"].max()], 
-             [df["log_kcat_1"].min(), df["log_kcat_1"].max()], 'k--')
+    # ax3.plot([df["log_kcat_1"].min(), df["log_kcat_1"].max()], 
+    #          [df["log_kcat_1"].min(), df["log_kcat_1"].max()], 'k--')
     # for dy in [-3]:
     #     ax3.plot([df["log_kcat_1"].min(), df["log_kcat_1"].max()],
     #              [df["log_kcat_1"].min() + dy, df["log_kcat_1"].max() + dy], color='gray', linestyle='--')
@@ -288,24 +295,40 @@ def visualize_correlations(km_1, km_2, kcat_1, kcat_2, title, log_ratio_threshol
 
 if __name__ == '__main__':
 
-    working = 'apogee'
+
+
+
+
+    # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
+    # working = 'sabiork'
+    # working = 'apatch'
+    # working = 'bucket'
+    working = 'everything'
 
-    # against = 'runeem'
-    against = 'brenda'
+    against = 'runeem'
+    # against = 'brenda'
+    # against = 'sabiork'
 
     # scino_only = True
-    scino_only = False
-    # scino_only = None
+    # scino_only = False
+    scino_only = None
+    # scino_only = 'false_revised'
 
-    if scino_only:
+    if scino_only is True:
         working += '_scientific_notation'
     elif scino_only is False:
         working += '_no_scientific_notation'
+    elif scino_only == 'false_revised':
+        working += '_no_scientific_revised'
     
     readme = f'data/matched/EnzymeSubstrate/{against}/{against}_{working}.parquet'
     matched_view = pl.read_parquet(readme)
+
+    matched_view = matched_view.filter(
+        pl.col('pmid') != '21980421'
+    )
     print(readme)
-    analyze_correlations(matched_view, readme)
+    analyze_correlations(matched_view, f"1. {working} 2. {against}")
     

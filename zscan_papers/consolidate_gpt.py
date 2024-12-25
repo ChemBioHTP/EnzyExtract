@@ -7,7 +7,8 @@ def main():
     # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
-    working = 'revision-prod'
+    # working = 'revision-prod'
+    working = 'bucket'
     do_final_answer = False
     if working == 'apogee':
         walk_from = 'completions/enzy/apogee'
@@ -16,6 +17,10 @@ def main():
     elif working == 'beluga':
         walk_from = 'completions/enzy'
         prefix = 'beluga'
+        conventional_levels = False
+    elif working == 'bucket':
+        walk_from = 'completions/enzy/bucket'
+        prefix = None
         conventional_levels = False
     elif working == 'cherry-dev':
         walk_from = 'completions/enzy'
@@ -30,6 +35,8 @@ def main():
         walk_from = 'completions/revision'
         prefix = 'tablevision-prod'
         conventional_levels = False
+    else:
+        raise ValueError(f"Unknown working {working}")
         # do_final_answer = True
 
     # read every jsonl in completions/enzy/apogee as long as it doesn't end in 0.jsonl
@@ -38,8 +45,8 @@ def main():
         for filename in filenames:
             if prefix and not filename.startswith(prefix):
                 continue
-            # if filename.endswith('0.jsonl'):
-                # continue
+            if filename.endswith('0.jsonl'):
+                continue
             if filename.endswith('.429.jsonl'):
                 continue
             if not filename.endswith('.jsonl'):

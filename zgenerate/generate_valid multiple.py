@@ -7,7 +7,7 @@ from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multipl
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid
 
 
-def generate_valid_csv(namespace, # tuned # tableless-oneshot # brenda-rekcat-md-v1-2
+def generate_valid_parquet(namespace, # tuned # tableless-oneshot # brenda-rekcat-md-v1-2
         filenames, # list of filenames
         *,
         compl_folder = 'completions/enzy', # C:/conjunct/table_eval/completions/enzy
@@ -61,7 +61,7 @@ def generate_valid_csv(namespace, # tuned # tableless-oneshot # brenda-rekcat-md
     # if validated_csv and not os.path.exists(validated_csv):
     print("Writing to", validated_csv)
 
-    if validated_csv and not os.path.exists(validated_csv):
+    if validated_csv: #  and not os.path.exists(validated_csv):
         print("Writing to", validated_csv)
         if validated_csv.endswith('.parquet'):
             import polars as pl
@@ -74,13 +74,16 @@ def generate_valid_csv(namespace, # tuned # tableless-oneshot # brenda-rekcat-md
 if __name__ == "__main__":
     blacklist = whitelist = None
 
-    namespace = 'apogee-rebuilt'
+    # namespace = 'apogee-rebuilt'
     # namespace = 'apatch-topoff-open'
+    # namespace = 'bucket-rebuilt'
+    namespace = 'apatch-rebuilt'
 
     structured = namespace.endswith('-str') or namespace.endswith('-struct')
     version = None
-    compl_folder = 'completions/enzy/apogee'
-    # compl_folder = 'completions/enzy/apatch'
+    # compl_folder = 'completions/enzy/apogee'
+    # compl_folder = 'completions/enzy/bucket'
+    compl_folder = 'completions/enzy/apatch'
 
     from enzyextract.utils.openai_management import merge_all_chunked_completions
     merge_all_chunked_completions(compl_folder, compl_folder)
@@ -88,7 +91,7 @@ if __name__ == "__main__":
 
     filenames = [f for f in os.listdir(compl_folder) if f.endswith('.jsonl') and not f.endswith('0.jsonl') and not f.endswith('.429.jsonl')]
     print("Collected", len(filenames), "filenames")
-    df = generate_valid_csv(namespace=namespace, filenames=filenames, 
+    df = generate_valid_parquet(namespace=namespace, filenames=filenames, 
                 compl_folder=compl_folder, 
                 silence=False,
                 use_yaml=not structured)
