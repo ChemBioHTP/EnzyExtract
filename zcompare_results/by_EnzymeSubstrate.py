@@ -155,12 +155,16 @@ def organism_objective(gpt_dict, base_dict):
             return 1
     return 0
 
-def enzyme_objective(gpt_dict, base_dict):
+def enzyme_objective(gpt_dict, base_dict, do_top3=True):
     # Objective function. Tries to maximize the number of enzyme-substrate pairs that are the same
     gpt_names = [x for x in [gpt_dict['enzyme'], gpt_dict.get('enzyme_full')] if x]
     base_names = [x for x in [base_dict['enzyme'], base_dict.get('enzyme_full')] if x]
-    gpt_ecs = [x for x in [gpt_dict['enzyme_ecs'], gpt_dict.get('enzyme_ecs_full')] if x]
-    base_ecs = [x for x in [base_dict['enzyme_ecs'], base_dict.get('enzyme_ecs_full')] if x]
+    if do_top3:
+        gpt_ecs = [x for x in [gpt_dict['enzyme_ecs_top3'], gpt_dict.get('enzyme_ecs_top3_full')] if x]
+        base_ecs = [x for x in [base_dict['enzyme_ecs_top3'], base_dict.get('enzyme_ecs_top3_full')] if x]
+    else:
+        gpt_ecs = [x for x in [gpt_dict['enzyme_ecs'], gpt_dict.get('enzyme_ecs_full')] if x]
+        base_ecs = [x for x in [base_dict['enzyme_ecs'], base_dict.get('enzyme_ecs_full')] if x]
     # if one is completely empty, then it will always be 0
 
 
@@ -333,6 +337,25 @@ def parse_col(col: str, suffix='') -> pl.Expr:
         return convert_to_true_value(value, unit)
     return pl.col(col).map_elements(to_true, return_dtype=pl.Float64)
 
+def load_ecs(add_top3=True):
+    """
+    return the ec df, with these columns:
+    - alias
+    - enzyme_ecs
+    - enzyme_ecs_top3
+    """
+    ecs = pl.read_parquet('data/brenda/brenda_to_ec.parquet')
+    selectors = ['alias', 'enzyme_ecs']
+    if add_top3:
+        selectors.append('enzyme_ecs_top3')
+    ecs = (
+        ecs
+        .rename({'viable_ecs': 'enzyme_ecs'})
+        .select(selectors)
+    )
+
+    return ecs
+
 def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
     """
     Perform various data cleaning with 
@@ -415,12 +438,7 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
     gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
     ### add ecs to base_df
-    ecs = pl.read_parquet('data/brenda/brenda_to_ec.parquet')
-    ecs = (
-        ecs
-        .rename({'viable_ecs': 'enzyme_ecs'})
-        .select(['alias', 'enzyme_ecs'])
-    )
+    ecs = load_ecs()
     base_df = base_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
     base_df = base_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
 
@@ -436,6 +454,7 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
         partition_by='pmid',
         how='inner',
         progress_bar=True,
+        maximize=True,
         objective_column='objective'
     )
     return finalize_df(matched_df)
@@ -553,12 +572,7 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
     ### add ecs to base_df
-    ecs = pl.read_parquet('data/brenda/brenda_to_ec.parquet')
-    ecs = (
-        ecs
-        .rename({'viable_ecs': 'enzyme_ecs'})
-        .select(['alias', 'enzyme_ecs'])
-    )
+    ecs = load_ecs()
     brenda_df = brenda_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
 
     ### add ecs to gpt_df
@@ -625,16 +639,16 @@ if __name__ == '__main__':
 
 
     # exit(0)
-    # working = 'apogee'
+    working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
     # working = 'sabiork'
     # working = 'bucket'
     # working = 'apatch'
-    working = 'everything'
+    # working = 'everything'
 
-    against = 'runeem'
-    # against = 'brenda'
+    # against = 'runeem'
+    against = 'brenda'
     # against = 'sabiork'
 
     scino_only = None

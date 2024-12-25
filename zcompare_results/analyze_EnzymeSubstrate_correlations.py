@@ -16,7 +16,9 @@ def analyze_correlations(matched_view: pl.DataFrame, title):
         (10 ** (pl.col('km_value_1').log10() - pl.col('km_value_2').log10()).abs()).alias('km_diff'),
         (10 ** (pl.col('kcat_value_1').log10() - pl.col('kcat_value_2').log10()).abs()).alias('kcat_diff'),
     ])
-
+    # matched_view = matched_view.with_columns([
+    #     ((pl.col('objective').cast(pl.Int16) % 10000) >= 6000).alias('same_enzyme'),
+    # ])
     print("able to find same enzyme:", matched_view.filter(pl.col('same_enzyme')).height / matched_view.height)
     print("able to find same substrate:", matched_view.filter(pl.col('same_substrate')).height / matched_view.height)
     # compute the R^2 and spearman correlation based on the value of km1, km2, kcat1, kcat2
@@ -299,16 +301,16 @@ if __name__ == '__main__':
 
 
 
-    # working = 'apogee'
+    working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
     # working = 'sabiork'
     # working = 'apatch'
     # working = 'bucket'
-    working = 'everything'
+    # working = 'everything'
 
-    against = 'runeem'
-    # against = 'brenda'
+    # against = 'runeem'
+    against = 'brenda'
     # against = 'sabiork'
 
     # scino_only = True
@@ -326,9 +328,9 @@ if __name__ == '__main__':
     readme = f'data/matched/EnzymeSubstrate/{against}/{against}_{working}.parquet'
     matched_view = pl.read_parquet(readme)
 
-    matched_view = matched_view.filter(
-        pl.col('pmid') != '21980421'
-    )
+    # matched_view = matched_view.filter(
+    #     pl.col('pmid') != '21980421'
+    # )
     print(readme)
     analyze_correlations(matched_view, f"1. {working} 2. {against}")
     
