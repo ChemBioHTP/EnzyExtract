@@ -58,7 +58,7 @@ def _load_doi_pmid_dict():
 
 
 
-def find_canonical(filename: str):
+def find_canonical(filename: str, default=None):
     _load_doi_pmid_dict()
     filename = filename.lower()
     global doi_pmid_df, filename_to_canonical, doi_to_canonical
@@ -77,7 +77,7 @@ def find_canonical(filename: str):
     if filename.isnumeric():
         return filename
     # don't know
-    return None
+    return default
 
 
 if __name__ == '__main__':

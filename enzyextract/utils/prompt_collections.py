@@ -1079,3 +1079,6 @@ Finally, provide your final answer. If the yaml is all correct, simply respond "
 To express scientific notation, write "× 10^n". Do NOT add fields to the schema. 
 """
 
+for_best_sequence = """
+
+"""

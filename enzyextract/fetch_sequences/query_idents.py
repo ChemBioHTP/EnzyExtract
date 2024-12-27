@@ -42,6 +42,7 @@ def fetch_uniprots(uniprot_ids: list, do_redirects=True) -> pd.DataFrame:
     if 'results' not in uniprot_info:
         print("Unexpected format")
         print(uniprot_info)
+    
     redirects = []
     for entry in uniprot_info['results']:
         uniprot_id = entry.get('primaryAccession', "not found")
@@ -70,7 +71,124 @@ def fetch_uniprots(uniprot_ids: list, do_redirects=True) -> pd.DataFrame:
     return df
 
 
-def fetch_pdb_response(pdb_ids):
+
+def _fetch_uniprot_info_expanded(uniprot_ids):
+    # Use UniProt API to fetch information in bulk
+    url = "https://rest.uniprot.org/uniprotkb/search"
+    query = " OR ".join(uniprot_ids)
+    params = {
+        "query": query,
+        "fields": "accession,id,protein_name,organism_name,sequence,ec", # lit_pubmed_id
+        "format": "json"
+    } # https://www.uniprot.org/help/return_fields
+    response = requests.get(url, params=params)
+    return response.json()
+
+
+import polars as pl
+
+def fetch_uniprots_expanded(uniprot_ids: list, do_redirects=True) -> pl.DataFrame:
+    """
+    Columns:
+    ['accession', 'enzyme_name', 'organism', 'organism_common', 'sequence', 'ec_numbers', 'uniparc', 'why_deleted']
+    """
+    results = []
+    uniprot_info = _fetch_uniprot_info_expanded(uniprot_ids)
+    if 'results' not in uniprot_info:
+        print("Unexpected format")
+        print(uniprot_info)
+    
+    # entryType
+    # primaryAccession
+    # uniProtkbId
+    # organism
+    #   scientificName
+    #   commonName
+    #   taxonId
+    #   evidences: [...]
+    #   lineage: [...]
+    # proteinDescription
+    #   recommendedName?
+    #     fullName?
+    #       value?
+    #   submissionNames
+    #     fullName?
+    #       value?
+
+    results = {
+        'accession': [],
+        'enzyme_name': [],
+        'organism': [],
+        'organism_common': [],
+        'sequence': [],
+        'ec_numbers': [],
+        'uniparc': [],
+        'why_deleted': [],
+        
+    }
+    found_ids = set()
+    for entry in uniprot_info['results']:
+        uniprot_id = entry.get('primaryAccession', "not found")
+        results['accession'].append(uniprot_id)
+        found_ids.add(uniprot_id)
+
+        enzyme = entry.get('proteinDescription', {}).get('recommendedName', {}).get('fullName', {}).get('value', None)
+        if enzyme is None:
+            enzyme = (entry.get('proteinDescription', {}).get('submissionNames') or [{}])[0].get('fullName', {}).get('value', None)
+        results['enzyme_name'].append(enzyme)
+
+        organism = entry.get('organism', {}).get('scientificName', None)
+        results['organism'].append(organism)
+
+        organism_common = entry.get('organism', {}).get('commonName', None)
+        results['organism_common'].append(organism_common)
+
+        sequence = entry.get('sequence', {}).get('value', None)
+        results['sequence'].append(sequence)
+        
+        uniparc = entry.get('extraAttributes', {}).get('uniParcId', None)
+        results['uniparc'].append(uniparc)
+
+        if entry.get('entryType') == 'Inactive':
+            if entry.get('inactiveReason', {}).get('inactiveReasonType') == 'DELETED':
+                results['why_deleted'].append(entry.get('inactiveReason', {}).get('deletedReason', 'deleted'))
+            else:
+                results['why_deleted'].append('unknown')
+        else:
+            results['why_deleted'].append(None)
+
+
+        ec_numbers = []
+        for submission in entry.get('proteinDescription', {}).get('submissionNames', []):
+            ec = submission.get('ecNumbers', [])
+            ec = [x.get('value') for x in ec]
+            ec_numbers += ec
+        results['ec_numbers'].append(ec_numbers)
+    
+    # add all the missing ids
+    # for some reason Uniprot just drops ids randomly .-.
+    # missing_ids = set(uniprot_ids) - found_ids
+    # for missing_id in missing_ids:
+    #     results['accession'].append(missing_id)
+    #     results['enzyme_name'].append(None)
+    #     results['organism'].append(None)
+    #     results['organism_common'].append(None)
+    #     results['sequence'].append(None)
+    #     results['ec_numbers'].append(None)
+    #     results['uniparc'].append(None)
+    #     results['why_deleted'].append(None)
+
+        # results.append((uniprot_id, enzyme, organism, sequence))
+    # to df
+    # if redirects and do_redirects:
+        # print("Redirecting", redirects)
+        # results += fetch_uniprots_expanded(redirects, do_redirects=False)
+    # df = pd.DataFrame(results, columns=['uniprot', 'enzyme', 'organism', 'sequence'])
+    df = pl.DataFrame(results)
+    return df
+
+
+def fetch_pdb_response(pdb_ids: list[str]) -> dict:
     # Use PDB API to fetch information in bulk
     url = f"https://data.rcsb.org/graphql"
     query = """
@@ -112,7 +230,10 @@ def fetch_pdb_response(pdb_ids):
     response = requests.post(url, json={'query': query, 'variables': {'ids': list(pdb_ids)}})
     return response.json()
 
-def fetch_pdbs(pdb_ids) -> pd.DataFrame:
+def fetch_pdbs(pdb_ids: list[str]) -> pd.DataFrame:
+    """
+    columns=['pdb', 'descriptor', 'name', 'sys_name', 'organism', 'info', 'seq', 'seq_can', 'pmids', 'dois']
+    """
     pdb_info = fetch_pdb_response(pdb_ids)
     result = []
     for entry in pdb_info['data']['entries']:

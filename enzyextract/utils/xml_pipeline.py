@@ -23,6 +23,8 @@ def xml_get_soup(raw_text) -> bs4.BeautifulSoup | None:
     # idk why, but html.parser kept hanging 
     soup = bs4.BeautifulSoup(raw_text, "lxml") # avoid putting in head/body tags
     return soup
+
+elename = {}
 def xml_raw_text_processing(soup: bs4.BeautifulSoup) -> str:
     """
     Obtain plaintext
@@ -36,6 +38,15 @@ def xml_raw_text_processing(soup: bs4.BeautifulSoup) -> str:
         analyte = soup.find('xocs:rawtext')
     if analyte is None:
         return ''
+    
+    # Remove <ce:bibliography> elements
+    for bibliography in analyte.find_all('ce:bibliography'):
+        bibliography.decompose()
+    
+    # Capitalize all content inside <ce:small-caps>
+    for small_caps in analyte.find_all('ce:small-caps'):
+        if small_caps.string:  # If it's a single text node
+            small_caps.string = small_caps.string.upper()
         # raise ValueError("No <body> or <xocs:rawtext> found in xml.")
     # https://stackoverflow.com/questions/17530471/get-all-text-from-an-xml-document
 
@@ -44,21 +55,26 @@ def xml_raw_text_processing(soup: bs4.BeautifulSoup) -> str:
     # instead of conglomerating all strings, try a more fine-grained approach
     ws_map = {"ce:para": "\n\n", "ce:section": "\n\n", "ce:simplesect": "\n\n",
               "ce:italic": "", "ce:bold": "", "ce:sup": "", "ce:sub": "", "ce:sc": "", "ce:underline": "",
-              "ce:inf": "", "ce:cross-ref": ""}
+              "ce:inf": "", "ce:cross-ref": "", "ce:small-caps": ""}
     # all else: \n
     # print all strings
 
     builder = ''
+
     for ele in analyte.descendants:
+        # exclude ce:bibliography
+        if ele.name and 'ce:' in ele.name:
+            elename[ele.name] = elename.get(ele.name, 0) + 1
         if isinstance(ele, bs4.element.NavigableString):
-            builder += ele.replace('\n','')
+            builder += ele.replace('\n',' ')
         elif isinstance(ele, bs4.element.Tag):
+            # Capitalize content inside <ce:small-caps>
             if ele.name in ws_map:
                 builder += ws_map[ele.name]
-            else:
+            elif ele.name and not ele.name.startswith('ce:'):
                 # check the last token in builder
                 if builder and builder[-1] not in [' ', '\n']:
-                    builder += "\n"
+                    builder += " "
     return builder
 
 class TraversalHandler:

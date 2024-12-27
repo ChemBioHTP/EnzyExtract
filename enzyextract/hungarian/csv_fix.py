@@ -333,3 +333,7 @@ def courtesy_fix_pmids(pmids, df, df2=None):
             print("Converting pmids to int")
             pmids = [int(pmid) for pmid in pmids]
     return pmids
+
+if __name__ == '__main__':
+    foo = '2.8 × 10⁻³ ± 4.0 × 10⁻⁴ s⁻¹'
+    print(fix_scientific_notation(foo))

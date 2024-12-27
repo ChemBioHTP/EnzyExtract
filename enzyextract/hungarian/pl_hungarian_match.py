@@ -28,7 +28,7 @@ def calculate_similarity_matrix(df1: pl.DataFrame, df2: pl.DataFrame, objective_
     
     return similarity_matrix
 
-def assign_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn, objective_column=None):
+def assign_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn, objective_column=None, maximize=True):
     """
     Optimally solves the assignment problem between two dataframes, given the objective function.
     Tries to maximize the objective.
@@ -57,7 +57,7 @@ def assign_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn, objecti
         padding = np.zeros((m - n, m))
         similarity_matrix = np.vstack((similarity_matrix, padding))
     
-    row_ind, col_ind = linear_sum_assignment(similarity_matrix, maximize=True)
+    row_ind, col_ind = linear_sum_assignment(similarity_matrix, maximize=maximize)
 
     # construct df
     larger_n = max(len(row_ind), len(col_ind))
@@ -82,7 +82,7 @@ def assign_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn, objecti
     return pl.DataFrame(matches_dict)
 
 def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn, 
-                   partition_by=None, how='inner', progress_bar=False, **kwargs):
+                   partition_by=None, how='inner', progress_bar=False, maximize=True, **kwargs):
     """
     Join in a SQL-like fashion, but by maximizing an objective function to find assignments. 
 
@@ -184,7 +184,7 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
             df2 = df2.with_row_index('_hungarian_index')
             
 
-            matches = assign_optimally(df1orig, df2orig, objective_fn, **kwargs)
+            matches = assign_optimally(df1orig, df2orig, objective_fn, maximize=maximize, **kwargs)
             matches = matches.join(df1, left_on='index_1', right_on='_hungarian_index', how='full')
 
             matches = (

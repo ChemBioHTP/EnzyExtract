@@ -44,13 +44,15 @@ def search_ids(all_txt: str):
 
     return pdb_matches, uniprot_matches, refseq_matches, genbank_matches
 
-amino1 = "ACDEFGHIKLMNPQRSTVWY"
-amino3 = "Ala|Cys|Asp|Glu|Phe|Gly|His|Ile|Lys|Leu|Met|Asn|Pro|Gln|Arg|Ser|Thr|Val|Trp|Tyr"
-mutant_pattern = re.compile(r'\b([ACDEFGHIKLMNPQRSTVWY][1-9]\d{1,3}[ACDEFGHIKLMNPQRSTVWY])\b')
-mutant_v2_pattern = re.compile(rf'\b(?:{amino3})[1-9]\d{{1,3}}(?:{amino3})\b', re.IGNORECASE)
-mutant_v3_pattern = re.compile(rf'\b((?:{amino3})[1-9]\d{{0,3}}(?:{amino3}))\b', re.IGNORECASE)
+# amino1 = "ACDEFGHIKLMNPQRSTVWY"
+# amino3 = "Ala|Cys|Asp|Glu|Phe|Gly|His|Ile|Lys|Leu|Met|Asn|Pro|Gln|Arg|Ser|Thr|Val|Trp|Tyr"
+# mutant_pattern = re.compile(r'\b([ACDEFGHIKLMNPQRSTVWY][1-9]\d{1,3}[ACDEFGHIKLMNPQRSTVWY])\b')
+# mutant_v2_pattern = re.compile(rf'\b(?:{amino3})[1-9]\d{{1,3}}(?:{amino3})\b', re.IGNORECASE)
+# mutant_v3_pattern = re.compile(rf'\b((?:{amino3})[1-9]\d{{0,3}}(?:{amino3}))\b', re.IGNORECASE)
 
-mutant_v4_pattern = re.compile(rf'\b((?:{amino3})-?[1-9]\d{{1,3}})\b', re.IGNORECASE)
+# mutant_v4_pattern = re.compile(rf'\b((?:{amino3})-?[1-9]\d{{1,3}})\b', re.IGNORECASE)
+
+from enzyextract.thesaurus.mutant_patterns import amino1, amino3, mutant_pattern, mutant_v2_pattern, mutant_v3_pattern, mutant_v4_pattern
 def search_mutants(all_txt: str):
     # search text for mutant codes
     mutant_matches = mutant_pattern.findall(all_txt) + mutant_v2_pattern.findall(all_txt)
