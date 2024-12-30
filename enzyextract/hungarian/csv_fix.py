@@ -4,7 +4,7 @@ import re
 import pandas as pd
 import polars as pl
 
-from enzyextract.fetch_sequences.read_pdfs_for_idents import mutant_pattern, mutant_v3_pattern, mutant_v4_pattern, amino3, amino1
+from enzyextract.fetch_sequences.read_pdfs_for_idents import amino3
 
 _strange_kcat_units = set()
 _strange_km_units = set()

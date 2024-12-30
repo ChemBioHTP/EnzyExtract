@@ -5,15 +5,17 @@ from Bio.Data.IUPACData import protein_letters_3to1_extended as amino3to1
 amino1 = "ACDEFGHIKLMNPQRSTVWY"
 amino3 = "Ala|Cys|Asp|Glu|Phe|Gly|His|Ile|Lys|Leu|Met|Asn|Pro|Gln|Arg|Ser|Thr|Val|Trp|Tyr"
 mutant_pattern = re.compile(r'\b([ACDEFGHIKLMNPQRSTVWY][1-9]\d{1,3}[ACDEFGHIKLMNPQRSTVWY])\b')
-mutant_v2_pattern = re.compile(rf'\b(?:{amino3})[1-9]\d{{1,3}}(?:{amino3})\b', re.IGNORECASE)
+# mutant_v2_pattern = re.compile(rf'\b(?:{amino3})[1-9]\d{{1,3}}(?:{amino3})\b', re.IGNORECASE)
 mutant_v3_pattern = re.compile(rf'\b((?:{amino3})[1-9]\d{{0,3}}(?:{amino3}))\b', re.IGNORECASE)
 
-mutant_v4_pattern = re.compile(rf'\b((?:{amino3})-?[1-9]\d{{1,3}})\b', re.IGNORECASE)
+# mutant_v4_pattern = re.compile(rf'\b((?:{amino3})-?[1-9]\d{{1,3}})\b', re.IGNORECASE)
 
 # mutant_v5_pattern = re.compile(rf"\b((?:{amino3})-?\d{{1,4}}(?:\s*→\s*|\s*to\s*|\s*>\s*|!)-?(?:{amino3}))\b") # if arrow or "to", then it is unambiguously a point mutation.
-mutant_v5_pattern = re.compile(rf"\b((?:{amino3})-?\d{{1,4}}(?:\s*→\s*|\s*to\s*|\s*>\s*|!)-?(?:{amino3}))\b")
+mutant_v5_pattern = re.compile(rf"\b((?:{amino3})-?\d{{1,4}}(?:\s*→\s*|\s*to\s*|\s*>\s*|!)-?(?:{amino3}))(?:[^\-\w\d]|$)")
 
-standardize_mutants1_re = re.compile(rf"({amino3})-?(\d{{1,4}})(\s?→\s?| to |\s?>\s?|!)[ -]?({amino3})(?:[^\-\w\d]|$)") # if arrow or "to", then it is unambiguously a point mutation.
+standardize_mutants1_re = re.compile(rf"({amino3})-?(\d{{1,4}})(\s*→\s*|\s*to\s*|\s*>\s*|!)[ -]?({amino3})(?:[^\-\w\d]|$)") # if arrow or "to", then it is unambiguously a point mutation.
+
+mutant_to_wt = re.compile('([A-Z]\d+)[A-Z]')
 
 import polars as pl
 import polars.selectors as cs

@@ -7,7 +7,7 @@ from openai import OpenAI
 
 from openai.lib._pydantic import to_strict_json_schema
 
-from enzyextract.utils.construct_batch import to_openai_dict_message
+from enzyextract.submit.batch_utils import to_openai_dict_message
 
 client = OpenAI()
 

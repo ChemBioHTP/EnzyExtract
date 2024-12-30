@@ -52,7 +52,7 @@ def search_ids(all_txt: str):
 
 # mutant_v4_pattern = re.compile(rf'\b((?:{amino3})-?[1-9]\d{{1,3}})\b', re.IGNORECASE)
 
-from enzyextract.thesaurus.mutant_patterns import amino1, amino3, mutant_pattern, mutant_v2_pattern, mutant_v3_pattern, mutant_v4_pattern
+from enzyextract.thesaurus.mutant_patterns import amino1, amino3, mutant_pattern, mutant_v3_pattern
 def search_mutants(all_txt: str):
     # search text for mutant codes
     mutant_matches = mutant_pattern.findall(all_txt) + mutant_v2_pattern.findall(all_txt)

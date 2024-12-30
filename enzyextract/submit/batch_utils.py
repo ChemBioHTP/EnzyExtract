@@ -97,7 +97,7 @@ def chunked_write_to_jsonl(batch, filepath, chunk_size=1000):
     filepath: complete path to a file, INCLUDING {dest_folder}/{namespace}.jsonl
     Returns list of filenames written to, so they can be opened and submitted in sequence
     """
-    chunk_size = 1000
+    # chunk_size = 1000
     have_multiple = len(batch) > chunk_size # need to enforce chunk size, since OpenAI has data size limit
 
     write_dests = []
