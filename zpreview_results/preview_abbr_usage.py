@@ -4,7 +4,7 @@ How useful are abbreviations?
 
 import polars as pl
 
-abbr_df  = pl.read_parquet('data/synonyms/abbr/beluga_abbrs.parquet')
+abbr_df  = pl.read_parquet('data/thesaurus/abbr/beluga_abbrs.parquet')
 
 so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
 base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
@@ -19,7 +19,7 @@ print(joined_df)
 
 
 
-gpt_df = pl.read_parquet('data/synonyms/abbr/beluga-abbrs-4ostruct_20241213.parquet')
+gpt_df = pl.read_parquet('data/thesaurus/abbr/beluga-abbrs-4ostruct_20241213.parquet')
 gpt_df = gpt_df[['abbreviation', 'full_name', 'category', 'pmid']]
 
 print("GPT has max full_name length of", gpt_df['full_name'].str.len_chars().max())

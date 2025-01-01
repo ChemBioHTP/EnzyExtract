@@ -1,6 +1,6 @@
 import json
 import polars as pl
-from enzyextract.utils.construct_batch import locate_correct_batch
+from enzyextract.submit.batch_utils import locate_correct_batch
 
 batch_folder = 'batches/synonyms/abbr'
 compl_folder = 'completions/synonyms/abbr'
@@ -58,4 +58,4 @@ df = df_out = pl.DataFrame(data)
 print(df)
 
 
-df.write_parquet(f'data/synonyms/abbr/{namespace}_{version}.parquet')
+df.write_parquet(f'data/thesaurus/abbr/{namespace}_{version}.parquet')

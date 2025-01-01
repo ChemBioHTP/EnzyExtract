@@ -10,11 +10,11 @@ from tqdm import tqdm
 
 from enzyextract.backform.backform_utils import fix_the_yaml, isolate_the_yaml
 from enzyextract.explode.explode_auto_context import create_explode_batch, pmids_needing_exploding
-from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
-from enzyextract.utils.openai_management import process_env, submit_batch_file
+from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
+from enzyextract.submit.openai_management import process_env, submit_batch_file
 from enzyextract.utils.pmid_management import pmids_from_cache
 from enzyextract.utils import prompt_collections
-from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
 from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
 

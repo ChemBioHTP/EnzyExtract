@@ -10,7 +10,7 @@ from typing import TypedDict
 import pandas as pd
 from tqdm import tqdm
 
-from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
+from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
 from enzyextract.fetch_sequences.confirm_enzyme_sequences import idents_for_pmid, load_yaml_enzymes, form_mutant_codes, to_regex, does_sequence_corroborate, sequence_search_regex, MutantCodes, to_amino_sequence, find_offset, find_p, find_p_offset
@@ -325,6 +325,9 @@ if __name__ == "__main__":
     
     namespace = 'apogee-nonbrenda'
     unidf = load_df_from_folder(f"fetch_sequences/uniprot/{namespace}")
+    
+    # NOTE: fragments have moved. They were formerly in fetch_sequences/results/*_fragments, but
+    # now they are in data/enzymes/accessions/*
     
     uniprot_df = pd.read_csv(f"fetch_sequences/results/uniprot_fragments/{namespace}_uniprots.tsv", sep="\t") \
         # .head(0)

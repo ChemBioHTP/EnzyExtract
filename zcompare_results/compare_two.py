@@ -9,7 +9,7 @@ from enzyextract.backform.process_human_perfect import form_human_perfect
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid, widen_df
 from enzyextract.hungarian.hungarian_matching import match_dfs_by_pmid
 from enzyextract.hungarian.postmatched_utils import convenience_rearrange_cols
-from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
+from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_file
 

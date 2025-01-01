@@ -9,9 +9,15 @@ def main():
     # working = 'cherry-dev'
     # working = 'revision-prod'
     working = 'bucket'
+    # working = 'apatch'
     do_final_answer = False
+
     if working == 'apogee':
         walk_from = 'completions/enzy/apogee'
+        prefix = None
+        conventional_levels = True
+    elif working == 'apatch':
+        walk_from = 'completions/enzy/apatch'
         prefix = None
         conventional_levels = True
     elif working == 'beluga':
@@ -96,5 +102,16 @@ def main():
     ])
     df.write_parquet(f'data/gpt/{working}_gpt.parquet')
 
+def consolidate_all():
+    dfs = []
+    for working in ['apogee', 'bucket', 'apatch']:
+        df = pl.read_parquet(f'data/gpt/{working}_gpt.parquet')
+        df = df.with_columns([
+            pl.lit(working).alias('zerolevel')
+        ])
+        dfs.append(df)
+    df = pl.concat(dfs, how='diagonal')
+    df.write_parquet('data/gpt/latest_gpt.parquet')
 if __name__ == '__main__':
-    main()
+    # main()
+    consolidate_all()

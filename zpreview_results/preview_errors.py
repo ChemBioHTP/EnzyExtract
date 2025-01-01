@@ -1,7 +1,7 @@
 import polars as pl
 import polars.selectors as cs
 from Bio.Data.IUPACData import protein_letters_3to1_extended
-from enzyextract.fetch_sequences.read_pdfs_for_idents import mutant_pattern, mutant_v3_pattern, mutant_v4_pattern
+from enzyextract.thesaurus.mutant_patterns import mutant_pattern, mutant_v3_pattern, mutant_v4_pattern
 
 def clean_mutants(df):
     df = df.with_columns([
@@ -92,9 +92,34 @@ def preview_prompt_regurgitate():
       kcat: 33 ± 0.3 s^-1
       Km: 2.3 mM
       kcat/Km: null"""
+    
+    prompt_fragment2 = """    - descriptor: R203Q cat-1; with NADPH; 25°C
+      substrate: H2O2
+      kcat: null
+      Km: 9.9 ± 0.1 µM
+      kcat/Km: 4.4 s^-1 mM^-1"""
     df = pl.scan_parquet('data/gpt/apogee_gpt.parquet').filter(
         pl.col('content').str.contains(prompt_fragment, literal=True)
+        | pl.col('content').str.contains(prompt_fragment2, literal=True)
     ).collect()
+
+    df.select('pmid').write_parquet('data/pmids/apogee_prompt_regurgitate.parquet')
+
+    df = pl.scan_parquet('data/gpt/apatch_gpt.parquet').filter(
+        pl.col('content').str.contains(prompt_fragment, literal=True)
+        | pl.col('content').str.contains(prompt_fragment2, literal=True)
+    ).collect()
+
+    df.select('pmid').write_parquet('data/pmids/apatch_prompt_regurgitate.parquet')
+
+    df = pl.scan_parquet('data/gpt/bucket_gpt.parquet').filter(
+        pl.col('content').str.contains(prompt_fragment, literal=True)
+        | pl.col('content').str.contains(prompt_fragment2, literal=True)
+    ).collect()
+
+    df.select('pmid').write_parquet('data/pmids/bucket_prompt_regurgitate.parquet')
+
+    # if this happens once, then it's highly likely that the pdf itself is illegible and can't be processed.
     print(df) # 32 examples
 
 def preview_super_long():
@@ -122,7 +147,8 @@ def preview_super_long():
     print(manifest)
 
 if __name__ == "__main__":
-    preview_mutants()
+    preview_prompt_regurgitate()
+    # preview_mutants()
     # preview_wide_tables()
     # preview_hallucinate_micro()
     # preview_asm_micro_error()

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import polars as pl
 
 def script_see_abbr_dist():
-    df = pl.read_parquet('data/synonyms/abbr/beluga_abbrs.parquet')
+    df = pl.read_parquet('data/thesaurus/abbr/beluga_abbrs.parquet')
 
     # GPT has max full_name length of 155
     df = df.with_columns([

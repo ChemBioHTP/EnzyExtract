@@ -2,7 +2,7 @@
 import json
 import os
 import pandas as pd
-from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
+from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid
 
@@ -76,16 +76,16 @@ if __name__ == "__main__":
 
     # namespace = 'apogee-rebuilt'
     # namespace = 'apatch-topoff-open'
-    # namespace = 'bucket-rebuilt'
-    namespace = 'apatch-rebuilt'
+    namespace = 'bucket-rebuilt'
+    # namespace = 'apatch-rebuilt'
 
     structured = namespace.endswith('-str') or namespace.endswith('-struct')
     version = None
     # compl_folder = 'completions/enzy/apogee'
-    # compl_folder = 'completions/enzy/bucket'
-    compl_folder = 'completions/enzy/apatch'
+    compl_folder = 'completions/enzy/bucket'
+    # compl_folder = 'completions/enzy/apatch'
 
-    from enzyextract.utils.openai_management import merge_all_chunked_completions
+    from enzyextract.submit.openai_management import merge_all_chunked_completions
     merge_all_chunked_completions(compl_folder, compl_folder)
 
 

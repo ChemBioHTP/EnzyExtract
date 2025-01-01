@@ -301,21 +301,21 @@ if __name__ == '__main__':
 
 
 
-    working = 'apogee'
+    # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
     # working = 'sabiork'
     # working = 'apatch'
     # working = 'bucket'
-    # working = 'everything'
+    working = 'everything'
 
     # against = 'runeem'
     against = 'brenda'
     # against = 'sabiork'
 
     # scino_only = True
-    # scino_only = False
-    scino_only = None
+    scino_only = False
+    # scino_only = None
     # scino_only = 'false_revised'
 
     if scino_only is True:

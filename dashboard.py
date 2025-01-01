@@ -1,8 +1,8 @@
 
 import json
 import os
-from enzyextract.utils.construct_batch import preview_batches_in_folder
-from enzyextract.utils.openai_management import process_env, preview_batches_uploaded, check_undownloaded
+from enzyextract.submit.batch_utils import preview_batches_in_folder
+from enzyextract.submit.openai_management import process_env, preview_batches_uploaded, check_undownloaded
 
 # from generate_bmatched import run_stats
 def script_fetch_undownloaded():
@@ -34,7 +34,7 @@ def script_fetch_undownloaded():
 
 def script_submit_stragglers():
     # just submit a few
-    from enzyextract.utils.openai_management import process_env, submit_batch_file
+    from enzyextract.submit.openai_management import process_env, submit_batch_file
     # stragglers = ['batches/enzy/wos-open-apogee-t2neboth_1.7000.jsonl', 'batches/enzy/wos-open-apogee-t2neboth_1.8000.jsonl']
     # stragglers = ['batches/enzy/brenda-hindawi-apogee-t2neboth_1.jsonl']
     filedests = ['batches/enzy/apatch/wos-localshim-t2neboth_1.0.jsonl', 'batches/enzy/apatch/wos-localshim-t2neboth_1.1000.jsonl'] # f'batches/enzy/apatch/topoff-open-apatch-t2neboth_1.0.jsonl'
@@ -75,7 +75,7 @@ def script2(path_to_dir, pending_file='batches/pending.jsonl'):
 
 def script_download_all_errors():
     # download all errors, because oops I forgot
-    from enzyextract.utils.openai_management import iter_all_error_files
+    from enzyextract.submit.openai_management import iter_all_error_files
     from tqdm import tqdm
     for want_name, content in tqdm(iter_all_error_files()):
         with open(f'completions/errors/length/{want_name}.err.jsonl', 'wb') as f:

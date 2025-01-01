@@ -17,3 +17,4 @@ legacy/**
 *.parquet
 zpreprocessing/reocr/**/*.png
 zfinetune/mds/*.md
+*.pth

@@ -1,0 +1,136 @@
+# back construct: given a corrected csv, construct the ideal yaml
+# use this to fine tune gpt-4o-mini
+
+import json
+import re
+import pandas as pd
+
+from enzyextract.backform.backform_utils import openai_batch_to_finetune, openai_crafted_batch_to_finetune
+from enzyextract.backform.quality_assure import quality_assure_finetune, quality_assure_for_enzyme_matching
+from enzyextract.metrics.get_perfects import get_perfects_only
+from enzyextract.utils import prompt_collections
+from enzyextract.submit.batch_utils import pmid_from_usual_cid
+from enzyextract.utils.md_management import read_md_by_pmid
+
+# from backform.get_perfects import get_perfects_only
+# current_best = pd.read_csv('completions/enzy/rekcat-vs-brenda_5.csv')
+# perfect_df = get_perfects_only(current_best)
+# print(perfect_df['kcat'].count())
+
+# print(len(set(perfect_df['pmid'])))
+# print(perfect_df['pmid'].unique())
+
+# perfect_df.to_csv('backform/rekcat-vs-brenda_5_perfect.csv', index=False)
+
+# get # of kcat
+
+
+# includes: 9733678, 9628739, 9521731, 9305868, 9235932
+
+
+# for these pmids, prefer the manually corrected csv: (RHS, corrected brenda)
+# 9696781, 9733738, 9790663, 9857017, 9933602
+
+# 9636048, 9576908, 9556600, 9495750, 9398292, 9359420, 9202000, 8948426, 8910590, 8670160, 8626758
+
+# for these pmids, prefer the manually corrected csv: (RHS, corrected brenda) BUT only take non-null kcat:
+
+# 8780523
+
+# for these pmids, prefer the direct gpt-4o output:
+# 9973343, 9092497, 8939970, 8645224
+
+# for these pmids, rearrange in private:
+# 8688421
+
+def train_test_split(result, train_ratio=0.7, val_ratio=0.2, seed=42):
+    
+    # shuffle
+    import random
+    random.seed(seed)
+    random.shuffle(result)
+    
+    train = result[:int(len(result) * train_ratio)]
+    val = result[int(len(result) * train_ratio):int(len(result) * (train_ratio + val_ratio))]
+    test = result[int(len(result) * (train_ratio + val_ratio)):]
+    return train, val, test
+
+def save_partitions(train, val, test, dest_folder, namespace, pmids_dest=None):
+    for part, name in [(train, 'train'), (val, 'val'), (test, 'test')]:
+        if not part:
+            continue
+        with open(f"{dest_folder}/{namespace}.{name}.jsonl", 'w') as f:
+            for pmid, item in part:
+                f.write(json.dumps(item) + '\n')
+        if pmids_dest:
+            with open(f"{pmids_dest}/pmids-{namespace}.{name}.txt", 'w') as f:
+                for pmid, item in part:
+                    f.write(str(pmid) + '\n')
+    
+
+
+def script_finetune_from_md():
+    # backform from a md file
+    
+    namespace = 'manifold'
+    input_batch = 'zfinetune/inputs/manifold_tune.jsonl'
+    input_reqs = {}
+    with open(input_batch, 'r') as f:
+        for line in f:
+            obj = json.loads(line)
+            pmid = str(pmid_from_usual_cid(obj['custom_id'])) # blunder
+            input_reqs[pmid] = obj
+    
+    input_md_path = 'zfinetune/mds/train manifold.md'
+    with open(input_md_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    
+    train = []
+    val = []
+    # 10206992, , 10373434, 10947957, 11016923, 11468288, 11675384, 12604203
+
+    # those with little educational value
+    val_set = ['10347221', '10960485', '12054464', ]
+
+    has_table_re = re.compile(r'\|:?-*:?(\|:?-*:?)+\|')
+    for pmid, content in read_md_by_pmid(content):
+        assert pmid in input_reqs
+        input_req = input_reqs[pmid]
+        req = openai_crafted_batch_to_finetune(input_req, content, system_prompt=prompt_collections.for_manifold)
+        
+        # quality assurance
+        
+        if 'μM' in content or 'µM' in content:
+            # then the input req better have it too!
+            tabled = ""
+            untabled = ""
+            # look at input req
+            for msg in input_req['body']['messages'][1:]:
+                content = msg['content']
+                if has_table_re.search(content):
+                    tabled += content
+                else:
+                    untabled += content
+            if tabled and 'μ' not in tabled and 'µ' not in tabled:
+                print(pmid, "does not have µM in table")
+            if untabled and 'μ' not in untabled and 'µ' not in untabled:
+                print(pmid, "does not have µM in untabled")
+            if not tabled:
+                print(pmid, "does not have table")
+            
+            
+        if pmid in val_set:
+            val.append((pmid, req))
+        else:
+            train.append((pmid, req))
+    # assert len(val) == len(val_set)
+    
+    # quality assurance. 
+
+    dest_folder = 'zfinetune/jobs'
+    save_partitions(train, val, [], dest_folder, namespace)
+    
+    
+if __name__ == "__main__":
+    script_finetune_from_md()

@@ -3,8 +3,8 @@ import re
 
 from Bio.Data.IUPACData import protein_letters_3to1_extended
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from enzyextract.thesaurus.substrates_io import latest_smiles_df, latest_inchi_df
-from enzyextract.fetch_sequences.read_pdfs_for_idents import amino3
+
+from enzyextract.thesaurus.mutant_patterns import amino3
 from datetime import datetime
 import polars as pl
 import polars.selectors as cs
@@ -13,7 +13,7 @@ import rapidfuzz
 from enzyextract.hungarian.hungarian_matching import is_wildtype
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
 from enzyextract.hungarian import pl_hungarian_match
-from enzyextract.fetch_sequences.read_pdfs_for_idents import mutant_pattern, mutant_v3_pattern
+from enzyextract.thesaurus.mutant_patterns import mutant_pattern, mutant_v3_pattern
 
 # note: brenda/pubchem idents never have ascii
 replace_greek = {'α': 'alpha', 'β': 'beta', 'ß': 'beta',
@@ -116,20 +116,38 @@ def script_substrate_idents(base_df, abbr_df, gpt_df):
     return want_df
     
 
+def load_ecs(add_top3=True):
+    """
+    return the ec df, with these columns:
+    - alias
+    - enzyme_ecs
+    - enzyme_ecs_top3
+    """
+    ecs = pl.read_parquet('data/brenda/brenda_to_ec.parquet')
+    selectors = ['alias', 'enzyme_ecs']
+    if add_top3:
+        selectors.append('enzyme_ecs_top3')
+    ecs = (
+        ecs
+        .rename({'viable_ecs': 'enzyme_ecs'})
+        .select(selectors)
+    )
+
+    return ecs
     
 
-def sequenced():
-    df = latest_smiles_df()
-    # print(df)
+# def sequenced():
+#     df = latest_smiles_df()
+#     # print(df)
 
 
-    df2 = latest_inchi_df()
+#     df2 = latest_inchi_df()
 
-    brenda_df = pl.read_parquet('data/substrates/brenda_inchi_all.parquet')
-    print(df2)
+#     brenda_df = pl.read_parquet('data/substrates/brenda_inchi_all.parquet')
+#     print(df2)
 
 
-### Begin methods for use for hungarian matching
+### Begin methods for use for assignment problem
 def is_subset_match(list1: list, list2: list):
     """
     Returns True if list1 is a subset of list2, or vice versa.
@@ -155,6 +173,7 @@ def organism_objective(gpt_dict, base_dict):
             return 1
     return 0
 
+BEST = 9
 def enzyme_objective(gpt_dict, base_dict, do_top3=True):
     # Objective function. Tries to maximize the number of enzyme-substrate pairs that are the same
     gpt_names = [x for x in [gpt_dict['enzyme'], gpt_dict.get('enzyme_full')] if x]
@@ -172,30 +191,30 @@ def enzyme_objective(gpt_dict, base_dict, do_top3=True):
     for gpt_name in gpt_names:
         for base_name in base_names:
             if gpt_name.lower() == base_name.lower():
-                return 9 # case-insensitive match is good enough
+                return BEST # case-insensitive match is good enough
     
     for gpt_ec in gpt_ecs:
         for base_ec in base_ecs:
             if gpt_ec == base_ec:
-                return 9
+                return BEST
     
     ### One-to-many match: this is okay
     for gpt_ec in gpt_ecs:
         for base_ec in base_ecs:
             if is_subset_match(gpt_ec, base_ec):
-                return 8
+                return BEST-1
 
     ### A high string similarity is also in this calibre
     for gpt_name in gpt_names:
         for base_name in base_names:
             if len(gpt_name) >= 5 and len(base_name) >= 5 and rapidfuzz.fuzz.ratio(gpt_name, base_name) > 90:
-                return 8
+                return BEST-1
     
     ### Many-to-many match: this is fine
     for gpt_ec in gpt_ecs:
         for base_ec in base_ecs:
             if len(set(gpt_ec) & set(base_ec)) > 0:
-                return 6
+                return BEST-3
     return 0
 def substrate_objective(gpt_dict, base_dict):
     # Objective function. Tries to maximize the number of substrate pairs that are the same
@@ -212,40 +231,42 @@ def substrate_objective(gpt_dict, base_dict):
     for gpt_name in gpt_names:
         for base_name in base_names:
             if gpt_name.lower() == base_name.lower():
-                return 9
+                return BEST
     for gpt_cid in gpt_cids:
         for base_cid in base_cids:
             if gpt_cid == base_cid:
-                return 9
+                return BEST
     for gpt_brenda in gpt_brendas:
         for base_brenda in base_brendas:
             if gpt_brenda == base_brenda:
-                return 9
+                return BEST
     
     ### One-to-many match: this is okay
     for gpt_cid in gpt_cids:
         for base_cid in base_cids:
             if is_subset_match(gpt_cid, base_cid):
-                return 8
+                return BEST-1
     for gpt_brenda in gpt_brendas:
         for base_brenda in base_brendas:
             if is_subset_match(gpt_brenda, base_brenda):
-                return 8
+                return BEST-1
     
-    ### A high string similarity is slightly worse - eg. NAD vs NAD+
-    for gpt_name in gpt_names:
-        for base_name in base_names:
-            if len(gpt_name) >= 5 and len(base_name) >= 5 and rapidfuzz.fuzz.ratio(gpt_name, base_name) > 90:
-                return 7
+
     ### Many-to-many match: this is fine
     for gpt_cid in gpt_cids:
         for base_cid in base_cids:
             if len(set(gpt_cid) & set(base_cid)) > 0:
-                return 6
+                return BEST-2
     for gpt_brenda in gpt_brendas:
         for base_brenda in base_brendas:
             if len(set(gpt_brenda) & set(base_brenda)) > 0:
-                return 6
+                return BEST-2
+            
+    ### A high string similarity is slightly worse - eg. NAD vs NAD+
+    for gpt_name in gpt_names:
+        for base_name in base_names:
+            if len(gpt_name) >= 5 and len(base_name) >= 5 and rapidfuzz.fuzz.ratio(gpt_name, base_name) > 90:
+                return BEST-3
     return 0
 
 def mutant_objective(gpt_dict, base_dict):
@@ -257,7 +278,7 @@ def mutant_objective(gpt_dict, base_dict):
     b = base_dict['clean_mutant']
     if a and b:
         if set(a) == set(b):
-            return 9
+            return BEST
 
     a = gpt_dict['mutant']
     b = base_dict['mutant']
@@ -265,12 +286,12 @@ def mutant_objective(gpt_dict, base_dict):
     if a and b:
         # if both not empty
         if a.lower() == b.lower(): # .lower() == b.lower():
-            return 9
+            return BEST
             # ensure it is a mutant format
             # if re.match(r"\b[A-Z]\d+[A-Z]\b", a): 
             #     return 9
         if is_wildtype(a, allow_empty=False) and is_wildtype(b, allow_empty=False):
-            return 9 # both wild-type: good.
+            return BEST # both wild-type: good.
     
     # allow matching empty to "wild-type", but don't reward it as much
     # if (a or b) and is_wildtype(a) and is_wildtype(b):
@@ -314,9 +335,9 @@ def enzyme_substrate_objective(gpt_dict, base_dict):
     mutant_coeff = 100
     
     substrate_coeff = 10
-    ph_coeff = 1
-    temperature_coeff = 1
-    kinetic_coeff = 0.1
+    ph_coeff = 0.1
+    temperature_coeff = 0.1
+    kinetic_coeff = 0.01
     z = (
         organism_coeff * organism_objective(gpt_dict, base_dict)
         + enzyme_coeff * enzyme_objective(gpt_dict, base_dict)
@@ -337,24 +358,6 @@ def parse_col(col: str, suffix='') -> pl.Expr:
         return convert_to_true_value(value, unit)
     return pl.col(col).map_elements(to_true, return_dtype=pl.Float64)
 
-def load_ecs(add_top3=True):
-    """
-    return the ec df, with these columns:
-    - alias
-    - enzyme_ecs
-    - enzyme_ecs_top3
-    """
-    ecs = pl.read_parquet('data/brenda/brenda_to_ec.parquet')
-    selectors = ['alias', 'enzyme_ecs']
-    if add_top3:
-        selectors.append('enzyme_ecs_top3')
-    ecs = (
-        ecs
-        .rename({'viable_ecs': 'enzyme_ecs'})
-        .select(selectors)
-    )
-
-    return ecs
 
 def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
     """
@@ -383,7 +386,7 @@ def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
         ])
     standardize_mutants1_re = re.compile(rf"({amino3})-?(\d{{1,4}})(\s?→\s?| to |\s?>\s?|!)[ -]?({amino3})") # if arrow or "to", then it is unambiguously a point mutation.
     df = df.with_columns([
-        pl.col("mutant").str.replace_all(standardize_mutants1_re.pattern, r"\1\2\4").alias("mutant")
+        pl.col("mutant").str.replace_all(standardize_mutants1_re.pattern, r"$1$2$4").alias("mutant")
     ])
     df = df.with_columns([
         pl.col("mutant").str.extract_all(mutant_pattern.pattern).alias("mutant1"),
@@ -414,7 +417,7 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
     
     
     ### add substrate_unabbreviated to base_df
-    abbr_df = pl.read_parquet('data/synonyms/abbr/beluga-abbrs-4ostruct_20241213.parquet')
+    abbr_df = pl.read_parquet('data/thesaurus/abbr/beluga-abbrs-4ostruct_20241213.parquet')
     abbr_df = abbr_df.select(['pmid', 'abbreviation', 'full_name']).rename({'full_name': 'substrate_unabbreviated'})
     base_df = base_df.join(abbr_df, left_on=['pmid', 'substrate'], right_on=['pmid', 'abbreviation'], how='left')
     base_df = base_df.with_columns([
@@ -618,16 +621,24 @@ def add_diff(df):
         )
     )
 
+def load_runeem_df(exclude_train=False):
+    so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
+    base_df = pl.read_csv('data/humaneval/runeem/runeem_20241219.csv', schema_overrides=so)
+
+    if exclude_train:
+        train_pmids = pl.read_parquet('data/pmids/t2neboth_train.parquet')
+        base_df = base_df.filter(~pl.col('pmid').is_in(train_pmids['pmid']))
+    return base_df
 if __name__ == '__main__':
 
     so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
 
     # step 1: thesaurus
-    if not os.path.exists((want_dest := 'data/synonyms/thesaurus/apogee_substrate_thesaurus.parquet')): #  or True:
+    if not os.path.exists((want_dest := 'data/thesaurus/substrate/apogee_substrate_thesaurus.parquet')): #  or True:
         
         # base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
-        base_df = pl.read_parquet('data/humaneval/runeem/runeem_20241219.parquet')
-        abbr_df = pl.read_parquet('data/synonyms/abbr/beluga-abbrs-4ostruct_20241213.parquet')
+        base_df = load_runeem_df()
+        abbr_df = pl.read_parquet('data/thesaurus/abbr/beluga-abbrs-4ostruct_20241213.parquet')
         # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
         # gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
         gpt_df = pl.read_parquet('data/valid/_valid_apogee-rebuilt.parquet')
@@ -637,23 +648,22 @@ if __name__ == '__main__':
     else: want_df = pl.read_parquet(want_dest)
 
 
-
     # exit(0)
-    working = 'apogee'
+    # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
     # working = 'sabiork'
     # working = 'bucket'
     # working = 'apatch'
-    # working = 'everything'
+    working = 'everything'
 
     # against = 'runeem'
     against = 'brenda'
     # against = 'sabiork'
 
-    scino_only = None
+    # scino_only = None
     # scino_only = True
-    # scino_only = False
+    scino_only = False
     # scino_only = 'false_revised'
 
     whitelist = None
@@ -679,7 +689,7 @@ if __name__ == '__main__':
         gpt_df = pl.read_parquet('data/valid/_valid_everything.parquet')
     else:
         raise ValueError("Invalid working")
-    base_df = pl.read_csv('data/humaneval/runeem/runeem_20241219.csv', schema_overrides=so)
+    base_df = load_runeem_df(exclude_train=True)
 
     # exclude scientific notation: exclude "10^" to see if it improves acc like I think
     

@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import polars as pl
+import polars.selectors as cs
 
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid, widen_df
 from enzyextract.utils.pmid_management import pmids_from_cache, cache_pmids_to_disk, lift_pmids
@@ -394,7 +395,7 @@ def convert_parquet():
 
 def determine_mutants():
     # check to see how many rows have valid mutants
-    from enzyextract.fetch_sequences.read_pdfs_for_idents import mutant_pattern, mutant_v3_pattern
+    from enzyextract.thesaurus.mutant_patterns import mutant_pattern, mutant_v3_pattern
     df = pl.read_parquet('data/_compiled/apogee_all.parquet')
     df = df.filter(
         pl.col("mutant").str.contains(mutant_pattern.pattern)
@@ -490,12 +491,38 @@ def generate_sabiork():
     df.write_parquet('data/sabiork/sabiork.parquet')
     exit(0)
 
+def check_for_lame():
+    """
+    lame is when enzyme == enzyme_full
+    """
+    df = pl.read_parquet('data/export/TheData_kcat.parquet')
+    exit(0)
+
+def produce_epic():
+    df = pl.read_parquet('data/export/TheData_kcat.parquet')
+    df = df.filter(
+        pl.col('kcat_value').is_not_null()
+        & pl.col('sequence').is_not_null()
+        & pl.col('smiles').is_not_null()
+
+        # block failed abbreviations
+        # & ~(
+        #     (pl.col('substrate').str.len_chars() <= 2)
+        #     & pl.col('substrate_full').is_null()
+        # )
+    ).with_columns(
+        pl.col('clean_mutant').list.join('; ').alias('clean_mutant')
+    )
+    df.write_parquet('data/export/TheData_kcat_sequenced.parquet')
+    exit(0)
+
 if __name__ == "__main__":
     # script_count_pdfs()
     # script_create_runeem_df()
     # script_lift_runeem_set()
     # df = script_look_for_ecs()
     # exit(0)
+    produce_epic()
     generate_sabiork()
     generate_ascii_ctrl()
     check_for_km()

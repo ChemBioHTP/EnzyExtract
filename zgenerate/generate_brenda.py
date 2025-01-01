@@ -578,7 +578,7 @@ def script_enzyme_name_to_ec():
     Generate a mapping from enzyme name to EC number
     These parquet files are created:
     - brenda_to_ec.parquet
-    - runeem_20241125_ec.csv
+    - (no longer) runeem_20241125_ec.csv
     """
     # try to find ecs for either the enzyme or enzyme_full
     enzyme_df = pl.read_parquet('data/brenda/brenda_enzyme_synonyms.parquet')
@@ -600,9 +600,17 @@ def script_enzyme_name_to_ec():
     alias_df = enzyme_df[['alias', 'ec']]
     # concat alias_df, pure_name_to_ec, and systematic_name_to_ec
     alias_df = pl.concat([alias_df, pure_name_to_ec, systematic_name_to_ec]).drop_nulls("alias")
-    to_ec_df = alias_df.group_by("alias").agg(pl.col("ec")).rename({"ec": "viable_ecs"})
+
+    alias_df = alias_df.with_columns([
+        pl.col('ec').str.extract(r"(\d+\.\d+\.\d+)\.\d+").alias('enzyme_ecs_top3')
+    ])
+    to_ec_df = alias_df.group_by("alias").agg(
+        pl.col("ec").unique().drop_nulls(),
+        pl.col('enzyme_ecs_top3').unique().drop_nulls()
+    ).rename({"ec": "viable_ecs"})
 
     to_ec_df.write_parquet('data/brenda/brenda_to_ec.parquet')
+    return
 
     # sort by length of ec
     duplicates = to_ec_df.sort(pl.col("viable_ecs").list.len(), descending=True)

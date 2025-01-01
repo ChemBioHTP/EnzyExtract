@@ -29,7 +29,7 @@ def script_look_for_bad_ocr():
 
         # Save results
         dfs.append(df_content)
-        # df_content.write_parquet(f'data/synonyms/abbr/{name}_bad_ocr.parquet')
+        # df_content.write_parquet(f'data/thesaurus/abbr/{name}_bad_ocr.parquet')
     
     # Combine all results if needed
     final_df = pl.concat(dfs)

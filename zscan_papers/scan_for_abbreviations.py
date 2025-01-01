@@ -63,7 +63,7 @@ def auto_extract_abbr(content: str):
         # parts = semipart.split(', ', 1)
 
         # remove the hyphenation
-        semipart = remove_hyphenation_re.sub(r'\1\2', semipart)
+        semipart = remove_hyphenation_re.sub(r'$1$2', semipart)
 
         parts = delimiter_re.split(semipart, maxsplit=1)
         if len(parts) <= 1:
@@ -137,8 +137,8 @@ def script_look_for_abbreviations(pdfs_folder="C:/conjunct/tmp/eval/arctic", rec
         & ~(pl.col('pmid').is_in(set(df2['pmid'])))
     )
     # df.to_csv('C:/conjunct/tmp/eval/arctic_dev/ec_matches.csv', index=False)
-    df.write_parquet('data/synonyms/abbr/beluga_paper_abbrs.parquet')
-    df2.write_parquet('data/synonyms/abbr/beluga_abbrs.parquet')
+    df.write_parquet('data/thesaurus/abbr/beluga_paper_abbrs.parquet')
+    df2.write_parquet('data/thesaurus/abbr/beluga_abbrs.parquet')
 
     # wow, 366/(366+58) = 86% of the papers can be automatically processed!
     return df
@@ -173,8 +173,8 @@ def script_look_for_abbreviations_polars():
         # df_abbrs = df_abbrs.collect()
         
         # Save results
-        df_content.write_parquet(f'data/synonyms/abbr/{name}_paper_abbrs.parquet')
-        df_abbrs.write_parquet(f'data/synonyms/abbr/{name}_abbrs.parquet')
+        df_content.write_parquet(f'data/thesaurus/abbr/{name}_paper_abbrs.parquet')
+        df_abbrs.write_parquet(f'data/thesaurus/abbr/{name}_abbrs.parquet')
         
         # Find interesting cases (papers with content but no structured abbreviations)
         interesting_df = (

@@ -2,9 +2,9 @@
 
 import polars as pl
 
-from enzyextract.utils.construct_batch import chunked_write_to_jsonl
+from enzyextract.submit.batch_utils import chunked_write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
-from enzyextract.utils.openai_management import process_env, submit_batch_file
+from enzyextract.submit.openai_management import process_env, submit_batch_file
 from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
 from enzyextract.utils.namespace_management import glean_model_name
 from enzyextract.prompts import agentic_similarity

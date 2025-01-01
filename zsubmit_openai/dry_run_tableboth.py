@@ -10,7 +10,7 @@ import os
 from tqdm import tqdm
 
 from enzyextract.utils import prompt_collections
-from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.micro_fix import duplex_mM_corrected_text
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from

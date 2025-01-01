@@ -1,6 +1,6 @@
 import json
 import polars as pl
-from enzyextract.utils.construct_batch import locate_correct_batch
+from enzyextract.submit.batch_utils import locate_correct_batch
 
 batch_folder = 'batches/similarity'
 compl_folder = 'completions/similarity'
@@ -89,4 +89,4 @@ df = df.select([
 print(df)
 
 
-df.write_parquet(f'data/synonyms/es/{namespace}_{version}.parquet')
+df.write_parquet(f'data/thesaurus/es/{namespace}_{version}.parquet')

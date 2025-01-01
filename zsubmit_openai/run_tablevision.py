@@ -4,9 +4,9 @@ import json
 from tqdm import tqdm
 from PIL import Image
 
-from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
-from enzyextract.utils.construct_batch import write_to_jsonl
-from enzyextract.utils.openai_management import submit_batch_file
+from enzyextract.submit.openai_schema import to_openai_batch_request_with_schema
+from enzyextract.submit.batch_utils import write_to_jsonl, chunked_write_to_jsonl
+from enzyextract.submit.openai_management import submit_batch_file
 
 manifest = pl.read_parquet('data/manifest.parquet')
 manifest = manifest.filter(
@@ -119,18 +119,13 @@ for i, (pmid, yaml, imglocs) in enumerate(tqdm(joint.select(['pmid', 'yaml', 'im
 
 # submit to openAI
 
-dest_folder = 'batches/revision/' # + namespace + '.jsonl'
+dest_filepath = f'batches/revision/{namespace}.jsonl' # + namespace + '.jsonl'
 
-chunk_size = 1000
-have_multiple = len(batch) > chunk_size # need to enforce chunk size, since OpenAI has data size limit
-for i in range(0, len(batch), chunk_size):
-    chunk = batch[i:i+chunk_size]
-    if have_multiple:
-        will_write_to = f'{dest_folder}/{namespace}.{i}.jsonl'
-    write_to_jsonl(chunk, will_write_to)
+chunk_dests = chunked_write_to_jsonl(batch, dest_filepath, 1000)
+for chunk_dest in chunked_write_to_jsonl:
     try:
-        batchname = submit_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
+        batchname = submit_batch_file(chunk_dest, pending_file='batches/pending.jsonl') # will ask for confirmation
     except Exception as e:
-        print("Error submitting batch", will_write_to, e)
+        print("Error submitting batch", chunk_dest, e)
 # write_to_jsonl(batch, will_write_to)
 # batchname = submit_batch_file(will_write_to, pending_file='batches/pending.jsonl')

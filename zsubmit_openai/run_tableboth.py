@@ -10,10 +10,10 @@ import os
 from tqdm import tqdm
 
 from enzyextract.utils import prompt_collections
-from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
+from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
 from enzyextract.utils.micro_fix import duplex_mM_corrected_text
-from enzyextract.utils.openai_management import process_env, submit_batch_file
+from enzyextract.submit.openai_management import process_env, submit_batch_file
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from
 from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
@@ -22,7 +22,8 @@ from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
 
 process_env('.env')
 
-namespace = 'wos-localshim-t2neboth' # 'brenda-pnas-apogee-4o-str' # 'wos-open-apogee-429d-t2neboth'
+# namespace = 'wos-localshim-t2neboth' # 'brenda-pnas-apogee-4o-str' # 'wos-open-apogee-429d-t2neboth'
+namespace = 'wos-remoteall-t2neboth'
 
 # defaults
 # micro_path = "C:/conjunct/vandy/yang/reocr/results/micros_resnet_v1.csv"
@@ -65,7 +66,7 @@ elif namespace.startswith('cherry-dev-'):
     tables_from = 'C:/conjunct/tmp/eval/cherry_dev/tables'
 else:
     toplevels = ['brenda', 'scratch', 'wos', 'topoff']
-    secondlevels = ['wiley', 'open', 'open1', 'open2', 'open3', 'asm', 'jbc', 'hindawi', 'openremote', 'local_shim', 'localshim', 'pnas', 'scihub']
+    secondlevels = ['wiley', 'open', 'open1', 'open2', 'open3', 'remoteall', 'asm', 'jbc', 'hindawi', 'openremote', 'local_shim', 'pnas', 'scihub'] # 'localshim', 
     found = False
     for top in toplevels:
         if namespace.startswith(f"{top}-"):
@@ -80,6 +81,10 @@ else:
                     elif second in 'localshim':
                         pdf_root = f"D:/papers/{top}/local_shim"
                         second = 'local_shim'
+                        dest_folder = 'batches/enzy/apatch'
+                    elif second in 'remoteall':
+                        pdf_root = f"D:/papers/{top}/remote_all"
+                        second = 'remote_all'
                         dest_folder = 'batches/enzy/apatch'
                     if os.path.exists(f"C:/conjunct/tmp/eval/cherry_prod/tables/{top}/{second}"):
                         print("Using cherry tables and mM")

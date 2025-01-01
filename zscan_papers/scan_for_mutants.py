@@ -1,5 +1,5 @@
 import os
-from enzyextract.fetch_sequences.read_pdfs_for_idents import amino1, amino3, mutant_pattern, mutant_v3_pattern
+from enzyextract.thesaurus.mutant_patterns import amino1, amino3, mutant_pattern, mutant_v3_pattern, mutant_v5_pattern
 import pymupdf
 from tqdm import tqdm
 import polars as pl
@@ -70,24 +70,11 @@ def look_for_mutants(pdfs_folder, recursive=False, pmid_whitelist=None):
     })
     return df
 
-def script_look_for_all_ecs():
-    whitelist = set(pl.read_parquet('data/pmids/apogee_nonbrenda_numerical.fn.parquet')['pmid'])
-    # dfs = []
-    # df = look_for_mutants("D:/papers/brenda", recursive=True)
-    # df.write_parquet('data/enzymes/ec/brenda_ec_matches.parquet')
-    df = look_for_mutants("D:/papers/scratch", recursive=True, pmid_whitelist=whitelist)
-    print(df)
-    return df
-    # df.write_parquet('data/enzymes/ec/scratch_ec_matches.parquet')
-    # df = script_look_for_ecs("D:/papers/topoff", recursive=True)
-    # df.write_parquet('data/enzymes/ec/topoff_ec_matches.parquet')
-    # df = script_look_for_ecs("D:/papers/wos", recursive=True)
-    # df.write_parquet('data/enzymes/ec/wos_ec_matches.parquet')
 
 def script_look_for_mutants_plified():
     dfs = []
 
-    in_df_names = ['topoff', 'scratch', 'brenda', 'wos']
+    in_df_names = ['scratch', 'brenda', 'wos'] # , 'topoff']
 
     for name in in_df_names:
         print("Looking for mutants in", name)
@@ -96,22 +83,25 @@ def script_look_for_mutants_plified():
         df = (
             df.with_columns([
                 pl.col('text').str.extract_all(mutant_pattern.pattern).list.unique().alias('mutant1'),
-                pl.col('text').str.extract_all(mutant_v3_pattern.pattern).list.unique().alias('mutant2')
+                pl.col('text').str.extract_all(mutant_v3_pattern.pattern).list.unique().alias('mutant2'),
+                pl.col('text').str.extract_all(mutant_v5_pattern.pattern).list.unique().alias('mutant3')
             ])
-            .select('pmid', 'page_number', 'mutant1', 'mutant2')
+            .select('pmid', 'page_number', 'mutant1', 'mutant2', 'mutant3')
             .with_columns([
                 pl.when(pl.col('mutant1').list.len() == 0)
                     .then(None).otherwise(pl.col('mutant1')).alias('mutant1'),
                 pl.when(pl.col('mutant2').list.len() == 0)
-                    .then(None).otherwise(pl.col('mutant2')).alias('mutant2')
+                    .then(None).otherwise(pl.col('mutant2')).alias('mutant2'),
+                pl.when(pl.col('mutant3').list.len() == 0)
+                    .then(None).otherwise(pl.col('mutant3')).alias('mutant3')
             ])
             # .filter((pl.col('mutant1').list.len() > 0)
                     # | (pl.col('mutant2').list.len() > 0))
-            .filter(pl.col('mutant1').is_not_null() | pl.col('mutant2').is_not_null())
+            .filter(pl.col('mutant1').is_not_null() | pl.col('mutant2').is_not_null() | pl.col('mutant3').is_not_null())
         )
         
-        df = df.collect() # .unique(maintain_order=True)
-        df.write_parquet(f'data/enzymes/mutants/{name}_mutant_matches.parquet')
+        # df = df.collect() # .unique(maintain_order=True)
+        df.sink_parquet(f'data/enzymes/mutants/{name}_mutant_matches.parquet')
         del df
         # dfs.append(df)
         # df.write_parquet(f'data/enzymes/mutants/{name}_mutant_matches.parquet')
@@ -151,5 +141,5 @@ def script_look_for_full_sequences():
 
 if __name__ == "__main__":
     # script_look_for_all_ecs()
-    # script_look_for_mutants_plified()
-    script_look_for_full_sequences()
+    script_look_for_mutants_plified()
+    # script_look_for_full_sequences()
