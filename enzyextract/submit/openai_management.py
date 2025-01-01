@@ -329,7 +329,7 @@ def merge_all_chunked_completions(compl_folder, dest_folder):
         namespace, version = namespace_version.rsplit('_', 1)
         assert version.isdigit()
     
-    if input("Proceed? (y/n): ").lower() == 'y':
+    if not valid or input("Proceed? (y/n): ").lower() == 'y':
         for namespace_version in valid:
             namespace, version = namespace_version.rsplit('_', 1)
             # assert version.isdigit()

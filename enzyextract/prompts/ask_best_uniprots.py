@@ -33,9 +33,9 @@ class PickAccessionSchema(BaseModel):
 
 
 
-pick_pdb = """
+pick_accessions = """
 Given a target enzyme, rank the top 3 accessions that best match the target enzyme and organism. \
-Only report complete matches. If no such match exists, return null. Output your answer in JSON. \
+Accept synonyms. Only report complete matches. If no match exists, return null. Output your answer in JSON. \
 
 # Example 1
 

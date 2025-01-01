@@ -40,7 +40,7 @@ def _roundup_doi_pmid_dict():
     # drop null preferred
     doi_pmid_df = doi_pmid_df.dropna(subset=['preferred'])
 
-    doi_pmid_df.to_csv(r'dev/data/doi_pmid_dict_1.csv', index=False)
+    doi_pmid_df.to_csv(r'data/pmids/doi_pmid_dict_1.csv', index=False)
 
 doi_pmid_df = None
 filename_to_canonical = {}
@@ -49,7 +49,7 @@ def _load_doi_pmid_dict():
     global doi_pmid_df, filename_to_canonical, doi_to_canonical
     if doi_pmid_df is not None:
         return
-    doi_pmid_df = pd.read_csv(r'dev/data/doi_pmid_dict_1.csv')
+    doi_pmid_df = pd.read_csv(r'data/pmids/doi_pmid_dict_1.csv')
     filename_to_canonical = {}
     doi_to_canonical = {}
     for doi, doi_filename, preferred in doi_pmid_df[['doi', 'doi_filename', 'preferred']].values:

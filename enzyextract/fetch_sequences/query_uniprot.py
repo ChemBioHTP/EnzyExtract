@@ -326,7 +326,6 @@ def fetch_uniprots_latest(uniprot_ids: list) -> pl.DataFrame:
     Columns:
     ['uniprot', 'enzyme_name', 'organism', 'organism_common', 'sequence', 'ec_numbers', 'uniparc', 'why_deleted']
     """
-    results = []
     uniprot_info = _fetch_uniprot_info_latest(uniprot_ids)
     if 'results' not in uniprot_info:
         print("Unexpected format")

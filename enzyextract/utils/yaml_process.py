@@ -89,6 +89,7 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
             'pH': None,
             # 'solvent': None,
             'solution': None,
+            'cofactors': [],
             'other': [],
             'descriptor': entry.get('descriptor')
         }
@@ -139,7 +140,7 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
                 for eors in targets:
                     queries.append((r'\b' + re.escape(eors) + r'\b', eors))
                 for tag in tags: # this will be in tag order
-                    if "(with" in tag:
+                    if "(with " in tag or tag.startswith("with "):
                         # this is a coenzyme, cannot classify it as enzyme or substrate
                         continue
                     for query, eors in queries:
@@ -167,6 +168,14 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
         obj['other'] = '; '.join(obj['other'])
         if obj['other'] == '':
             obj['other'] = None # consistency
+        
+        # cofactors
+        for tag in tags:
+            if tag.startswith('(with ') or tag.startswith('with '):
+                obj['cofactors'].append(tag)
+        obj['cofactors'] = '; '.join(obj['cofactors'])
+        if obj['cofactors'] == '':
+            obj['cofactors'] = None
 
 
         # try to locate the full name
@@ -187,16 +196,27 @@ def do_auto_context(descriptor_data, context, prefer_semicolons=True):
                 eors = specs[0] # enzyme or substrate
                 proceedwith = eors
 
-            elif key == 'enzyme' and obj['mutant'] is not None:
-                # enzyme is None, but mutant is not None, suggests that it matched with some sort of mutant
-                for eors in specs:
-                    if obj['mutant'] in eors['mutants']:
-                        if proceedwith is None:
-                            proceedwith = eors
-                        else:
-                            # if there are 2, then it's ambiguous
-                            proceedwith = None
-                            break
+            elif key == 'enzyme':
+                if proceedwith is None and obj['mutant'] is not None:
+                    # enzyme is None, but mutant is not None, suggests that it matched with some sort of mutant
+                    for eors in specs:
+                        if obj['mutant'] in eors['mutants']:
+                            if proceedwith is None:
+                                proceedwith = eors
+                            else:
+                                # if there are 2, then it's ambiguous
+                                proceedwith = None
+                                break
+                if proceedwith is None and obj['organism'] is not None:
+                    # enzyme is None, but organism is not None, suggests that it matched with some sort of organism
+                    for eors in specs:
+                        if obj['organism'] in eors['organisms']:
+                            if proceedwith is None:
+                                proceedwith = eors
+                            else:
+                                # if there are 2, then it's ambiguous
+                                proceedwith = None
+                                break
 
 
             if proceedwith is not None:

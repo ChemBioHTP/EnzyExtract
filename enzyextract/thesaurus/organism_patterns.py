@@ -31,6 +31,8 @@ organism_patterns = {
     'Maize': 'Zea mays',
     'Corn': 'Zea mays',
     'corn': 'Zea mays',
+    'Horse': 'Equus caballus',
+    'horse': 'Equus caballus'
 }
 
 str_replacements = {
