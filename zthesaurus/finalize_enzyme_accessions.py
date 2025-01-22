@@ -37,6 +37,40 @@ def get_total_accessions():
 
     return pdb, uniprot, refseq, genbank
 
+def get_known_uniprot_old():
+    ### uniprot
+    bdr = []
+    for filename in os.listdir('data/enzymes/accessions/uniprot'):
+        if filename.endswith('.parquet'):
+            bdr.append(
+                pl.scan_parquet(f'data/enzymes/accessions/uniprot/{filename}').select(
+                    cs.exclude('full_response')
+                ).collect()
+            )
+    if bdr:
+        uniprot_known = pl.concat(bdr, how='diagonal')
+        uniprot_known = uniprot_known.unique(['uniprot', 'sequence'])
+    else:
+        uniprot_known = pl.DataFrame({
+            'uniprot': [],
+            'enzyme': [],
+            'organism': [],
+            'sequence': []
+        })
+    return uniprot_known
+
+def get_known_uniprot():
+    """
+    Note: see zthesaurus/finalize_uniprot.py
+    """
+    cited = pl.read_parquet('data/enzymes/accessions/uniprot/all_cited.parquet')
+    searched = pl.read_parquet('data/enzymes/accessions/uniprot_searched/gen2.parquet')
+    uniprot_known = pl.concat([cited, searched], how='diagonal')
+    uniprot_known = uniprot_known.filter(
+        pl.col('uniprot').is_not_null()
+    ).unique(['uniprot', 'sequence'])
+    return uniprot_known
+
 def get_known_accessions():
     """
     Step 2: Observe known accessions
@@ -59,26 +93,8 @@ def get_known_accessions():
     )
     # uniprot_known = read_all_dfs('fetch_sequences/results/uniprot_fragments', so=so)
     # uniprot_known = read_all_dfs('data/enzymes/accessions/uniprot', so=so)
-
-    ### uniprot
-    bdr = []
-    for filename in os.listdir('data/enzymes/accessions/uniprot'):
-        if filename.endswith('.parquet'):
-            bdr.append(
-                pl.scan_parquet(f'data/enzymes/accessions/uniprot/{filename}').select(
-                    cs.exclude('full_response')
-                ).collect()
-            )
-    if bdr:
-        uniprot_known = pl.concat(bdr, how='diagonal')
-        uniprot_known = uniprot_known.unique(['uniprot', 'sequence'])
-    else:
-        uniprot_known = pl.DataFrame({
-            'uniprot': [],
-            'enzyme': [],
-            'organism': [],
-            'sequence': []
-        })
+    uniprot_known = get_known_uniprot()
+    
     # ncbi_known = read_all_dfs('fetch_sequences/results/ncbi_fragments', so=so)
     ncbi_known = read_all_dfs('data/enzymes/accessions/ncbi', so=so)
     pdb_known = pdb_known.with_columns([
@@ -96,6 +112,9 @@ def get_unknown_accessions():
 
     pdb, uniprot, refseq, genbank = get_total_accessions()
     pdb_known, uniprot_known, ncbi_known = get_known_accessions()
+
+    pdb_known = pdb_known.head(0)
+    ncbi_known = ncbi_known.head(0)
 
     pdb_done = set(pdb_known['pdb_unversioned'])
     uniprot_done = set(uniprot_known['uniprot'])
@@ -127,7 +146,12 @@ def finalize_accessions():
     uniprot_known.write_parquet('data/enzymes/accessions/final/uniprot.parquet')
     ncbi_known.write_parquet('data/enzymes/accessions/final/ncbi.parquet')
 
-    refseq_known = read_all_dfs('data/enzymes/accessions/refsesq', so=so)
+    print("Finalized accessions")
+    print("data/enzymes/accessions/final/pdb.parquet")
+    print("data/enzymes/accessions/final/uniprot.parquet")
+    print("data/enzymes/accessions/final/ncbi.parquet")
+
+    # refseq_known = read_all_dfs('data/enzymes/accessions/refsesq', so=so)
 
 
 if __name__ == '__main__':

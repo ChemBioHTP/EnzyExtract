@@ -18,10 +18,15 @@ def gen_brenda_kcat():
 
     df = df.filter(
         pl.col('turnover_number').is_not_null()
-        & pl.col('organism_name').is_not_null()
+        # & pl.col('organism_name').is_not_null()
+        # & pl.col('accessions').is_not_null()
     )
     df = df.join(substrate2inchi, left_on='substrate', right_on='name', how='inner')
-    print(df) # 66702
+    print(df) 
+    # 76391: kcat
+    # 72106: kcat + inchi (94.4%)
+    # 66702: kcat + organism + inchi (87.3%)
+    # 31909: kcat + uniprot + inchi (41.8%)
 
 if __name__ == '__main__':
     gen_brenda_kcat()

@@ -27,7 +27,8 @@ def generate_backcited_chapter():
     """
     thedata = pl.read_parquet('data/export/TheData_kcat.parquet')
     # uniprot = pl.read_parquet('data/enzymes/accessions/final/uniprot.parquet')
-    uniprot = pl.read_parquet('data/enzymes/accessions/uniprot_from_pmid/p2u_20241228-181808.parquet')
+    # uniprot = pl.read_parquet('data/enzymes/accessions/uniprot_from_pmid/p2u_20241228-181808.parquet')
+    uniprot = pl.read_parquet('data/enzymes/accessions/final/uniprot.parquet')
     pmid2uniprot = uniprot.select(['uniprot', 'pmids']).explode('pmids').drop_nulls()
     pmid2uniprot = pmid2uniprot.group_by('pmids').agg(pl.col('uniprot').unique())
 
@@ -58,63 +59,10 @@ def generate_backcited_chapter():
 from enzyextract.utils.pl_utils import wrap_pbar
 
 
-def generate_searched_chapter():
-    import rapidfuzz
-    from tqdm import tqdm
-    # df = read_all_dfs('data/enzymes/accessions/uniprot_searched')
-    # df.write_parquet('data/enzymes/accessions/uniprot_searched.parquet')
-    df = pl.read_parquet('data/enzymes/accessions/uniprot_searched.parquet')
-
-    # calculate similarity between query_enzyme and protein_name
-    similarities = df.select(['query_enzyme', 'protein_name']).unique()
-    def similarity(x):
-        query_enzyme = x['query_enzyme']
-        protein_name = x['protein_name']
-        out = rapidfuzz.fuzz.partial_ratio(query_enzyme, protein_name) # 0 to 100
-        return out
-
-    with tqdm(total=similarities.height) as pbar:
-        similarities = similarities.with_columns([
-            pl.struct(
-                pl.col('query_enzyme'),
-                pl.col('protein_name')
-            ).map_elements(
-                wrap_pbar(pbar, similarity),
-                return_dtype=pl.Float64
-            ).alias('similarity')
-        ])
-    df = df.join(similarities, on=['query_enzyme', 'protein_name'], how='left')
-
-    # now for each query_enzyme, get the best accession, organism, protein_name, sequence
-    df = df.sort('similarity', descending=True)
-    optimal_similarity = df.group_by(['query_enzyme', 'query_organism'], maintain_order=True).agg(
-        pl.col('protein_name').first(),
-        pl.col('organism').first(),
-        pl.col('accession').first(),
-        pl.col('sequence').first(),
-        pl.col('similarity').first()
-    )
-
-    acceptable = optimal_similarity.filter(pl.col('similarity') > 60) # 60 is arbitrary 
-    # (haha, I was actually going to pick 80)
-    acceptable = acceptable.rename({
-        'query_enzyme': 'enzyme',
-        'query_organism': 'organism',
-        'organism': 'alt_organism',
-        'protein_name': 'alt_enzyme',
-        'accession': 'uniprot',
-        'sequence': 'sequence',
-        'similarity': 'similarity'
-    })
-    
-    acceptable = acceptable.with_columns([
-        pl.lit('searched').alias('enzyme_source')
-    ])
-
-    # print(optimal_similarity)
-    return acceptable
 
 if __name__ == '__main__':
+
+    exit(0)
     thedata = pl.read_parquet('data/export/TheData.parquet')
     pmid2canonical = thedata.select(['pmid', 'canonical']).unique()
 
@@ -136,6 +84,5 @@ if __name__ == '__main__':
     pass
 
     cited.write_parquet('data/enzymes/thesaurus/uniprots_cited.parquet')
-    # searched = generate_searched_chapter()
-    # searched.write_parquet('data/enzymes/thesaurus/uniprots_searched.parquet')
+
     # searched = searched

@@ -174,7 +174,7 @@ def organism_objective(gpt_dict, base_dict):
     return 0
 
 BEST = 9
-def enzyme_objective(gpt_dict, base_dict, do_top3=True):
+def enzyme_objective(gpt_dict, base_dict, do_top3=False):
     # Objective function. Tries to maximize the number of enzyme-substrate pairs that are the same
     gpt_names = [x for x in [gpt_dict['enzyme'], gpt_dict.get('enzyme_full')] if x]
     base_names = [x for x in [base_dict['enzyme'], base_dict.get('enzyme_full')] if x]
@@ -384,6 +384,7 @@ def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
         df = df.with_columns([
             parse_col("kcat").alias("kcat_value"),
         ])
+    # if 'clean_mutant'
     standardize_mutants1_re = re.compile(rf"({amino3})-?(\d{{1,4}})(\s?→\s?| to |\s?>\s?|!)[ -]?({amino3})") # if arrow or "to", then it is unambiguously a point mutation.
     df = df.with_columns([
         pl.col("mutant").str.replace_all(standardize_mutants1_re.pattern, r"$1$2$4").alias("mutant")
@@ -437,8 +438,9 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
     base_df = base_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
     ### add cid and brenda_id to gpt_df
-    gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
-    gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
+    if 'cid' not in want_df.columns or 'brenda_id' not in want_df.columns:
+        gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
+        gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
     ### add ecs to base_df
     ecs = load_ecs()
@@ -446,8 +448,9 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
     base_df = base_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
 
     ### add ecs to gpt_df
-    gpt_df = gpt_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
-    gpt_df = gpt_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
+    if 'enzyme_ecs' not in ecs.columns:
+        gpt_df = gpt_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
+        gpt_df = gpt_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
     # now, give 
 
     matched_df = pl_hungarian_match.join_optimally(
@@ -571,15 +574,16 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     brenda_df = brenda_df.join(want_view, left_on='substrate', right_on='name', how='left')
 
     ### add cid and brenda_id to gpt_df
-    gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
-    gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
+    if 'cid' not in want_df.columns or 'brenda_id' not in want_df.columns:
+        gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
+        gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
     ### add ecs to base_df
     ecs = load_ecs()
     brenda_df = brenda_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
 
     ### add ecs to gpt_df
-    if 'enzyme' in gpt_df.columns:
+    if 'enzyme' in gpt_df.columns and 'enzyme_ecs' not in gpt_df.columns:
         gpt_df = gpt_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
         gpt_df = gpt_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
     # now, give 
@@ -652,18 +656,19 @@ if __name__ == '__main__':
     # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
-    # working = 'sabiork'
+    working = 'sabiork'
     # working = 'bucket'
     # working = 'apatch'
-    working = 'everything'
+    # working = 'everything'
+    # working = 'thedata'
 
     # against = 'runeem'
     against = 'brenda'
     # against = 'sabiork'
 
-    # scino_only = None
+    scino_only = None
     # scino_only = True
-    scino_only = False
+    # scino_only = False
     # scino_only = 'false_revised'
 
     whitelist = None
@@ -687,6 +692,8 @@ if __name__ == '__main__':
         gpt_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
     elif working == 'everything':
         gpt_df = pl.read_parquet('data/valid/_valid_everything.parquet')
+    elif working == 'thedata':
+        gpt_df = pl.read_parquet('data/export/TheData_kcat.parquet')
     else:
         raise ValueError("Invalid working")
     base_df = load_runeem_df(exclude_train=True)
@@ -701,8 +708,13 @@ if __name__ == '__main__':
         working += '_scientific_notation'
     elif scino_only is False:
         gpt_df = gpt_df.filter(
-            ~pl.col('kcat').str.contains('10\^')
-            & ~pl.col('km').str.contains('10\^')
+            (
+                ~pl.col('kcat').str.contains('10\^')
+                | pl.col('kcat').is_null()
+            ) & (
+                ~pl.col('km').str.contains('10\^')
+                | pl.col('km').is_null()
+            )
         )
         working += '_no_scientific_notation'
     elif scino_only == 'false_revised':

@@ -510,9 +510,10 @@ def produce_epic():
         #     (pl.col('substrate').str.len_chars() <= 2)
         #     & pl.col('substrate_full').is_null()
         # )
-    ).with_columns(
-        pl.col('clean_mutant').list.join('; ').alias('clean_mutant')
     )
+    # .with_columns(
+    #     pl.col('clean_mutant').list.join('; ').alias('clean_mutant')
+    # )
     df.write_parquet('data/export/TheData_kcat_sequenced.parquet')
     exit(0)
 

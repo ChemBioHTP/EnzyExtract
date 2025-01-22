@@ -7,6 +7,7 @@ from enzyextract.submit.openai_management import submit_batch_file
 from enzyextract.submit.openai_schema import to_openai_batch_request_with_schema
 from enzyextract.thesaurus.ascii_patterns import pl_to_ascii
 from enzyextract.thesaurus.organism_patterns import pl_fix_organism
+from enzyextract.thesaurus.fuzz_utils import compute_fuzz_with_progress
 
 # df = pl.read_parquet('data/valid/_valid_with_duplicates.parquet')
 df = pl.read_parquet('data/export/TheData_kcat.parquet')
@@ -112,7 +113,8 @@ uniprot_aliases = uniprot_all.filter(
 uniprot_all = (
     pl.concat([uniprot_all, uniprot_aliases], how='diagonal')
     .unique('uniprot', keep='first')
-    .select('uniprot', 'enzyme_name', 'organism', 'organism_common', 'sequence')
+    .select('uniprot', 'enzyme_name', 'organism', 'organism_common', 'sequence',
+            'recommended_name', 'submission_names', 'alternative_names')
 )
 
 ### Now join sequences to infos_plus_uniprot
@@ -123,7 +125,8 @@ infos_plus_uniprot = infos_plus_uniprot.filter(pl.col('sequence').is_not_null())
 
 infos_plus_uniprot = infos_plus_uniprot.select('index', 'pmid', 'canonical', 'enzyme', 'enzyme_full', 
                     'organism', 'uniprot', 'enzyme_preferred',
-                     'enzyme_name', 'organism_fixed', 'organism_right', 'organism_common')
+                     'enzyme_name', 'organism_fixed', 'organism_right', 'organism_common',
+                     'recommended_name', 'submission_names', 'alternative_names')
 
 # calculate enzyme_preferred as enzyme if enzyme_full is null else enzyme_full
 infos_plus_uniprot = infos_plus_uniprot.with_columns([
@@ -140,13 +143,16 @@ infos_plus_uniprot = infos_plus_uniprot.with_columns([
 # enzyme_preferred and info, provided len(rhs) is larger
 
 
-from enzyextract.thesaurus.fuzz_utils import compute_fuzz_with_progress
 
 # Define the comparisons to calculate fuzz similarities
 comparisons = [
-    ('enzyme_preferred', 'enzyme_name', False, 'similarity_enzyme_name'),
+    # ('enzyme_preferred', 'enzyme_name', False, 'similarity_enzyme_name'),
     ('organism_fixed', 'organism_right', False, 'similarity_organism'),
     ('organism', 'organism_common', False, 'similarity_organism_common'),
+    ('enzyme_preferred', 'recommended_name', False, 'similarity_recommended_name'),
+    ('enzyme_preferred', 'submission_names', False, 'similarity_submission_names'),
+    ('enzyme_preferred', 'alternative_names', False, 'similarity_alternative_names'),
+
 ]
 
 # Compute the similarities with progress tracking
@@ -155,13 +161,21 @@ infos_plus_uniprot = compute_fuzz_with_progress(infos_plus_uniprot, comparisons)
     pl.max_horizontal(
         pl.col(f"similarity_organism"),
         pl.col(f"similarity_organism_common"),
-    ).alias('max_organism_similarity')
-).rename({
-    'similarity_enzyme_name': 'max_enzyme_similarity',
-})
+    ).alias('max_organism_similarity'),
+    pl.max_horizontal(
+        pl.col(f"similarity_recommended_name"),
+        pl.col(f"similarity_submission_names"),
+        pl.col(f"similarity_alternative_names"),
+    ).alias('max_enzyme_similarity'),
+)
+# .rename({
+#     'similarity_enzyme_name': 'max_enzyme_similarity',
+# })
 
+
+# (organism, enzyme) (95, 90) --> (90, 85): 5430 --> 6292
 perfect_uniprot = infos_plus_uniprot.filter(
-    (pl.col('max_organism_similarity') >= 95) & (pl.col('max_enzyme_similarity') >= 90)
+    (pl.col('max_organism_similarity') >= 90) & (pl.col('max_enzyme_similarity') >= 85)
 )
 
 perfect_uniprot = perfect_uniprot.with_columns(
@@ -169,7 +183,7 @@ perfect_uniprot = perfect_uniprot.with_columns(
 ) # .sort('total_similarity', descending=True).unique('index', keep='first')
 perfect_uniprot.write_parquet('data/enzymes/thesaurus/uniprot_similar.parquet')
 
-namespace = 'pick-uniprot-dev2'
+namespace = 'pick-uniprot-dev3'
 write_to = f'data/ingest/pick/{namespace}.parquet'
 print("Ingest at", write_to)
 infos_plus_uniprot.write_parquet(write_to)
@@ -180,7 +194,7 @@ uniprot_no_organism = infos_plus_uniprot.filter(
     & ~pl.col('index').is_in(perfect_uniprot['index'])
 )
 uniprot_no_organism.write_parquet(f'data/enzymes/thesaurus/uniprot_similar_no_organism.parquet')
-perfect_uniprot.write_parquet(f'data/enzymes/thesaurus/uniprot_similar.parquet')
+# perfect_uniprot.write_parquet(f'data/enzymes/thesaurus/uniprot_similar.parquet')
 pass
 
 

@@ -8,6 +8,8 @@ from enzyextract.hungarian.hungarian_matching import is_wildtype
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
 from enzyextract.hungarian import pl_hungarian_match
 from enzyextract.thesaurus.mutant_patterns import mutant_pattern, mutant_v3_pattern, amino3, amino3to1, standardize_mutants1_re, with_clean_mutants
+from enzyextract.thesaurus.ascii_patterns import pl_to_ascii
+from enzyextract.thesaurus.organism_patterns import pl_fix_organism
 
 # note: brenda/pubchem idents never have ascii
 replace_greek = {'α': 'alpha', 'β': 'beta', 'ß': 'beta',
@@ -248,7 +250,7 @@ def add_identifiers(gpt_df):
     uniprot_picked = (
         pl.read_parquet('data/enzymes/thesaurus/uniprot_picked.parquet')
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot'])
-        .filter(pl.col('uniprot').is_not_null())
+        .filter(pl.col('uniprot').is_not_null()) 
         .join(uniprot2seq, on='uniprot', how='left', validate='m:1') # adds sequence
         .rename({
             'uniprot': 'uniprot_picked',
@@ -272,7 +274,7 @@ def add_identifiers(gpt_df):
     ### add uniprot (old cited, pick-uniprot-prod1)
     uniprot_cited = (
         pl.read_parquet('data/enzymes/thesaurus/uniprots_cited.parquet')
-        .filter(pl.col('uniprot').is_not_null())
+        .filter(pl.col('uniprot').is_not_null() & pl.col('sequence').is_not_null())
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot', 'sequence'])
         .rename({
             'uniprot': 'uniprot_cited',
@@ -340,7 +342,12 @@ def add_identifiers(gpt_df):
     pdb_similar = pl.read_parquet('data/enzymes/thesaurus/pdb_similar.parquet')
     pdb_similar_no_organism = pl.read_parquet('data/enzymes/thesaurus/pdb_similar_no_organism.parquet')
 
-    pdb2seq = pl.read_parquet('data/enzymes/accessions/final/pdb.parquet').select(['pdb', 'seq_can']).unique('pdb')
+    pdb2seq = (
+        pl.read_parquet('data/enzymes/accessions/final/pdb.parquet')
+        .select(['pdb', 'seq_can'])
+        .filter(pl.col('seq_can').is_not_null())
+        .unique('pdb')
+    )
     gpt_to_pdb = (
         pl.concat([
             pdb_picked.select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'pdb']), 
@@ -370,9 +377,8 @@ def add_identifiers(gpt_df):
     ncbi2seq = (
         pl.read_parquet('data/enzymes/accessions/final/ncbi.parquet')
         .select(['ncbi', 'sequence'])
-        .filter(
-            pl.col('sequence').is_not_null()
-        ).unique('ncbi')
+        .filter(pl.col('sequence').is_not_null())
+        .unique('ncbi')
     ) # columns: ncbi, sequence
     ncbi_picked = (
         pl.read_parquet('data/enzymes/thesaurus/ncbi_picked.parquet')
@@ -432,10 +438,8 @@ def add_identifiers(gpt_df):
     ### add uniprot, searched
     uniprot_searched = (
         pl.read_parquet('data/enzymes/thesaurus/uniprots_searched.parquet')
-        .select(['enzyme', 'organism', 'uniprot', 'sequence']) # , 'enzyme_source'])
-        .filter(
-            pl.col('sequence').is_not_null()
-        )
+        .select(['query_enzyme', 'query_organism', 'uniprot', 'sequence']) # , 'enzyme_source'])
+        .filter(pl.col('sequence').is_not_null())
         .rename({
             'uniprot': 'uniprot_searched',
             'sequence': 'sequence_searched',
@@ -443,22 +447,36 @@ def add_identifiers(gpt_df):
         .with_columns([
             pl.lit('uniprot searched').alias('sequence_source_searched')
         ])
-        .unique(['enzyme', 'organism'], keep='first')
+        .unique(['query_enzyme', 'query_organism'], keep='first')
     )
     # with searched, we need to join first by enzyme_full, then by enzyme
     gpt_df = (
-        gpt_df.join(uniprot_searched, left_on=['enzyme_full', 'organism'], right_on=['enzyme', 'organism'], how='left')
+        gpt_df.with_columns([
+            pl_to_ascii(
+                pl.coalesce(pl.col('enzyme_full'), pl.col('enzyme')),
+                lowercase=False
+            )
+            .str.replace_all(r"[!\"():\[\]^]", "")
+            .alias('enzyme_ascii_fixed'),
+            pl_fix_organism(pl.col('organism'))
+            .str.replace_all(r"[!\"():\[\]^]", "")
+            .alias('organism_ascii_fixed'),
+        ])
+        .join(uniprot_searched, left_on=['enzyme_ascii_fixed', 'organism_ascii_fixed'], right_on=['query_enzyme', 'query_organism'], how='left')
+
         .with_columns([
             pl.coalesce(['uniprot', 'uniprot_searched']).alias('uniprot'),
             pl.coalesce(['sequence', 'sequence_searched']).alias('sequence'),
             pl.coalesce(['sequence_source', 'sequence_source_searched']).alias('sequence_source'),
         ]).drop('uniprot_searched', 'sequence_searched', 'sequence_source_searched')
-        .join(uniprot_searched, on=['enzyme', 'organism'], how='left', validate='m:1')
+        .join(uniprot_searched, left_on=['enzyme_full', 'organism'], right_on=['query_enzyme', 'query_organism'], how='left', validate='m:1')
         .with_columns([
             pl.coalesce(['uniprot', 'uniprot_searched']).alias('uniprot'),
             pl.coalesce(['sequence', 'sequence_searched']).alias('sequence'),
             pl.coalesce(['sequence_source', 'sequence_source_searched']).alias('sequence_source'),
         ]).drop('uniprot_searched', 'sequence_searched', 'sequence_source_searched')
+
+        .drop('enzyme_ascii_fixed', 'organism_ascii_fixed')
     )
 
 
@@ -519,3 +537,10 @@ if __name__ == "__main__":
     # 242115
     print("generating data/export/TheData_kcat.parquet")
     df.write_parquet('data/export/TheData_kcat.parquet')
+
+    # relaxing perfect requirements: 95679 --> 96101
+    # sequence confidence score
+    # - multiply similarity as the confidence score
+    # - confidence score helps with different communities that demand different levels of accuracy
+    # - enzyme name, enzyme organism, 
+    # confidence for substrate: we demand exact matches

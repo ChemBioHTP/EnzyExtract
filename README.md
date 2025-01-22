@@ -43,6 +43,16 @@ kcat is defined as any non-null values. Hence, non-numeric values like "ND" are 
 ## manifold series:
 - manifold
 
+# Generate accessions
+
+1. zsubmit_accessions/run_accessions.py
+1b. zsubmit_accessions/run_uniprot_search polars.py
+2. zthesaurus/finalize_uniprot.py
+3. zthesaurus/finalize_enzyme_accessions.py
+4. zsubmit_accessions/prepare_pick_uniprot.py
+4. generate_enzyme_thesaurus.py
+- backcited.py
+
 # Generate final product
 
 1. zgenerate/generate_valid multiple.py

@@ -50,7 +50,7 @@ if __name__ == '__main__':
     thedata = pl.read_parquet('data/export/TheData_kcat.parquet')
     relevant_pmids = thedata.select('canonical').unique().filter(
         ~pl.col('canonical').str.contains('[A-Za-z/_]')
-    )
+    ) # get every canonical that is strictly numeric (ie. a pmid)
     # print(relevant_pmids)
     relevant_pmids = relevant_pmids.rename({'canonical': 'pmid'}).head(100)
     print("Have", relevant_pmids.height, "pmids")

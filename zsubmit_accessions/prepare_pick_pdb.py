@@ -204,7 +204,7 @@ info_view = compute_fuzz_with_progress(info_view, comparisons).with_columns(
 ]).sort('index')
 
 # write
-namespace = 'pick-pdb-dev2'
+namespace = 'pick-pdb-dev3'
 write_to = f'data/ingest/pick/{namespace}.parquet'
 print("Ingest at", write_to)
 info_view.write_parquet(write_to)
@@ -212,7 +212,9 @@ info_view.write_parquet(write_to)
 if use_lowercase != 'both':
     exit(0)
 
-perfect_pdb = info_view.filter((pl.col('max_enzyme_similarity') >= 90) & (pl.col('max_organism_similarity') >= 95))
+# organism similarity 95 to 90: 9342 --> 9486
+# enzyme similarity 90 to 85: 9486 --> 10343
+perfect_pdb = info_view.filter((pl.col('max_enzyme_similarity') >= 85) & (pl.col('max_organism_similarity') >= 90))
 imperfect_pdb = info_view.filter((pl.col('max_enzyme_similarity') < 90) | (pl.col('max_organism_similarity') < 95))
 imperfect_pdb = imperfect_pdb.join(perfect_pdb, on='index', how='anti') # perfect pdb no longer needs to be matched.
 pass # 46843 to 29401
