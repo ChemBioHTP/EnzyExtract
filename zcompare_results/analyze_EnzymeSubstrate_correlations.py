@@ -103,8 +103,9 @@ def analyze_correlations(matched_view: pl.DataFrame, title):
             else:
                 print(f'  {k}: {v}')
     
-    visualize_sns_scatter(corr_view, title)
+    # visualize_sns_scatter(corr_view, title)
     # visualize_sns_kde(corr_view, title)
+    visualize_kcat(corr_view, results=results, title='EnzyExtractDB vs BRENDA')
 
 
 
@@ -187,6 +188,99 @@ def visualize_sns_scatter(df: pl.DataFrame, title, log_ratio_threshold=2):
     plt.subplots_adjust(left=0.08, right=0.95, bottom=0.08, top=0.91, wspace=0.26, hspace=0.26)
     plt.show()
 
+def visualize_kcat(df: pl.DataFrame, title, results, log_ratio_threshold=2):
+    # Create masks and log transformations
+    df = df.with_columns([
+        pl.col('km_value_1').log10().alias('log_km_1'),
+        pl.col('km_value_2').log10().alias('log_km_2'),
+        pl.col('kcat_value_1').log10().alias('log_kcat_1'),
+        pl.col('kcat_value_2').log10().alias('log_kcat_2'),
+        (pl.col('km_diff') < 100).alias('km_valid'),
+        (pl.col('kcat_diff') < 100).alias('kcat_valid'),
+    ])
+
+    df = df.filter(
+        (pl.col('log_km_1').is_null() | pl.col('log_km_1').is_between(-10, 10))
+        & (pl.col('log_km_2').is_null() | pl.col('log_km_2').is_between(-10, 10))
+        & (pl.col('log_kcat_1').is_null() | pl.col('log_kcat_1').is_between(-10, 10))
+        & (pl.col('log_kcat_2').is_null() | pl.col('log_kcat_2').is_between(-10, 10))
+    )
+    
+    # Create figure with subplots
+    # fig, axes = plt.subplots(1, 2, figsize=(15, 15))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    # ax1, ax2, 
+    ax3, ax4 = axes.flatten()
+    # Set each subplot to have a square aspect ratio
+    # for ax in axes:
+        # ax.set_aspect('equal')
+
+
+
+
+
+
+
+    kcat_log_ratios = df["log_kcat_2"] - df["log_kcat_1"]
+
+    # kcat scatter plot
+    sns.scatterplot(data=df, x="log_kcat_1", y="log_kcat_2", # hue="kcat_valid", 
+                    alpha=0.1, ax=ax3, rasterized=True)
+    
+    # set dpi to 300 for better resolution
+
+    
+    # on TOP: KDE for kcat (1000 values - not too much)
+    # df1000 = df.sample(n=4000)
+    # sns.kdeplot(data=df1000, x="log_kcat_1", y="log_kcat_2", 
+    #                 cmap='viridis',
+    #                 fill=True, alpha=1, 
+    #                 levels=100, # thresh=0.1, 
+    #                 ax=ax3)
+    
+    # plt.colorbar(plt.cm.ScalarMappable(cmap='viridis'), label='Density', ax=ax3)
+    # x_min, x_max = ax3.get_xlim()
+    # for dy in [-3, 0]:
+    #     ax3.plot([x_min, x_max], [x_min + dy, x_max + dy], color='gray', alpha=0.2)
+    # for dy in [np.log10(60)]:
+    #     ax3.plot([x_min, x_max], [x_min + dy, x_max + dy], color='blue', alpha=0.2)
+    ax3.set_title('kcat Comparison')
+    ax3.set_xlabel('log10(kcat) from EnzyExtractDB')
+    ax3.set_ylabel('log10(kcat) from BRENDA')
+
+    # kcat histogram with KDE
+    sns.histplot(kcat_log_ratios, bins=50, kde=False, ax=ax4)
+    ax4.axvline(x=log_ratio_threshold, color='r', linestyle='--')
+    ax4.axvline(x=-log_ratio_threshold, color='r', linestyle='--')
+    ax4.set_title('Difference in log10(kcat)')
+
+    # Calculate R^2 and Pearson correlation for kcat log values
+    pearson_corr = results['kcat']['original']['pearson']
+    r_squared = results['kcat']['original']['r2']
+    accuracy = results['kcat']['original']['accuracy']
+
+
+    # Display correlation values
+    print(f"Pearson Correlation (log-transformed kcat): {pearson_corr:.3f}")
+    print(f"R^2 (log-transformed kcat): {r_squared:.3f}")
+
+
+    # Put correlation values in the plot
+    ax3.text(0.05, 0.95, f"Pearson Correlation: {pearson_corr:.3f}",
+                transform=ax3.transAxes, fontsize=12, verticalalignment='top')
+    ax3.text(0.05, 0.90, f"R^2: {r_squared:.3f}",
+                transform=ax3.transAxes, fontsize=12, verticalalignment='top')
+    # Put accuracy
+    ax3.text(0.05, 0.85, f"Accuracy: {accuracy:.3f}",
+                transform=ax3.transAxes, fontsize=12, verticalalignment='top')
+
+    # Overall title and layout adjustments
+    fig.suptitle(title)
+    plt.tight_layout()
+    plt.subplots_adjust(left=0.08, right=0.95, bottom=0.1, top=0.90, wspace=0.26, hspace=0.26)
+    # plt.show()
+    # save to svg
+    plt.savefig(f'kcat_comparison_{title}.svg', dpi=300)
 def visualize_sns_kde(df: pl.DataFrame, title):
     # Add log transformations to the DataFrame
     df = df.with_columns([
@@ -307,7 +401,8 @@ if __name__ == '__main__':
     # working = 'sabiork'
     # working = 'apatch'
     # working = 'bucket'
-    working = 'everything'
+    # working = 'everything'
+    working = 'thedata'
 
     # against = 'runeem'
     against = 'brenda'

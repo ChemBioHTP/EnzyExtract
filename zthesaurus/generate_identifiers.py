@@ -235,9 +235,37 @@ def add_identifiers(gpt_df):
         pl.lit(None).alias('sequence'),
         pl.lit(None).alias('sequence_source'),
         pl.lit(None).alias('uniprot'),
-        pl.lit(None).alias('ncbi')
+        pl.lit(None).alias('ncbi'),
+        pl.lit(None).alias('pdb'),
+        pl.lit(None).alias('max_enzyme_similarity'),
+        pl.lit(None).alias('max_organism_similarity'),
+        pl.lit(None).alias('total_similarity'),
     ])
 
+    uniprot_conf = (
+        pl.read_parquet('data/thesaurus/confident/uniprot.parquet')
+        .with_columns(
+            # multiplication of percentages
+            # no organism present: confidence is 50%
+            ((pl.col('max_enzyme_similarity') * pl.col('max_organism_similarity').fill_null(50)) / 100).alias('total_similarity'),
+        )
+    )
+    pdb_conf = (
+        pl.read_parquet('data/thesaurus/confident/pdb.parquet')
+        .with_columns(
+            # multiplication of percentages
+            # no organism present: confidence is 50%
+            ((pl.col('max_enzyme_similarity') * pl.col('max_organism_similarity').fill_null(50)) / 100).alias('total_similarity'),
+        )
+    )
+    ncbi_conf = (
+        pl.read_parquet('data/thesaurus/confident/ncbi.parquet')
+        .with_columns(
+            # multiplication of percentages
+            # no organism present: confidence is 50%
+            ((pl.col('max_enzyme_similarity') * pl.col('max_organism_similarity').fill_null(50)) / 100).alias('total_similarity'),
+        )
+    )
     ##### UNIPROT
     uniprot2seq = (
         pl.read_parquet('data/enzymes/accessions/final/uniprot.parquet')
@@ -258,7 +286,7 @@ def add_identifiers(gpt_df):
         })
         .with_columns([
             # TODO: distinguish cited vs backcited vs doublecited
-            pl.lit('uniprot cited').alias('sequence_source_picked')
+            pl.lit('uniprot cited picked').alias('sequence_source_picked')
         ])
     )
     gpt_df = (
@@ -286,6 +314,8 @@ def add_identifiers(gpt_df):
         ])
     )
 
+    
+
     # fix dumb thing
     # enzyme_thesaurus = enzyme_thesaurus.with_columns([
     #     pl.when(pl.col('enzyme') == pl.col('enzyme_full'))
@@ -304,43 +334,60 @@ def add_identifiers(gpt_df):
     )
 
     ### add uniprot (similar)
+    # uniprot_similar = (
+    #     pl.concat([
+    #         pl.read_parquet('data/enzymes/thesaurus/uniprot_similar.parquet')
+    #             .sort('total_similarity'),
+    #         pl.read_parquet('data/enzymes/thesaurus/uniprot_similar_no_organism.parquet')
+    #             .sort('similarity_organism'),
+    #     ], how='diagonal')
+    #     .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot'])
+    #     .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
+    #     .join(uniprot2seq, on='uniprot', how='left', validate='m:1') # adds sequence
+    #     .rename({
+    #         'uniprot': 'uniprot_similar',
+    #         'sequence': 'sequence_similar',
+    #     })
+    #     .with_columns([
+    #         pl.lit('uniprot cited').alias('sequence_source_similar')
+    #     ])
+    # )
+
+    ### new uniprot (cited, similar)
+    coalescables = ['sequence', 'sequence_source', 'max_enzyme_similarity', 'max_organism_similarity', 'total_similarity']
+    u_coalescables = ['uniprot', *coalescables]
     uniprot_similar = (
-        pl.concat([
-            pl.read_parquet('data/enzymes/thesaurus/uniprot_similar.parquet')
-                .sort('total_similarity'),
-            pl.read_parquet('data/enzymes/thesaurus/uniprot_similar_no_organism.parquet')
-                .sort('similarity_organism'),
-        ], how='diagonal')
-        .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot'])
-        .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
-        .join(uniprot2seq, on='uniprot', how='left', validate='m:1') # adds sequence
-        .rename({
-            'uniprot': 'uniprot_similar',
-            'sequence': 'sequence_similar',
-        })
-        .with_columns([
-            pl.lit('uniprot cited').alias('sequence_source_similar')
-        ])
+        uniprot_conf
+        .filter(
+            (pl.col('max_enzyme_similarity') >= 90) 
+            & ((pl.col('max_organism_similarity') >= 90)
+                | pl.col('max_organism_similarity').is_null())
+            & pl.col('sequence').is_not_null()
+        ).with_columns(
+            pl.lit('uniprot cited').alias('sequence_source')
+        ).sort('total_similarity', descending=True)
+        .unique(['canonical', 'enzyme', 'enzyme_full', 'organism'], keep='first')
+        .select(['canonical', 'enzyme', 'enzyme_full', 'organism', *u_coalescables])
+        .rename({x: f'{x}_similar' for x in u_coalescables})
     )
     gpt_df = (
-        gpt_df.join(uniprot_similar, on=['pmid', 'enzyme', 'enzyme_full', 'organism'], 
+        gpt_df.join(uniprot_similar, on=['canonical', 'enzyme', 'enzyme_full', 'organism'], 
                     join_nulls=True, how='left', validate='m:1')
         .with_columns([
-            pl.coalesce(['uniprot', 'uniprot_similar']).alias('uniprot'),
-            pl.coalesce(['sequence', 'sequence_similar']).alias('sequence'),
-            pl.coalesce(['sequence_source', 'sequence_source_similar']).alias('sequence_source'),
-        ]).drop('uniprot_similar', 'sequence_similar', 'sequence_source_similar')
+            pl.coalesce([x, f'{x}_similar']).alias(x) for x in u_coalescables
+        ]).drop([f'{x}_similar' for x in u_coalescables])
     )
 
     
 
     ##### PDB
     ### add pdb
+    p_coalescables = ['pdb', *coalescables]
     pdb_picked = pl.read_parquet('data/enzymes/thesaurus/pdb_picked.parquet').filter(
         pl.col('pdb').is_not_null()
     )
-    pdb_similar = pl.read_parquet('data/enzymes/thesaurus/pdb_similar.parquet')
-    pdb_similar_no_organism = pl.read_parquet('data/enzymes/thesaurus/pdb_similar_no_organism.parquet')
+    # pdb_similar = pl.read_parquet('data/enzymes/thesaurus/pdb_similar.parquet')
+    # pdb_similar_no_organism = pl.read_parquet('data/enzymes/thesaurus/pdb_similar_no_organism.parquet')
 
     pdb2seq = (
         pl.read_parquet('data/enzymes/accessions/final/pdb.parquet')
@@ -351,26 +398,55 @@ def add_identifiers(gpt_df):
     gpt_to_pdb = (
         pl.concat([
             pdb_picked.select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'pdb']), 
-            pdb_similar.sort('total_similarity')
-                .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'pdb']), 
-            pdb_similar_no_organism.sort('max_enzyme_similarity')
-                .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'pdb']),
+            # pdb_similar.sort('total_similarity')
+            #     .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'pdb']), 
+            # pdb_similar_no_organism.sort('max_enzyme_similarity')
+            #     .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'pdb']),
         ]).unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
         .join(pdb2seq, left_on='pdb', right_on='pdb', how='left')
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'pdb', 'seq_can'])
         .with_columns([
-            pl.lit('pdb cited').alias('sequence_source_pdb')
-        ])
+            pl.lit('pdb cited picked').alias('sequence_source_pdb')
+        ]).rename({
+            'pdb': 'pdb_picked'
+        })
     )
+
+    
 
     # join pdb
     gpt_df = (
         gpt_df.join(gpt_to_pdb, on=['pmid', 'enzyme', 'enzyme_full', 'organism'], 
                     join_nulls=True, validate='m:1', how='left') # , 
         .with_columns([
+            pl.coalesce(['pdb', 'pdb_picked']).alias('pdb'),
             pl.coalesce(['sequence', 'seq_can']).alias('sequence'),
             pl.coalesce(['sequence_source', 'sequence_source_pdb']).alias('sequence_source'),
-        ]).drop('seq_can', 'sequence_source_pdb')
+        ]).drop('seq_can', 'sequence_source_pdb', 'pdb_picked')
+    )
+
+    pdb_similar = (
+        pdb_conf
+        .filter(
+            (pl.col('max_enzyme_similarity') >= 90) 
+            & ((pl.col('max_organism_similarity') >= 90)
+                | pl.col('max_organism_similarity').is_null())
+            & pl.col('sequence').is_not_null()
+        ).with_columns(
+            # multiplication of percentages
+            # no organism present: confidence is 50%
+            pl.lit('pdb cited').alias('sequence_source')
+        ).sort('total_similarity', descending=True)
+        .unique(['canonical', 'enzyme', 'enzyme_full', 'organism'], keep='first')
+        .select(['canonical', 'enzyme', 'enzyme_full', 'organism', *p_coalescables])
+        .rename({x: f'{x}_similar' for x in p_coalescables})
+    )
+    gpt_df = (
+        gpt_df.join(pdb_similar, on=['canonical', 'enzyme', 'enzyme_full', 'organism'], 
+                    join_nulls=True, how='left', validate='m:1')
+        .with_columns([
+            pl.coalesce([x, f'{x}_similar']).alias(x) for x in p_coalescables
+        ]).drop([f'{x}_similar' for x in p_coalescables])
     )
 
     ##### NCBI
@@ -391,7 +467,7 @@ def add_identifiers(gpt_df):
             'sequence': 'sequence_picked',
         })
         .with_columns([
-            pl.lit('ncbi cited').alias('sequence_source_picked')
+            pl.lit('ncbi cited picked').alias('sequence_source_picked')
         ])
     )
     gpt_df = (
@@ -403,32 +479,56 @@ def add_identifiers(gpt_df):
         ]).drop('ncbi_picked', 'sequence_picked', 'sequence_source_picked')
     )
 
+    # ncbi_similar = (
+    #     pl.concat([
+    #         pl.read_parquet('data/enzymes/thesaurus/ncbi_similar.parquet')
+    #         .sort('total_similarity'),
+    #         pl.read_parquet('data/enzymes/thesaurus/ncbi_similar_no_organism.parquet')
+    #         .sort('max_enzyme_similarity'),
+    #     ], how='diagonal')
+    #     .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'ncbi'])
+    #     .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
+    #     .join(ncbi2seq, on='ncbi', how='left', validate='m:1') # adds sequence
+    #     .rename({
+    #         'ncbi': 'ncbi_similar',
+    #         'sequence': 'sequence_similar',
+    #     })
+    #     .with_columns([
+    #         pl.lit('ncbi cited').alias('sequence_source_similar')
+    #     ])
+    #     .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
+    # )
+    # gpt_df = (
+    #     gpt_df.join(ncbi_similar, on=['pmid', 'enzyme', 'enzyme_full', 'organism'], join_nulls=True, how='left', validate='m:1')
+    #     .with_columns([
+    #         pl.coalesce(['ncbi', 'ncbi_similar']).alias('ncbi'),
+    #         pl.coalesce(['sequence', 'sequence_similar']).alias('sequence'),
+    #         pl.coalesce(['sequence_source', 'sequence_source_similar']).alias('sequence_source'),
+    #     ]).drop('ncbi_similar', 'sequence_similar', 'sequence_source_similar')
+    # )
+
+    n_coalescables = ['ncbi', *coalescables]
     ncbi_similar = (
-        pl.concat([
-            pl.read_parquet('data/enzymes/thesaurus/ncbi_similar.parquet')
-            .sort('total_similarity'),
-            pl.read_parquet('data/enzymes/thesaurus/ncbi_similar_no_organism.parquet')
-            .sort('max_enzyme_similarity'),
-        ], how='diagonal')
-        .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'ncbi'])
-        .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
-        .join(ncbi2seq, on='ncbi', how='left', validate='m:1') # adds sequence
-        .rename({
-            'ncbi': 'ncbi_similar',
-            'sequence': 'sequence_similar',
-        })
-        .with_columns([
-            pl.lit('ncbi cited').alias('sequence_source_similar')
-        ])
-        .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
+        ncbi_conf
+        # pl.read_parquet('data/thesaurus/confident/ncbi.parquet')
+        .filter(
+            (pl.col('max_enzyme_similarity') >= 90) 
+            & ((pl.col('max_organism_similarity') >= 90)
+                | pl.col('max_organism_similarity').is_null())
+            & pl.col('sequence').is_not_null()
+        ).with_columns(
+            pl.lit('ncbi cited').alias('sequence_source')
+        ).sort('total_similarity', descending=True)
+        .unique(['canonical', 'enzyme', 'enzyme_full', 'organism'], keep='first')
+        .select(['canonical', 'enzyme', 'enzyme_full', 'organism', *n_coalescables])
+        .rename({x: f'{x}_similar' for x in n_coalescables})
     )
     gpt_df = (
-        gpt_df.join(ncbi_similar, on=['pmid', 'enzyme', 'enzyme_full', 'organism'], join_nulls=True, how='left', validate='m:1')
+        gpt_df.join(ncbi_similar, on=['canonical', 'enzyme', 'enzyme_full', 'organism'], 
+                    join_nulls=True, how='left', validate='m:1')
         .with_columns([
-            pl.coalesce(['ncbi', 'ncbi_similar']).alias('ncbi'),
-            pl.coalesce(['sequence', 'sequence_similar']).alias('sequence'),
-            pl.coalesce(['sequence_source', 'sequence_source_similar']).alias('sequence_source'),
-        ]).drop('ncbi_similar', 'sequence_similar', 'sequence_source_similar')
+            pl.coalesce([x, f'{x}_similar']).alias(x) for x in n_coalescables
+        ]).drop([f'{x}_similar' for x in n_coalescables])
     )
 
 
@@ -436,17 +536,17 @@ def add_identifiers(gpt_df):
     
     ##### UNIPROT AGAIN
     ### add uniprot, searched
+    s_coalescables = ['uniprot', 'sequence', 'sequence_source', 'max_enzyme_similarity', 'max_organism_similarity'] # , 'total_similarity']
     uniprot_searched = (
         pl.read_parquet('data/enzymes/thesaurus/uniprots_searched.parquet')
-        .select(['query_enzyme', 'query_organism', 'uniprot', 'sequence']) # , 'enzyme_source'])
+        .select(['query_enzyme', 'query_organism', 'uniprot', 'sequence', 'max_enzyme_similarity', 'max_organism_similarity']) # , 'enzyme_source'])
         .filter(pl.col('sequence').is_not_null())
-        .rename({
-            'uniprot': 'uniprot_searched',
-            'sequence': 'sequence_searched',
-        })
         .with_columns([
-            pl.lit('uniprot searched').alias('sequence_source_searched')
+            pl.lit('uniprot searched').alias('sequence_source')
         ])
+        .rename({
+            x: f'{x}_searched' for x in s_coalescables
+        })
         .unique(['query_enzyme', 'query_organism'], keep='first')
     )
     # with searched, we need to join first by enzyme_full, then by enzyme
@@ -465,19 +565,46 @@ def add_identifiers(gpt_df):
         .join(uniprot_searched, left_on=['enzyme_ascii_fixed', 'organism_ascii_fixed'], right_on=['query_enzyme', 'query_organism'], how='left')
 
         .with_columns([
-            pl.coalesce(['uniprot', 'uniprot_searched']).alias('uniprot'),
-            pl.coalesce(['sequence', 'sequence_searched']).alias('sequence'),
-            pl.coalesce(['sequence_source', 'sequence_source_searched']).alias('sequence_source'),
-        ]).drop('uniprot_searched', 'sequence_searched', 'sequence_source_searched')
+            pl.coalesce([x, f'{x}_searched']).alias(x) for x in s_coalescables
+        ]).drop([f'{x}_searched' for x in s_coalescables])
         .join(uniprot_searched, left_on=['enzyme_full', 'organism'], right_on=['query_enzyme', 'query_organism'], how='left', validate='m:1')
         .with_columns([
-            pl.coalesce(['uniprot', 'uniprot_searched']).alias('uniprot'),
-            pl.coalesce(['sequence', 'sequence_searched']).alias('sequence'),
-            pl.coalesce(['sequence_source', 'sequence_source_searched']).alias('sequence_source'),
-        ]).drop('uniprot_searched', 'sequence_searched', 'sequence_source_searched')
-
+            pl.coalesce([x, f'{x}_searched']).alias(x) for x in s_coalescables
+        ]).drop([f'{x}_searched' for x in s_coalescables])
         .drop('enzyme_ascii_fixed', 'organism_ascii_fixed')
     )
+
+    ### MERGE IN CONFIDENCES
+    c_coalescables = ['max_enzyme_similarity', 'max_organism_similarity', 'total_similarity']
+    
+
+
+    uniprot_conf = (
+        uniprot_conf.select(['canonical', 'enzyme', 'enzyme_full', 'organism', 'uniprot', *c_coalescables])
+    ).sort('total_similarity', descending=True).unique(['canonical', 'enzyme', 'enzyme_full', 'organism', 'uniprot'], keep='first')
+    gpt_df = gpt_df.join(uniprot_conf, on=['canonical', 'enzyme', 'enzyme_full', 'organism', 'uniprot'], 
+                         how='left', join_nulls=True, validate='m:1', suffix='_confidences')
+    gpt_df = gpt_df.with_columns([
+        pl.coalesce([x, f'{x}_confidences']).alias(x) for x in c_coalescables
+    ]).drop([f'{x}_confidences' for x in c_coalescables])
+
+    pdb_conf = (
+        pdb_conf.select(['canonical', 'enzyme', 'enzyme_full', 'organism', 'pdb', *c_coalescables])
+    ).sort('total_similarity', descending=True).unique(['canonical', 'enzyme', 'enzyme_full', 'organism', 'pdb'], keep='first')
+    gpt_df = gpt_df.join(pdb_conf, on=['canonical', 'enzyme', 'enzyme_full', 'organism', 'pdb'], 
+                         how='left', join_nulls=True, validate='m:1', suffix='_confidences')
+    gpt_df = gpt_df.with_columns([
+        pl.coalesce([x, f'{x}_confidences']).alias(x) for x in c_coalescables
+    ]).drop([f'{x}_confidences' for x in c_coalescables])
+    
+    ncbi_conf = ncbi_conf.select(
+        ['canonical', 'enzyme', 'enzyme_full', 'organism', 'ncbi', *c_coalescables]
+    ).sort('total_similarity', descending=True).unique(['canonical', 'enzyme', 'enzyme_full', 'organism', 'ncbi'], keep='first')
+    gpt_df = gpt_df.join(ncbi_conf, on=['canonical', 'enzyme', 'enzyme_full', 'organism', 'ncbi'], 
+                         how='left', join_nulls=True, validate='m:1', suffix='_confidences')
+    gpt_df = gpt_df.with_columns([
+        pl.coalesce([x, f'{x}_confidences']).alias(x) for x in c_coalescables
+    ]).drop([f'{x}_confidences' for x in c_coalescables])
 
 
     # print(gpt_df)
