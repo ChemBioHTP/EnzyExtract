@@ -295,6 +295,8 @@ def get_batch(batch_url, params):
         total = response.headers["x-total-results"]
         yield response, total
         batch_url = get_next_link(response.headers)
+        params = {} # actually, we need to clear params
+        break # TODO: well actually, we don't want further pages because 500 is enough
 
 def _fetch_uniprot_info_latest(uniprot_ids):
     # Use UniProt API to fetch information in bulk

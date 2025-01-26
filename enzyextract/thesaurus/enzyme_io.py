@@ -3,6 +3,9 @@ import polars as pl
 import os
 
 def read_all_dfs(folderpath, blacklist: Callable[[str], bool] = None, so=None) -> pl.DataFrame:
+    """
+    Reads all dataframes in a folder, then concatenates them.
+    """
     dfs = []
     for filename in os.listdir(folderpath):
         if blacklist is not None and blacklist(filename):

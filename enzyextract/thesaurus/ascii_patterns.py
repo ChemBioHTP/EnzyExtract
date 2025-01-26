@@ -7,14 +7,16 @@ replace_nonascii = {'\u2018': "'", '\u2019': "'", '\u2032': "'", '\u201c': '"', 
                     '®': '',
                     }
 import polars as pl
-def pl_to_ascii(col: pl.Expr) -> pl.Expr:
+def pl_to_ascii(col: pl.Expr, lowercase=True) -> pl.Expr:
     """
     Cleans a string column to make it closer to ascii.
     """
+    if lowercase:
+        col = col.str.to_lowercase()
     return (
         # pl.col(col)
         col
-        .str.to_lowercase()
+        # .str.to_lowercase()
         .str.replace_all('[-᠆‑‒–—―﹘﹣－˗−‐⁻]', '-')
         .str.replace_many(replace_greek)
         .str.replace_many(replace_nonascii)
