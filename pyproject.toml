@@ -16,7 +16,10 @@ classifiers = [
 
 dependencies = [
   "pandas",
-  
+  "polars",
+  "litellm",
+  'biopython',
+  "seaborn",
 ]
 
 

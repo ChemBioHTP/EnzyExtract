@@ -48,6 +48,7 @@ def fix_km(x: str) -> str:
     if not isinstance(x, str):
         x = str(x)
     
+    x = x.replace('\u03BC', '\u00B5') # greek mu \u03BC --> \u00B5
     x = fix_scientific_notation(x)
     
     x = re.sub(',', '', x) # destroy commas, which interfere with matching
@@ -290,6 +291,9 @@ def clean_columns_for_valid(df: pd.DataFrame, printme=True) -> pd.DataFrame:
         if printme:
             print("Strange kcat units", _strange_kcat_units)
             print("Strange km units", _strange_km_units)
+
+            if 'μM' in _strange_km_units:
+                raise AssertionError("HOW did mu (μ) not get replaced?")
         
 
     # cast pmid column to int, then str

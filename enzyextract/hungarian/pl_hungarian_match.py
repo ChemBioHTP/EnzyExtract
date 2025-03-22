@@ -202,7 +202,6 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
         return pl.concat(builder)
 
 
-import pytest
 
 def test_join_optimally_basic():
     """Test basic functionality of join_optimally"""

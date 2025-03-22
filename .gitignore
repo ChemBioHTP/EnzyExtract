@@ -14,3 +14,6 @@ _debug
 
 .hidden
 settings.json
+
+experiments
+*.svg

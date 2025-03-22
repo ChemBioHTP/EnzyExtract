@@ -10,6 +10,8 @@ import json
 
 from tqdm import tqdm
 
+from enzyextract.submit.submit_funcs import get_user_y_n
+
 _openai_client = None
 def process_env(filepath):
     global _openai_client
@@ -30,20 +32,7 @@ def get_openai_client():
             raise ValueError("No OpenAI key found!")
     return _openai_client
 
-persistent_input = None
-def get_user_y_n():
-    global persistent_input
-    if persistent_input is True:
-        inp = 'y'
-    elif persistent_input is False:
-        inp = 'n'
-    else:
-        inp = input("Proceed? (y/n): ")
-    if inp == 'Y':
-        persistent_input = True
-    elif inp == 'N':
-        persistent_input = False
-    return inp
+
 def submit_batch_file(filepath, pending_file=None):
     openai_client = get_openai_client()
     # read to make sure

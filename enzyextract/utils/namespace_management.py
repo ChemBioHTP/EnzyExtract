@@ -1,6 +1,13 @@
 
 
 from enzyextract.utils import prompt_collections
+import re
+
+
+def validate_namespace(namespace):
+    # make sure no bad characters in the namespace
+    if re.search(r'[*/\\<>:|?]', namespace):
+        raise ValueError("Namespace contains invalid characters")
 
 
 def glean_model_name(namespace, task='ingestion'):

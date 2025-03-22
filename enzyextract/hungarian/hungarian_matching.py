@@ -38,7 +38,10 @@ def calc_sigfigs(mantissa: str):
     return len(mantissa.lstrip('0')) 
     
 # NB: order matters
-valid_units = ["ms^-1", "sec^-1", "s^-1", "min^-1", "m^-1", "hr^-1", "h^-1", "mM", "µM", "nM", "M"]
+valid_units = ["ms^-1", "sec^-1", "s^-1", "min^-1", "m^-1", "hr^-1", "h^-1", "mM", 
+               "µM", # micro
+               "μM", # mu
+               "nM", "M"]
 def parse_value_and_unit(value_str):
     # match = re.match(r"(\d+(?:\.\d+)?)\s*(\S+)", value_str)
     # if match:
@@ -116,7 +119,8 @@ def convert_to_true_value(value, unit, sigfigs=None):
     km_conversions = {
         "M": 1,
         "mM": 1e-3,
-        "µM": 1e-6,
+        "µM": 1e-6, # micro sign, u+00b5
+        "μM": 1e-6, # mu sign, u+03bc
         "nM": 1e-9
     }
     

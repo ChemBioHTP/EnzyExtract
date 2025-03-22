@@ -8,6 +8,12 @@ import pymupdf
 _re_mM = re.compile(r"\bmM\b")
 _re_mM_i = re.compile(r"\bmM\b", re.IGNORECASE)
 
+widest_mM_re = re.compile(r'\bmm(?=$|[\Wo2])', re.IGNORECASE)
+true_widest_mM_re = re.compile(r'\b[m\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f]m(?=$|[\W])', re.IGNORECASE)
+ascii_control_re = re.compile(r'[\x00-\x08\x11\x12\x14-\x1F\x7F-\x9F]') # \x7F-\x9F
+ends_with_ascii_control_re = re.compile(r'[\x00-\x08\x11\x12\x14-\x1F\x7F-\x9F]$') # \x7F-\x9F
+
+
 def _iob(bbox1: tuple[float, float, float, float], bbox2: tuple[float, float, float, float]):
     """
     Compute the intersection area over box area, for bbox1.
