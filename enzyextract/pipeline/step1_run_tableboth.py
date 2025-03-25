@@ -15,31 +15,31 @@ from tqdm import tqdm
 from enzyextract.utils import prompt_collections
 from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
-from enzyextract.utils.micro_fix import duplex_mM_corrected_text
+from enzyextract.pre.reocr.micro_fix import duplex_mM_corrected_text
 from enzyextract.submit.litellm_management import process_env, submit_batch_file
 from enzyextract.utils.namespace_management import glean_model_name, validate_namespace
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from
 from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
 from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
-from enzyextract.utils.micro_fix import true_widest_mM_re, ends_with_ascii_control_re
+from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_control_re
 
 
 
 _schema_overrides = {
-            'namespace': pl.Utf8,
-            'version': pl.Utf8,
-            'shard': pl.UInt32,
-            'batch_fpath': pl.Utf8,
-            'model_name': pl.Utf8,
-            'llm_provider': pl.Utf8,
-            'prompt': pl.Utf8,
-            'structured': pl.Boolean,
-            'file_uuid': pl.Utf8,
-            'batch_uuid': pl.Utf8,
-            'status': pl.Utf8,
-            'completion_fpath': pl.Utf8,
-        }
+    'namespace': pl.Utf8,
+    'version': pl.Utf8,
+    'shard': pl.UInt32,
+    'batch_fpath': pl.Utf8,
+    'model_name': pl.Utf8,
+    'llm_provider': pl.Utf8,
+    'prompt': pl.Utf8,
+    'structured': pl.Boolean,
+    'file_uuid': pl.Utf8,
+    'batch_uuid': pl.Utf8,
+    'status': pl.Utf8,
+    'completion_fpath': pl.Utf8,
+}
 def read_log(log_location: str) -> pl.DataFrame:
     if os.path.exists(log_location):
         log = pl.read_parquet(log_location)
@@ -121,7 +121,9 @@ def main(
     prompt: str, 
     structured = False,
     llm_provider: str = 'openai',
-    version=None
+    version=None,
+    _check_nonzero_reocr=True,
+    _check_nonzero_tables=True,
 ):
     
     process_env('.env')
@@ -153,7 +155,7 @@ def main(
         else:
             return
 
-
+    os.makedirs(dest_folder, exist_ok=True)
     batch = []
 
     print("Namespace: ", namespace)
@@ -169,7 +171,8 @@ def main(
         pmid_to_tables = {}
         if tables_from is not None:
             pmid_to_tables = pmid_to_tables_from(tables_from)
-            assert pmid_to_tables, "No tables found"
+            if _check_nonzero_tables:
+                assert pmid_to_tables, "No tables found"
 
 
         acceptable_pmids = pmids_from_directory(pdf_root)
@@ -202,7 +205,10 @@ def main(
             if pmid in pmid_to_tables:
                 _intersect += 1
         print(f"Intersection of {_intersect} pmids with tables")
-        assert _intersect > 0, "No intersection of tables found"
+        if _check_nonzero_tables:
+            assert _intersect > 0, "No intersection of tables found"
+        elif _intersect == 0:
+            print("Warning: No tables found, but this is ok.")
 
 
         # apply micro fix
@@ -231,7 +237,10 @@ def main(
             ])
             _num_in_micro = len(set(micro_df['pdfname']).intersection(set(target_pmids)))
         print(f"Intersection of {_num_in_micro} pmids with micro corrections")
-        assert _num_in_micro > 0, "No intersection of micro corrections found"
+        if _check_nonzero_reocr:
+            assert _num_in_micro > 0, "No intersection of micro corrections found"
+        elif _num_in_micro == 0:
+            print("Warning: No micro corrections found, but this is ok.")
 
         _pmid_with_tables = 0
         for fileroot, filename, pmid in tqdm(manifest_view.iter_rows(), total=manifest_view.height):

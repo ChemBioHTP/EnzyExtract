@@ -18,8 +18,9 @@ dependencies = [
   "pandas",
   "polars",
   "litellm",
-  'biopython',
+  "biopython",
   "seaborn",
+  "google-cloud-storage",
 ]
 
 

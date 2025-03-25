@@ -10,7 +10,7 @@ from tqdm import tqdm
 from enzyextract.utils import prompt_collections
 from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
-from enzyextract.utils.micro_fix import mM_corrected_text
+from enzyextract.pre.reocr.micro_fix import mM_corrected_text
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
 

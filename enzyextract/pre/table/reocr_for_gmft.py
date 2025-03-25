@@ -3,7 +3,8 @@
 import os
 import types
 from typing import Generator
-from enzyextract.utils.micro_fix import true_widest_mM_re, ends_with_ascii_control_re
+from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_control_re
+from enzyextract.pre.reocr.reocr_schema import reocr_df_schema, reocr_df_schema_overrides
 from gmft_pymupdf import PyMuPDFPage, PyMuPDFDocument
 from gmft.pdf_bindings.common import BasePage
 from gmft.table_function_algorithm import _iob
@@ -16,7 +17,14 @@ import pymupdf
 
 # correction_df = pd.read_csv("C:/conjunct/vandy/yang/reocr/results/micros_resnet_v1.csv")
 def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str]):
-    if not micros_path.endswith(".parquet"):
+    if micros_path is None:
+        # no correction needed
+        return pl.DataFrame(
+            schema=reocr_df_schema,
+            schema_overrides=reocr_df_schema_overrides,
+
+        )
+    elif not micros_path.endswith(".parquet"):
         # correction_df = pd.read_csv(micros_path)
         # correction_df = correction_df.astype({'pdfname': str})
         correction_df = pl.read_csv(micros_path, schema_overrides={'pdfname': pl.Utf8})
@@ -55,7 +63,8 @@ def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str]):
             ])
         # assert f"{pdfname}.pdf" in all_pdfs_for_sanity, f"{pdfname}.pdf not found in the list of all pdfs"
     commonality = set(correction_df['pdfname']).intersection(set(all_pdfs_for_sanity))
-    assert commonality, "No common pdfs found between all_pdfs and correction_df"
+    if micros_path is not None:
+        assert commonality, "No common pdfs found between all_pdfs and correction_df"
     print(f"Common pdfs: {len(commonality)} / {len(all_pdfs_for_sanity)}")
     return correction_df
 

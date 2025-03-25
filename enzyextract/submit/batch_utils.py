@@ -70,6 +70,7 @@ def to_openai_batch_request(uuid: str, system_prompt: str, docs: list[str | PIL.
 def pmid_from_usual_cid(cid: str) -> str:
     """Assumes f'{namespace}_{version}_{pmid}'"""
     return cid.split('_', 2)[2] # formerly int
+    # return cid.rsplit('_', 1)[1]
 
 
 def namespace_from_usual_cid(cid: str) -> int:
@@ -207,7 +208,7 @@ def preview_batches_in_folder(src_folder, output_folder, undownloaded_only=True,
 def get_batch_output(filename, allow_unfinished=True) -> list[tuple[str, str, str]]:
     # return list of (custom_id, content, finish_reason)
     result = []
-    with open(filename, 'r') as f:
+    with open(filename, 'r', encoding='utf-8') as f:
         for line in f:
             obj = json.loads(line)
             finish_reason = obj['response']['body']['choices'][0]['finish_reason']

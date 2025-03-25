@@ -26,7 +26,7 @@ async def submit_batch_file(filepath, pending_file=None, custom_llm_provider='op
     inp = get_user_y_n()
     
     if inp.lower() == 'y':
-        print("BUCKET NAME:", os.environ['GCS_BUCKET_NAME'])
+        # print("BUCKET NAME:", os.environ['GCS_BUCKET_NAME'])
 
         with open(filepath, 'rb') as f:
             batch_input_file = await litellm.acreate_file(
@@ -36,7 +36,6 @@ async def submit_batch_file(filepath, pending_file=None, custom_llm_provider='op
             )
         batch_input_file_id = batch_input_file.id
 
-        print("BUCKET NAME:", os.environ['GCS_BUCKET_NAME'])
 
         batch_confirm = await litellm.acreate_batch(
             input_file_id=batch_input_file_id,

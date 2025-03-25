@@ -7,7 +7,7 @@ from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def analyze_correlations(matched_view: pl.DataFrame, title):
+def analyze_correlations(matched_view: pl.DataFrame, title, visualize=True):
     # matched_view = pl.read_parquet('_debug/cache/beluga_matched_based_on_EnzymeSubstrate.parquet')
     matched_view = matched_view.filter(
         ((pl.col('km_value_1') > 0) & (pl.col('km_value_2') > 0))
@@ -93,20 +93,20 @@ def analyze_correlations(matched_view: pl.DataFrame, title):
 
     # Print results
     
-    for key, value in results.items():
-        print(f'{key}:')
-        for k, v in value.items():
-            if isinstance(v, dict):
-                print(f'  {k}:')
-                for k2, v2 in v.items():
-                    print(f'    {k2}: {v2}')
-            else:
-                print(f'  {k}: {v}')
-    
-    visualize_sns_scatter(corr_view, title)
-    # visualize_sns_kde(corr_view, title)
-    # visualize_kcat(corr_view, results=results, title='EnzyExtractDB vs BRENDA')
-
+    if visualize:
+        for key, value in results.items():
+            print(f'{key}:')
+            for k, v in value.items():
+                if isinstance(v, dict):
+                    print(f'  {k}:')
+                    for k2, v2 in v.items():
+                        print(f'    {k2}: {v2}')
+                else:
+                    print(f'  {k}: {v}')
+        visualize_sns_scatter(corr_view, title)
+        # visualize_sns_kde(corr_view, title)
+        # visualize_kcat(corr_view, results=results, title='EnzyExtractDB vs BRENDA')
+    return results
 
 
 def visualize_sns_scatter(df: pl.DataFrame, title, log_ratio_threshold=2):

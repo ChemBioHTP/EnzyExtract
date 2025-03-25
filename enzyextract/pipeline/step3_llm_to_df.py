@@ -61,7 +61,7 @@ def generate_valid_parquet(fpath,
     valid_df = clean_columns_for_valid(pd.concat(valids)) # bad units for km and kcat are rejected here
     valid_df = valid_df.astype({'pmid': 'str'})
     
-    if write_fpath and not os.path.exists(write_fpath):
+    if write_fpath: #  and not os.path.exists(write_fpath):
         print("Writing to", write_fpath)
         if write_fpath.endswith('.parquet'):
             import polars as pl

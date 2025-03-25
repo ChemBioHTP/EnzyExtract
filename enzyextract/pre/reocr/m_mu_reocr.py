@@ -3,7 +3,7 @@ import pymupdf
 import os
 from tqdm import tqdm
 from enzyextract.utils.pmid_management import pmids_from_cache
-
+from enzyextract.pre.reocr.reocr_schema import reocr_df_schema, reocr_df_schema_overrides
 
 
 import PIL
@@ -28,6 +28,7 @@ torch.manual_seed(42)
 random.seed(42)
 
 torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+
 
 # Custom dataset class
 class CharacterDataset(Dataset):
@@ -479,9 +480,12 @@ def dump_images_too(root, all_pdfs, path_to_dest, target="mM", allow_lowercase=T
                 img.save(f'{other_dir}/{pdfname}_{pageno}_{ctr}.png')
         doc.close()
     
-    df = pl.DataFrame(data, 
-                      orient='row',
-                      schema=['pdfname', 'pageno', 'ctr', 'orig_char', 'orig_after', 'real_char', 'confidence', 'angle', 'letter_x0', 'letter_y0', 'letter_x1', 'letter_y1', 'x0', 'y0', 'x1', 'y1'])
+    df = pl.DataFrame(
+        data, 
+        orient='row',
+        schema=reocr_df_schema,
+        schema_overrides=reocr_df_schema_overrides
+    )
     return df
 
 
@@ -576,7 +580,7 @@ def script_scan_mM(pdf_root=None, write_dir=None, save_imgs=False, model_path=No
             all_pdfs.add(realname)
     
     # seen folder, reduce redundancy
-    if os.path.exists(seen_fpath):
+    if os.path.exists(seen_fpath) and os.path.getsize(seen_fpath) > 0:
         # read the seen file
         seen = pl.read_csv(seen_fpath, has_header=False, new_columns=['pdfname'], schema_overrides={'pdfname': pl.Utf8})
     else:
@@ -622,7 +626,6 @@ def script_scan_mM(pdf_root=None, write_dir=None, save_imgs=False, model_path=No
         pl.DataFrame(list(all_pdfs), schema=['pdfname'])
     ])
     seen.write_csv(seen_fpath, include_header=False)
-    exit(0)
 
 def script_federated_inference():
     """

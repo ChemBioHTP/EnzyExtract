@@ -94,7 +94,7 @@ def process_pdfs(pdf_root, write_dir, micros_path):
             seen = set(f.read().splitlines())
         all_pdfs = [f for f in all_pdfs if f not in seen]
 
-    
+    assert len(all_pdfs) > 0, "No PDFs to process. Check the directory."
     for filename in tqdm(all_pdfs):
         
         pdfname = filename[:-4]
@@ -127,7 +127,8 @@ def process_pdfs(pdf_root, write_dir, micros_path):
         except Exception as e:
             raise e
         finally:
-            doc.close()
+            if doc is not None:
+                doc.close()
         if aok:
             with open(seen_path, "a") as f:
                 f.write(f"{filename}\n")

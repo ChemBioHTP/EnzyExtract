@@ -438,7 +438,7 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
     base_df = base_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
     ### add cid and brenda_id to gpt_df
-    if 'cid' not in want_df.columns or 'brenda_id' not in want_df.columns:
+    if 'cid' not in gpt_df.columns or 'brenda_id' not in gpt_df.columns:
         gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
         gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
@@ -448,7 +448,7 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
     base_df = base_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
 
     ### add ecs to gpt_df
-    if 'enzyme_ecs' not in ecs.columns:
+    if 'enzyme_ecs' not in gpt_df.columns:
         gpt_df = gpt_df.join(ecs, left_on='enzyme', right_on='alias', how='left')
         gpt_df = gpt_df.join(ecs, left_on='enzyme_full', right_on='alias', how='left', suffix='_full')
     # now, give 
@@ -574,7 +574,7 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     brenda_df = brenda_df.join(want_view, left_on='substrate', right_on='name', how='left')
 
     ### add cid and brenda_id to gpt_df
-    if 'cid' not in want_df.columns or 'brenda_id' not in want_df.columns:
+    if 'cid' not in gpt_df.columns or 'brenda_id' not in gpt_df.columns:
         gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
         gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
