@@ -26,7 +26,7 @@ from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_c
 
 
 
-_schema_overrides = {
+llm_log_schema_overrides = {
     'namespace': pl.Utf8,
     'version': pl.Utf8,
     'shard': pl.UInt32,
@@ -42,7 +42,10 @@ _schema_overrides = {
 }
 def read_log(log_location: str) -> pl.DataFrame:
     if os.path.exists(log_location):
-        log = pl.read_parquet(log_location)
+        if log_location.endswith('.parquet'):
+            log = pl.read_parquet(log_location)
+        elif log_location.endswith('.tsv'):
+            log = pl.read_csv(log_location, separator='\t', schema_overrides=llm_log_schema_overrides)
     else:
         log = pl.DataFrame({
             'namespace': [],
@@ -57,7 +60,7 @@ def read_log(log_location: str) -> pl.DataFrame:
             'batch_uuid': [], # batch id given by openai
             'status': [], # aborted | local | submitted | downloaded
             'completion_fpath': [], # where the completion is stored
-        }, schema_overrides=_schema_overrides)
+        }, schema_overrides=llm_log_schema_overrides)
     return log
 
 def update_log(
@@ -88,7 +91,7 @@ def update_log(
         'batch_uuid': [batch_uuid],
         'status': [status],
         'completion_fpath': [None],
-    }, schema_overrides=_schema_overrides)
+    }, schema_overrides=llm_log_schema_overrides)
     log = read_log(log_location)
     if try_to_overwrite:
         log = log.update(df, on=['namespace', 'version', 'shard'])
@@ -373,7 +376,7 @@ if __name__ == '__main__':
         micro_path='.enzy/pre/mM/mM.parquet',
         tables_from='.enzy/pre/tables/markdown',
         dest_folder='.enzy/batches',
-        log_location='.enzy/llm_log.parquet',
+        log_location='.enzy/llm_log.tsv',
         model_name=model_name,
         llm_provider=llm_provider,
         prompt=suggested_prompt,

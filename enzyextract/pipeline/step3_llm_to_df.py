@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     namespace = 'bench dev2'
 
-    llm_log = pl.read_parquet('.enzy/llm_log.parquet')
+    llm_log = pl.read_csv('.enzy/llm_log.tsv', separator='\t', schema_overrides=llm_log_schema_overrides)
     fpath = '.enzy/completions/bench dev2_20250301.jsonl'
     write_dir = '.enzy/post/valid'
 
