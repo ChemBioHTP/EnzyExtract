@@ -1,4 +1,5 @@
 import os
+from enzyextract.pipeline.step1_run_tableboth import read_log, write_log
 import litellm
 import polars as pl
 from google.cloud import storage
@@ -37,7 +38,8 @@ def download(
     os.makedirs(err_folder, exist_ok=True)
 
     # Check to see which files are missing
-    df = pl.read_parquet(log_location) # .with_row_index('index')
+    # df = pl.read_parquet(log_location) # .with_row_index('index')
+    df = read_log(log_location)
 
     to_download = df.filter(
         pl.col('status') == 'submitted'
@@ -108,7 +110,7 @@ def download(
         print("No new files to download.")
         return
     df = df.update(updates_df, on=['namespace', 'version'], how='left')
-    df.write_parquet(log_location)
+    write_log(log_location, df)
 
 
 

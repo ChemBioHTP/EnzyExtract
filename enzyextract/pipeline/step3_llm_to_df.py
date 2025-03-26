@@ -73,6 +73,7 @@ def generate_valid_parquet(fpath,
 
 if __name__ == "__main__":
     raise NotImplementedError("This script is only an example.")
+    from enzyextract.pipeline.step1_run_tableboth import llm_log_schema_overrides
     blacklist = whitelist = None
 
     namespace = 'bench dev2'

@@ -63,6 +63,15 @@ def read_log(log_location: str) -> pl.DataFrame:
         }, schema_overrides=llm_log_schema_overrides)
     return log
 
+def write_log(log_location: str, log: pl.DataFrame):
+    if log_location.endswith('.parquet'):
+        # log.write_parquet(log_location)
+        # migrate to tsv
+        log.write_csv(log_location.removesuffix('.parquet') + '.tsv', separator='\t')
+    elif log_location.endswith('.tsv'):
+        log.write_csv(log_location, separator='\t')
+    else:
+        log.write_parquet(log_location + '.parquet')
 def update_log(
     log_location: str, 
     namespace: str,
@@ -97,7 +106,7 @@ def update_log(
         log = log.update(df, on=['namespace', 'version', 'shard'])
     else:
         log = pl.concat([log, df], how='diagonal_relaxed')
-    log.write_parquet(log_location)
+    write_log(log_location, log)
 
 def build_manifest(pdf_root):
     """
