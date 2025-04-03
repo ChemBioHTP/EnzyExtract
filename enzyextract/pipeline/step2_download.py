@@ -1,10 +1,14 @@
 import os
+from typing import Optional, Union
 from enzyextract.pipeline.step1_run_tableboth import read_log, write_log
 import litellm
 import polars as pl
 from google.cloud import storage
 
+from enzyextract.submit.anthropic_management import retrieve_anthropic_batch, retrieve_anthropic_results
+from enzyextract.submit.base import LLMCommonBatch
 from enzyextract.submit.litellm_management import process_env
+import requests
 
 
 def download_gcs_file(gcs_url, destination_file_name):
@@ -30,6 +34,33 @@ def download_gcs_file(gcs_url, destination_file_name):
     print(f"Downloaded {source_blob_path} to {destination_file_name}")
 
 
+def retrieve_my_batch(
+    batch_id: str,
+    llm_provider: str = 'openai',
+) -> Union[litellm.LiteLLMBatch, LLMCommonBatch]:
+    if llm_provider == 'anthropic':
+        return retrieve_anthropic_batch(batch_id)
+    return litellm.retrieve_batch(
+        batch_id=batch_id,
+        custom_llm_provider=llm_provider,
+    )
+
+def retrieve_my_file(
+    batch_id: Optional[str], 
+    file_id: str,
+    llm_provider: str = 'openai',
+):
+    if llm_provider == 'anthropic':
+        return retrieve_anthropic_results(batch_id, to_json_response=True)
+
+    else:
+        return litellm.file_content(
+            file_id=file_id,
+            custom_llm_provider=llm_provider,
+        )
+
+
+
 def download(
     log_location: str,
     dest_folder: str,
@@ -48,25 +79,30 @@ def download(
     )
 
     updates = []
-    for namespace, version, batch_id, llm_provider in to_download.select([
+    for namespace, version, shard, batch_id, llm_provider in to_download.select([
         # 'index',
         'namespace',
         'version',
+        'shard', 
         'batch_uuid',
         'llm_provider'
     ]).iter_rows():
-        write_dest = f"{dest_folder}/{namespace}_{version}.jsonl"
+        if shard is not None:
+            write_dest = f"{dest_folder}/{namespace}_{version}.{shard}.jsonl"
+        else:
+            write_dest = f"{dest_folder}/{namespace}_{version}.jsonl"
         # check if the file already exists
         if os.path.exists(write_dest):
             print(f"File {write_dest} already exists, skipping download.")
             updates.append({
                 'namespace': namespace,
                 'version': version,
+                'shard': shard,
                 'completion_fpath': write_dest,
                 'status': 'downloaded',
             })
             continue
-        retrieved_batch = litellm.retrieve_batch(
+        retrieved_batch = retrieve_my_batch(
             batch_id=batch_id,
             custom_llm_provider=llm_provider,
         )
@@ -77,11 +113,14 @@ def download(
                 # rip, litellm does not support GCS
                 output_file_id = output_file_id + '/predictions.jsonl'
                 download_gcs_file(output_file_id, write_dest)
+            elif llm_provider == 'anthropic':
+                pass
             else:
                 
                 # openai
-                file = litellm.file_content(
-                    file_id=retrieved_batch.output_file_id,
+                file = retrieve_my_file(
+                    batch_id=batch_id,
+                    file_id=output_file_id,
                     custom_llm_provider=llm_provider,
                 )
                 
@@ -91,7 +130,8 @@ def download(
             
             err_file_id = retrieved_batch.error_file_id
             if err_file_id:
-                err_file = litellm.file_content(
+                err_file = retrieve_my_file(
+                    batch_id=batch_id,
                     file_id=err_file_id,
                     custom_llm_provider=llm_provider,
                 )

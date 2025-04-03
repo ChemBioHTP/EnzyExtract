@@ -21,6 +21,7 @@ dependencies = [
   "biopython",
   "seaborn",
   "google-cloud-storage",
+  "anthropic",
 ]
 
 
