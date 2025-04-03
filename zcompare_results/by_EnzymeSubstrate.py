@@ -438,7 +438,7 @@ def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: 
     base_df = base_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
     ### add cid and brenda_id to gpt_df
-    if 'cid' not in want_df.columns or 'brenda_id' not in want_df.columns:
+    if 'cid' not in gpt_df.columns or 'brenda_id' not in gpt_df.columns:
         gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
         gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
@@ -574,7 +574,7 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     brenda_df = brenda_df.join(want_view, left_on='substrate', right_on='name', how='left')
 
     ### add cid and brenda_id to gpt_df
-    if 'cid' not in want_df.columns or 'brenda_id' not in want_df.columns:
+    if 'cid' not in gpt_df.columns or 'brenda_id' not in gpt_df.columns:
         gpt_df = gpt_df.join(want_view, left_on='substrate', right_on='name', how='left')
         gpt_df = gpt_df.join(want_view, left_on='substrate_full', right_on='name', how='left', suffix='_full')
 
@@ -656,11 +656,12 @@ if __name__ == '__main__':
     # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
-    working = 'sabiork'
+    # working = 'sabiork'
     # working = 'bucket'
     # working = 'apatch'
     # working = 'everything'
     # working = 'thedata'
+    working = 'rumble'
 
     # against = 'runeem'
     against = 'brenda'
@@ -694,6 +695,8 @@ if __name__ == '__main__':
         gpt_df = pl.read_parquet('data/valid/_valid_everything.parquet')
     elif working == 'thedata':
         gpt_df = pl.read_parquet('data/export/TheData_kcat.parquet')
+    elif working == 'rumble':
+        gpt_df = load_runeem_df(exclude_train=True)
     else:
         raise ValueError("Invalid working")
     base_df = load_runeem_df(exclude_train=True)

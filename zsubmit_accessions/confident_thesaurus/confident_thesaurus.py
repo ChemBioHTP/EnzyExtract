@@ -233,7 +233,10 @@ def get_all_cited():
     )
     ncbi = f_ncbi
 
-    
+    pdb = pdb.rename({
+        'pdb': 'pdb_raw' # avoid confusion
+    })
+
     return uniprot, pdb, ncbi
 
 def get_sequence_descriptions():

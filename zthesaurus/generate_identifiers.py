@@ -256,6 +256,7 @@ def add_identifiers(gpt_df):
             # multiplication of percentages
             # no organism present: confidence is 50%
             ((pl.col('max_enzyme_similarity') * pl.col('max_organism_similarity').fill_null(50)) / 100).alias('total_similarity'),
+            pl.col('pdb_common').alias('pdb')
         )
     )
     ncbi_conf = (
@@ -576,31 +577,31 @@ def add_identifiers(gpt_df):
 
     ### MERGE IN CONFIDENCES
     c_coalescables = ['max_enzyme_similarity', 'max_organism_similarity', 'total_similarity']
-    
+    conf_join_by = ['canonical', 'enzyme', 'enzyme_full', 'organism', 'sequence']
 
 
     uniprot_conf = (
-        uniprot_conf.select(['canonical', 'enzyme', 'enzyme_full', 'organism', 'uniprot', *c_coalescables])
-    ).sort('total_similarity', descending=True).unique(['canonical', 'enzyme', 'enzyme_full', 'organism', 'uniprot'], keep='first')
-    gpt_df = gpt_df.join(uniprot_conf, on=['canonical', 'enzyme', 'enzyme_full', 'organism', 'uniprot'], 
+        uniprot_conf.select([*conf_join_by, 'uniprot', *c_coalescables])
+    ).sort('total_similarity', descending=True).unique([*conf_join_by, 'uniprot'], keep='first')
+    gpt_df = gpt_df.join(uniprot_conf, on=[*conf_join_by, 'uniprot'], 
                          how='left', join_nulls=True, validate='m:1', suffix='_confidences')
     gpt_df = gpt_df.with_columns([
         pl.coalesce([x, f'{x}_confidences']).alias(x) for x in c_coalescables
     ]).drop([f'{x}_confidences' for x in c_coalescables])
 
     pdb_conf = (
-        pdb_conf.select(['canonical', 'enzyme', 'enzyme_full', 'organism', 'pdb', *c_coalescables])
-    ).sort('total_similarity', descending=True).unique(['canonical', 'enzyme', 'enzyme_full', 'organism', 'pdb'], keep='first')
-    gpt_df = gpt_df.join(pdb_conf, on=['canonical', 'enzyme', 'enzyme_full', 'organism', 'pdb'], 
+        pdb_conf.select([*conf_join_by, 'pdb', *c_coalescables])
+    ).sort('total_similarity', descending=True).unique([*conf_join_by, 'pdb'], keep='first')
+    gpt_df = gpt_df.join(pdb_conf, on=[*conf_join_by, 'pdb'], 
                          how='left', join_nulls=True, validate='m:1', suffix='_confidences')
     gpt_df = gpt_df.with_columns([
         pl.coalesce([x, f'{x}_confidences']).alias(x) for x in c_coalescables
     ]).drop([f'{x}_confidences' for x in c_coalescables])
     
     ncbi_conf = ncbi_conf.select(
-        ['canonical', 'enzyme', 'enzyme_full', 'organism', 'ncbi', *c_coalescables]
-    ).sort('total_similarity', descending=True).unique(['canonical', 'enzyme', 'enzyme_full', 'organism', 'ncbi'], keep='first')
-    gpt_df = gpt_df.join(ncbi_conf, on=['canonical', 'enzyme', 'enzyme_full', 'organism', 'ncbi'], 
+        [*conf_join_by, 'ncbi', *c_coalescables]
+    ).sort('total_similarity', descending=True).unique([*conf_join_by, 'ncbi'], keep='first')
+    gpt_df = gpt_df.join(ncbi_conf, on=[*conf_join_by, 'ncbi'], 
                          how='left', join_nulls=True, validate='m:1', suffix='_confidences')
     gpt_df = gpt_df.with_columns([
         pl.coalesce([x, f'{x}_confidences']).alias(x) for x in c_coalescables
