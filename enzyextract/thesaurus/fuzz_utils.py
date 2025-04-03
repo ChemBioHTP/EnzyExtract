@@ -5,10 +5,13 @@ from tqdm import tqdm
 import polars as pl
 
 def calculate_similarity(x, col1, col2, case_sensitive=False):
+    lhs = x[col1]
+    rhs = x[col2]
+    if lhs is None or rhs is None:
+        return None
     if not case_sensitive:
-        lhs = x[col1].lower()
-        rhs = x[col2].lower()
-
+        lhs = lhs.lower()
+        rhs = rhs.lower()
 
     # if check_shorter and (not rhs or len(rhs) <= len(lhs)):
         # return None  # Skip if rhs is shorter than or equal in length to lhs

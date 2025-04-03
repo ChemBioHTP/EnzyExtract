@@ -278,7 +278,7 @@ def add_enzyme_sequences(gpt_df):
 
     ### add uniprot (picked, pick-uniprot-prod2)
     uniprot_picked = (
-        pl.read_parquet('data/enzymes/thesaurus/uniprot_picked.parquet')
+        pl.read_parquet('data/thesaurus/enzymes/uniprot_picked.parquet')
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot'])
         .filter(pl.col('uniprot').is_not_null()) 
         .join(uniprot2seq, on='uniprot', how='left', validate='m:1') # adds sequence
@@ -303,7 +303,7 @@ def add_enzyme_sequences(gpt_df):
 
     ### add uniprot (old cited, pick-uniprot-prod1)
     uniprot_cited = (
-        pl.read_parquet('data/enzymes/thesaurus/uniprots_cited.parquet')
+        pl.read_parquet('data/thesaurus/enzymes/uniprots_cited.parquet')
         .filter(pl.col('uniprot').is_not_null() & pl.col('sequence').is_not_null())
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot', 'sequence'])
         .rename({
@@ -338,9 +338,9 @@ def add_enzyme_sequences(gpt_df):
     ### add uniprot (similar)
     # uniprot_similar = (
     #     pl.concat([
-    #         pl.read_parquet('data/enzymes/thesaurus/uniprot_similar.parquet')
+    #         pl.read_parquet('data/thesaurus/enzymes/uniprot_similar.parquet')
     #             .sort('total_similarity'),
-    #         pl.read_parquet('data/enzymes/thesaurus/uniprot_similar_no_organism.parquet')
+    #         pl.read_parquet('data/thesaurus/enzymes/uniprot_similar_no_organism.parquet')
     #             .sort('similarity_organism'),
     #     ], how='diagonal')
     #     .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot'])
@@ -385,11 +385,11 @@ def add_enzyme_sequences(gpt_df):
     ##### PDB
     ### add pdb
     p_coalescables = ['pdb', *coalescables]
-    pdb_picked = pl.read_parquet('data/enzymes/thesaurus/pdb_picked.parquet').filter(
+    pdb_picked = pl.read_parquet('data/thesaurus/enzymes/pdb_picked.parquet').filter(
         pl.col('pdb').is_not_null()
     )
-    # pdb_similar = pl.read_parquet('data/enzymes/thesaurus/pdb_similar.parquet')
-    # pdb_similar_no_organism = pl.read_parquet('data/enzymes/thesaurus/pdb_similar_no_organism.parquet')
+    # pdb_similar = pl.read_parquet('data/thesaurus/enzymes/pdb_similar.parquet')
+    # pdb_similar_no_organism = pl.read_parquet('data/thesaurus/enzymes/pdb_similar_no_organism.parquet')
 
     pdb2seq = (
         pl.read_parquet('data/enzymes/accessions/final/pdb.parquet')
@@ -459,7 +459,7 @@ def add_enzyme_sequences(gpt_df):
         .unique('ncbi')
     ) # columns: ncbi, sequence
     ncbi_picked = (
-        pl.read_parquet('data/enzymes/thesaurus/ncbi_picked.parquet')
+        pl.read_parquet('data/thesaurus/enzymes/ncbi_picked.parquet')
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'ncbi'])
         .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
         .filter(pl.col('ncbi').is_not_null())
@@ -483,9 +483,9 @@ def add_enzyme_sequences(gpt_df):
 
     # ncbi_similar = (
     #     pl.concat([
-    #         pl.read_parquet('data/enzymes/thesaurus/ncbi_similar.parquet')
+    #         pl.read_parquet('data/thesaurus/enzymes/ncbi_similar.parquet')
     #         .sort('total_similarity'),
-    #         pl.read_parquet('data/enzymes/thesaurus/ncbi_similar_no_organism.parquet')
+    #         pl.read_parquet('data/thesaurus/enzymes/ncbi_similar_no_organism.parquet')
     #         .sort('max_enzyme_similarity'),
     #     ], how='diagonal')
     #     .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'ncbi'])
@@ -540,7 +540,7 @@ def add_enzyme_sequences(gpt_df):
     ### add uniprot, searched
     s_coalescables = ['uniprot', 'sequence', 'sequence_source', 'max_enzyme_similarity', 'max_organism_similarity'] # , 'total_similarity']
     uniprot_searched = (
-        pl.read_parquet('data/enzymes/thesaurus/uniprots_searched.parquet')
+        pl.read_parquet('data/thesaurus/enzymes/uniprots_searched.parquet')
         .select(['query_enzyme', 'query_organism', 'uniprot', 'sequence', 'max_enzyme_similarity', 'max_organism_similarity']) # , 'enzyme_source'])
         .filter(pl.col('sequence').is_not_null())
         .with_columns([
@@ -634,6 +634,7 @@ def cid_diversity():
 def main(
     gpt_df: pl.DataFrame,
     subs_df: pl.DataFrame,
+    include_enzyme_sequences: bool = False,
 ):
     ### Step 1: Generate thesaurus    
     # so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
@@ -647,7 +648,10 @@ def main(
     ### Step 2: Add identifiers
     
     df = add_identifiers(gpt_df, subs_df=subs_df)
-    # df = add_enzyme_sequences(df)
+
+    if include_enzyme_sequences:
+        # add enzyme equences to the df
+        df = add_enzyme_sequences(df)
 
 
 
@@ -661,7 +665,7 @@ def main(
     # confidence for substrate: we demand exact matches
 
 if __name__ == "__main__":
-    raise NotImplementedError("This script is only an example.")
+    # raise NotImplementedError("This script is only an example.")
     # gpt_df = pl.read_parquet('data/gpt/apogee_gpt.parquet')
     # gpt_df = pl.read_parquet('data/valid/_valid_apogee-rebuilt.parquet')
     # ec_diversity()
@@ -677,6 +681,7 @@ if __name__ == "__main__":
     df = main(
         gpt_df=gpt_df,
         subs_df=subs_df,
+        include_enzyme_sequences=True,
     )
     df.write_parquet('data/export/TheData.parquet')
 

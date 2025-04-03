@@ -11,7 +11,7 @@ from enzyextract.utils import prompt_collections
 from enzyextract.utils.construct_batch import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
 from enzyextract.pre.reocr.micro_fix import mM_corrected_text
-from enzyextract.utils.openai_management import process_env, submit_batch_file
+from enzyextract.submit.openai_management import process_env, submit_batch_file
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from
 from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict

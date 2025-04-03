@@ -24,7 +24,9 @@ def download_gcs_file(gcs_url, destination_file_name):
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(source_blob_path)
 
+    # blob.download_as_bytes()
     blob.download_to_filename(destination_file_name)
+    
     print(f"Downloaded {source_blob_path} to {destination_file_name}")
 
 
@@ -76,6 +78,7 @@ def download(
                 output_file_id = output_file_id + '/predictions.jsonl'
                 download_gcs_file(output_file_id, write_dest)
             else:
+                
                 # openai
                 file = litellm.file_content(
                     file_id=retrieved_batch.output_file_id,
@@ -110,7 +113,7 @@ def download(
         print("No new files to download.")
         return
     df = df.update(updates_df, on=['namespace', 'version'], how='left')
-    write_log(log_location, df)
+    write_log(df, log_location)
 
 
 

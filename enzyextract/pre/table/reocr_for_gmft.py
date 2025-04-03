@@ -34,7 +34,7 @@ def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str]):
         #     pl.col('pdfname').str.replace("\.pdf$", "")
         # ])
         # correction_df = correction_df.to_pandas()
-        print(correction_df.columns)
+        # print(correction_df.columns)
 
     # only get those where cls is "mu" and confidence > 0.98
 
@@ -44,6 +44,9 @@ def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str]):
         & (pl.col('confidence') > 0.98)
     )
 
+    if not all_pdfs_for_sanity:
+        # no sanity check needed
+        return correction_df
     # sanity check
     list_of_pdfs_has_suffix = any([x.endswith(".pdf") for x in all_pdfs_for_sanity])
     df_pdfs_has_suffix = any(correction_df['pdfname'].str.ends_with(".pdf"))
