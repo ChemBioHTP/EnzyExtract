@@ -339,7 +339,7 @@ def main(
             need_to_submit.append(will_write_to)
 
     print("Time to submit!")
-    for will_write_to in need_to_submit:
+    for i, will_write_to in enumerate(need_to_submit):
         try:
             # if i == 0:
             #     # write the first one as an inspection, for debugging purposes
@@ -367,7 +367,10 @@ def main(
             batchname = None
             status = 'local'
 
-    
+        # special case with 1 shard
+        if len(need_to_submit) == 1:
+            i = None
+        
         # update log
         update_log(
             log_location=log_location,

@@ -1,6 +1,6 @@
 import litellm
 import os
-from enzyextract.submit.submit_funcs import get_user_y_n
+from enzyextract.submit.base import get_user_y_n
 from dotenv import load_dotenv
 
 def process_env(filepath):

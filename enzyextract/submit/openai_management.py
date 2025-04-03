@@ -10,7 +10,7 @@ import json
 
 from tqdm import tqdm
 
-from enzyextract.submit.submit_funcs import get_user_y_n
+from enzyextract.submit.base import get_user_y_n
 
 _openai_client = None
 def process_env(filepath):
