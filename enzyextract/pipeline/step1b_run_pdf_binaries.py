@@ -15,7 +15,8 @@ import os
 from tqdm import tqdm
 from anthropic.types.messages.batch_create_params import Request
 
-from enzyextract.pipeline.step1_run_tableboth import build_manifest, read_log, update_log
+from enzyextract.pipeline.llm_log import read_log, update_log
+from enzyextract.pipeline.step1_run_tableboth import build_manifest
 from enzyextract.submit.anthropic_management import submit_anthropic_batch_file, to_anthropic_batch_request
 from enzyextract.utils import prompt_collections
 from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl

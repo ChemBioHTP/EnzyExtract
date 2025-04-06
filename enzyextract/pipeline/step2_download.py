@@ -1,6 +1,6 @@
 import os
 from typing import Optional, Union
-from enzyextract.pipeline.step1_run_tableboth import read_log, write_log
+from enzyextract.pipeline.llm_log import write_log
 import litellm
 import polars as pl
 from google.cloud import storage
@@ -8,7 +8,7 @@ from google.cloud import storage
 from enzyextract.submit.anthropic_management import retrieve_anthropic_batch, retrieve_anthropic_results
 from enzyextract.submit.base import LLMCommonBatch
 from enzyextract.submit.litellm_management import process_env
-from enzyextract.pipeline.step1_run_tableboth import llm_log_schema_overrides
+from enzyextract.pipeline.llm_log import llm_log_schema, read_log
 import requests
 
 
@@ -148,7 +148,7 @@ def download(
             
     
     # update the log file
-    updates_df = pl.DataFrame(updates, schema_overrides=llm_log_schema_overrides)
+    updates_df = pl.DataFrame(updates, schema_overrides=llm_log_schema)
     if updates_df.height == 0:
         print("No new files to download.")
         return
