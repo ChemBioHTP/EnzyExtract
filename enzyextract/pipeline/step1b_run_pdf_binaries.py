@@ -33,12 +33,16 @@ from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_c
 
 
 def main(
+    *, 
     namespace: str, # ids
     pdf_root: str, # read from
-    dest_folder: str, # write to
-    log_location: str,
     model_name: str, # model settings
     prompt: str, 
+
+    log_location: str,
+    dest_folder: str, # write to
+    corresp_folder: str, 
+    
     structured = False,
     llm_provider: str = 'openai',
     version=None,
@@ -74,6 +78,7 @@ def main(
 
     os.makedirs(dest_folder, exist_ok=True)
     batch: list[Request] = []
+    correspondences = []
 
     print("Namespace: ", namespace)
 
@@ -122,19 +127,22 @@ def main(
             
             if len(doc) > 100:
                 # 100 pages is excessive
-                continue            
+                continue
 
             # obtain original annotation from part A
             # use the table_md_root
 
+            custom_id = f'{namespace}_{version}_{pmid}'
             if structured:
                 raise NotImplementedError("Structured mode is not implemented yet.")
             else:
                 req = to_anthropic_batch_request(
-                    f'{namespace}_{version}_{pmid}', prompt, 
+                    custom_id, 
+                    prompt, 
                     pdf_fpath=fpath, 
                     model_name=model_name)
             batch.append(req)
+            correspondences.append({"custom_id": custom_id, "pmid": pmid})
 
         print("Using model", model_name)
         # write in chunks
@@ -157,13 +165,25 @@ def main(
 
     print("Time to submit!")
     for chunk in need_to_submit:
+        
+        # special case with 1 shard
+        if len(need_to_submit) == 1:
+            i = None
+        
         try:
             batchname = submit_anthropic_batch_file(chunk)
             status = 'submitted'
+            if i is None:
+                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.parquet'
+            else:
+                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.{i}.parquet'
+            corr_df = pl.DataFrame(correspondences)
+            corr_df.write_parquet(corresp_fpath)
         except Exception as e:
             print("Error submitting batch", will_write_to)
             print(e)
             batchname = None
+            corresp_fpath = None
             status = 'local'
 
     
@@ -173,14 +193,17 @@ def main(
             namespace=namespace,
             version=version,
             shard=i,
-            batch_fpath=will_write_to,
+            status=status,
+
             model_name=model_name,
             llm_provider=llm_provider,
             prompt=prompt,
             structured=structured,
+
             file_uuid=None,
             batch_uuid=batchname,
-            status=status,
+            batch_fpath=will_write_to,
+            corresp_fpath=corresp_fpath,
             try_to_overwrite=try_to_overwrite
         )
 

@@ -8,6 +8,7 @@ from google.cloud import storage
 from enzyextract.submit.anthropic_management import retrieve_anthropic_batch, retrieve_anthropic_results
 from enzyextract.submit.base import LLMCommonBatch
 from enzyextract.submit.litellm_management import process_env
+from enzyextract.pipeline.step1_run_tableboth import llm_log_schema_overrides
 import requests
 
 
@@ -51,7 +52,7 @@ def retrieve_my_file(
     llm_provider: str = 'openai',
 ):
     if llm_provider == 'anthropic':
-        return retrieve_anthropic_results(batch_id, to_json_response=True)
+        return retrieve_anthropic_results(batch_id, file_id, to_json_response=True)
 
     else:
         return litellm.file_content(
@@ -104,7 +105,7 @@ def download(
             continue
         retrieved_batch = retrieve_my_batch(
             batch_id=batch_id,
-            custom_llm_provider=llm_provider,
+            llm_provider=llm_provider,
         )
         if retrieved_batch.status == 'completed':
             # download the file
@@ -113,15 +114,13 @@ def download(
                 # rip, litellm does not support GCS
                 output_file_id = output_file_id + '/predictions.jsonl'
                 download_gcs_file(output_file_id, write_dest)
-            elif llm_provider == 'anthropic':
-                pass
             else:
                 
                 # openai
                 file = retrieve_my_file(
                     batch_id=batch_id,
                     file_id=output_file_id,
-                    custom_llm_provider=llm_provider,
+                    llm_provider=llm_provider,
                 )
                 
                 with open(write_dest, 'wb') as f:
@@ -142,17 +141,23 @@ def download(
             updates.append({
                 'namespace': namespace,
                 'version': version,
+                'shard': shard,
                 'completion_fpath': write_dest,
                 'status': 'downloaded',
             })
             
     
     # update the log file
-    updates_df = pl.DataFrame(updates)
+    updates_df = pl.DataFrame(updates, schema_overrides=llm_log_schema_overrides)
     if updates_df.height == 0:
         print("No new files to download.")
         return
-    df = df.update(updates_df, on=['namespace', 'version'], how='left')
+    
+    _updates_sharded = updates_df.filter(pl.col('shard').is_not_null())
+    _updates_unsharded = updates_df.filter(pl.col('shard').is_null())
+    df = df.update(_updates_sharded, on=['namespace', 'version', 'shard'], how='left')
+    df = df.update(_updates_unsharded, on=['namespace', 'version'], how='left') # cannot update on null
+    # df = df.update(updates_df, on=['namespace', 'version', 'shard'], how='left')
     write_log(df, log_location)
 
 

@@ -31,6 +31,18 @@ def explode_field(v: str | list | None, prefer_semicolons=True) -> list:
         sep = '; '
         if sep not in v:
             sep = ', '
+    if isinstance(v, dict):
+        # tough
+        agg = []
+        for k, v in v.items():
+            if isinstance(v, list):
+                agg.extend(v)
+            elif isinstance(v, str):
+                agg.append(v)
+            else:
+                # idk
+                pass
+        return agg
     return v.split(sep=sep)
 
 
@@ -293,11 +305,19 @@ def parse_yaml(content: str, debugpmid=None):
 
 def validate_data(obj: list, fix=True, debugpmid=None):
     # expect km is str
+
+    if obj and not isinstance(obj, list):
+        if isinstance(obj, str):
+            print(f"[{debugpmid}] Data should be a list of dicts but is a string: ", obj)
+        else:
+            print(f"[{debugpmid}] Data should be a list of dicts but is: ", type(obj))
+        return False
+
     all_correct = True
     for datum in obj:
         delete_keys = []
         if not isinstance(datum, dict):
-            if debugpmid: print(f"[{debugpmid}] Data is not a dict but a", type(datum), ":", datum)
+            if debugpmid: print(f"[{debugpmid}] Datum is not a dict but a", type(datum), ":", datum)
             all_correct = False
             continue
         for k, v in datum.items():
@@ -330,6 +350,17 @@ def validate_context(obj: dict, fix=True, debugpmid=None, version: int=YamlVersi
     if not isinstance(obj, dict):
         if debugpmid: print(f"[{debugpmid}] Context is not a dict but a", type(obj), ":", obj)
         return False
+    
+    rename_keys = {
+        'pH': 'pHs',
+        'temperature': 'temperatures',
+        'enzyme': 'enzymes',
+        'substrate': 'substrates',
+    }
+    for k, to in rename_keys.items():
+        if k in obj:
+            obj[to] = obj[k]
+            del obj[k]
 
     for k, v in obj.items():
         # you know what, drop "other". pretty much useless

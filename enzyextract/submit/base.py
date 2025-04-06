@@ -23,11 +23,13 @@ class LLMCommonBatch:
     Common interface.
     See openai.types.batch.py at https://github.com/openai/openai-python
     """
+    endpoint: str
+    
     _underlying: None
     status: Literal[
         "validating", "failed", "in_progress", "finalizing", "completed", "expired", "cancelling", "cancelled"
     ] = None
     output_file_id: Optional[str] = None
     error_file_id: Optional[str] = None
-    endpoint: str
+    
 

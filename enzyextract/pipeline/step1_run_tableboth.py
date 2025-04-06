@@ -33,81 +33,142 @@ llm_log_schema_overrides = {
     'namespace': pl.Utf8,
     'version': pl.Utf8,
     'shard': pl.UInt32,
-    'batch_fpath': pl.Utf8,
+    'status': pl.Utf8, # aborted | local | submitted | downloaded
+
     'model_name': pl.Utf8,
     'llm_provider': pl.Utf8,
-    'prompt': pl.Utf8,
     'structured': pl.Boolean,
-    'file_uuid': pl.Utf8,
-    'batch_uuid': pl.Utf8,
-    'status': pl.Utf8,
-    'completion_fpath': pl.Utf8,
+    # 'prompt': pl.Utf8,
     'prompt_hash': pl.Utf8,
+
+    'file_uuid': pl.Utf8, # filename given by openai
+    'batch_uuid': pl.Utf8, # batch id given by openai
+
+    '_enzy_prefix': pl.Utf8, # prefix: probably the path to the .enzy folder.
+    'batch_fpath': pl.Utf8,
+    'corresp_fpath': pl.Utf8, # where the correspondence between custom_id and relavent info is stored
+    'completion_fpath': pl.Utf8, # where the completion is stored
 }
 def read_log(log_location: str) -> pl.DataFrame:
+    blank_log = pl.DataFrame(schema=llm_log_schema_overrides)
+
     if os.path.exists(log_location):
+        # reorder
         if log_location.endswith('.parquet'):
             log = pl.read_parquet(log_location)
+            log = pl.concat([blank_log, log], how='diagonal_relaxed') # reorder
         elif log_location.endswith('.tsv'):
             log = pl.read_csv(log_location, separator='\t', schema_overrides=llm_log_schema_overrides)
+            log = pl.concat([blank_log, log], how='diagonal_relaxed')
     else:
-        log = pl.DataFrame({
-            'namespace': [],
-            'version': [],
-            'shard': [],
-            'batch_fpath': [],
-            'model_name': [],
-            'llm_provider': [],
-            'structured': [],
-            'file_uuid': [], # filename given by openai
-            'batch_uuid': [], # batch id given by openai
-            'status': [], # aborted | local | submitted | downloaded
-            'completion_fpath': [], # where the completion is stored
-            'prompt_hash': [],
-        }, schema_overrides=llm_log_schema_overrides)
+        log = blank_log
+    log = log.with_columns(
+        pl.col('_enzy_prefix').fill_null(''), # fill nulls with empty string
+    )
+    # apply the enzy_prefix to the batch_fpath and corresp_fpath
+    log = log.with_columns([
+        (pl.col('_enzy_prefix') + pl.col('batch_fpath')).alias('batch_fpath'),
+        (pl.col('_enzy_prefix') + pl.col('corresp_fpath')).alias('corresp_fpath'),
+        (pl.col('_enzy_prefix') + pl.col('completion_fpath')).alias('completion_fpath'),
+    ]).drop('_enzy_prefix')
+    return log
+
+def separate_prefix(log: pl.DataFrame) -> pl.DataFrame:
+    """Attempts to extract the prefix from the log"""
+    # recreate the _enzy_prefix column
+    def get_enzy_prefix(struct: dict):
+        return os.path.commonprefix([x for x in [
+            struct['batch_fpath'],
+            struct['corresp_fpath'],
+            struct['completion_fpath'],
+        ] if x is not None])
+    log = log.with_columns([
+        pl.struct([
+            'batch_fpath',
+            'corresp_fpath',
+            'completion_fpath',
+        ]).map_elements(get_enzy_prefix, return_dtype=pl.Utf8).alias('_enzy_prefix'),
+    ]).with_columns([
+        pl.when(
+            pl.col('_enzy_prefix').is_not_null()
+            & pl.col('_enzy_prefix').str.ends_with('.enzy/')
+        ).then(
+            pl.col('_enzy_prefix')
+        ).otherwise(
+            pl.lit('')
+        ).alias('_enzy_prefix'),
+    ]).with_columns([
+        pl.col('batch_fpath').str.strip_prefix(pl.col('_enzy_prefix')),
+        pl.col('corresp_fpath').str.strip_prefix(pl.col('_enzy_prefix')),
+        pl.col('completion_fpath').str.strip_prefix(pl.col('_enzy_prefix')),
+    ])
     return log
 
 def write_log(log: pl.DataFrame, log_location: str):
+    
+    # log = separate_prefix(log)
+
     if log_location.endswith('.parquet'):
-        # log.write_parquet(log_location)
+        log.write_parquet(log_location)
         # migrate to tsv
-        write_dest = log_location.removesuffix('.parquet') + '.tsv'
-        if os.path.exists(write_dest):
-            print("File already exists, skipping.")
-            return
-        log.write_csv(log_location.removesuffix('.parquet') + '.tsv', separator='\t')
+        # write_dest = log_location.removesuffix('.parquet') + '.tsv'
+        # if os.path.exists(write_dest):
+        #     print("File already exists, skipping.")
+        #     return
+        # log.write_csv(log_location.removesuffix('.parquet') + '.tsv', separator='\t')
     elif log_location.endswith('.tsv'):
         log.write_csv(log_location, separator='\t')
     else:
         log.write_parquet(log_location + '.parquet')
+
 def update_log(
+    *, 
     log_location: str, 
     namespace: str,
     version: str,
     shard: int,
-    batch_fpath: str,
+    status: str,
+
     model_name: str,
     llm_provider: str,
     prompt: str,
     structured: bool,
+
     file_uuid: str,
     batch_uuid: str,
-    status: str,
+    batch_fpath: str,
+    corresp_fpath: str,
     try_to_overwrite: bool = False,
 ):
+    # try to extract the enzy_prefix
+    # enzy_prefix = os.path.commonprefix([
+    #     batch_fpath,
+    #     corresp_fpath,
+    # ])
+    # if enzy_prefix and enzy_prefix.endswith('.enzy/'):
+    #     batch_fpath = batch_fpath.removeprefix(enzy_prefix)
+    #     corresp_fpath = corresp_fpath.removeprefix(enzy_prefix)
+    # else:
+    #     enzy_prefix = ''
+
+
     df = pl.DataFrame({
         'namespace': [namespace],
         'version': [version],
         'shard': [shard],
-        'batch_fpath': [batch_fpath],
+        'status': [status],
+
         'model_name': [model_name],
         'llm_provider': [llm_provider],
+        'prompt_hash': [base64.b64encode(hashlib.sha256(prompt.encode()).digest()).decode()],
         'structured': [structured],
+
         'file_uuid': [file_uuid],
         'batch_uuid': [batch_uuid],
-        'status': [status],
+        # '_enzy_prefix': [enzy_prefix],
+        'batch_fpath': [batch_fpath],
+        'corresp_fpath': [corresp_fpath],
         'completion_fpath': [None],
-        'prompt_hash': [base64.b64encode(hashlib.sha256(prompt.encode()).digest()).decode()],
     }, schema_overrides=llm_log_schema_overrides)
     log = read_log(log_location)
     if try_to_overwrite:
@@ -115,6 +176,13 @@ def update_log(
     else:
         log = pl.concat([log, df], how='diagonal_relaxed')
     write_log(log, log_location)
+
+def convert_log(
+    df
+):
+    """Update a log file into the newer version"""
+    return df
+
 
 def build_manifest(pdf_root):
     """
@@ -131,16 +199,18 @@ def build_manifest(pdf_root):
     return manifest
 
 def main(
+    *, 
     namespace: str, # ids
     pdf_root: str, # read from
     micro_path: str,
     tables_from: Optional[str],
-    dest_folder: str, # write to
-    log_location: str,
     model_name: str, # model settings
     prompt: str, 
+
+    log_location: str,
+    dest_folder: str, # write to
     corresp_folder: str, # write any data matching custom_id to 
-    *, 
+    # *, 
     structured = False,
     llm_provider: str = 'openai',
     version=None,
@@ -266,8 +336,9 @@ def main(
         for fileroot, filename, pmid in tqdm(manifest_view.iter_rows(), total=manifest_view.height):
             assert pmid in target_pmids
             
+            fpath = fileroot + '/' + filename
             try:
-                doc = pymupdf.open(fileroot + '/' + filename)
+                doc = pymupdf.open(fpath)
             except Exception as e:
                 print("Error opening", fileroot)
                 print(e)
@@ -314,8 +385,7 @@ def main(
                 req = to_openai_batch_request(custom_id, prompt, docs, 
                                         model_name=model_name)
             batch.append(req)
-            if corresp_folder is not None:
-                correspondences.append({"custom_id": custom_id, "pmid": pmid})
+            correspondences.append({"custom_id": custom_id, "pmid": pmid})
 
         if _pmid_with_tables:
             print(f"Found {_pmid_with_tables} pmids with tables")
@@ -340,6 +410,11 @@ def main(
 
     print("Time to submit!")
     for i, will_write_to in enumerate(need_to_submit):
+
+        # special case with 1 shard
+        if len(need_to_submit) == 1:
+            i = None
+        
         try:
             # if i == 0:
             #     # write the first one as an inspection, for debugging purposes
@@ -357,19 +432,22 @@ def main(
             # batchname = submit_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
             file_uuid, batchname = asyncio.run(submit_batch_file(will_write_to, custom_llm_provider=llm_provider))
             status = 'submitted'
-            if corresp_folder is not None:
-                corr_df = pl.DataFrame(correspondences)
-                corr_df.write_parquet(f'{corresp_folder}/{namespace}_{version}.parquet')
+            if i is None:
+                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.parquet'
+            else:
+                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.{i}.parquet'
+            corr_df = pl.DataFrame(correspondences)
+            corr_df.write_parquet(corresp_fpath)
+            
         except Exception as e:
             print("Error submitting batch", will_write_to)
             print(e)
             file_uuid = None
             batchname = None
+            corresp_fpath = None
             status = 'local'
 
-        # special case with 1 shard
-        if len(need_to_submit) == 1:
-            i = None
+
         
         # update log
         update_log(
@@ -377,14 +455,17 @@ def main(
             namespace=namespace,
             version=version,
             shard=i,
-            batch_fpath=will_write_to,
+            status=status,
+
             model_name=model_name,
             llm_provider=llm_provider,
             prompt=prompt,
             structured=structured,
+
             file_uuid=file_uuid,
             batch_uuid=batchname,
-            status=status,
+            batch_fpath=will_write_to,
+            corresp_fpath=corresp_fpath,
             try_to_overwrite=try_to_overwrite
         )
 
@@ -395,15 +476,18 @@ if __name__ == '__main__':
     llm_provider = 'openai'
     model_name, suggested_prompt, structured = glean_model_name('baba-t2neboth')
     
-
+    namespace = 'my-namespace-here' # no colons: needs to be a valid file name
+    pdf_root = 'D:/papers'
+    enzy_root = 'D:/MyExtractionRun/.enzy'
     main(
-        namespace='',
-        pdf_root='pdfs/general',
-        micro_path='.enzy/pre/mM/mM.parquet',
-        tables_from='.enzy/pre/tables/markdown',
-        dest_folder='.enzy/batches',
-        corresp_folder='.enzy/corresp',
-        log_location='.enzy/llm_log.tsv',
+        namespace=namespace,
+        pdf_root=pdf_root,
+        micro_path=f'{enzy_root}/pre/mM/mM.parquet',
+        tables_from=f'{enzy_root}/pre/tables/markdown',
+
+        dest_folder=f'{enzy_root}/batches',
+        corresp_folder=f'{enzy_root}/corresp',
+        log_location=f'{enzy_root}/llm_log.tsv',
         model_name=model_name,
         llm_provider=llm_provider,
         prompt=suggested_prompt,

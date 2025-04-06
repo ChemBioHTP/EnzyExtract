@@ -6,6 +6,7 @@ import json
 import os
 import pandas as pd
 import polars as pl
+from enzyextract.submit.batch_decode import decode_jsonl
 from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid
@@ -13,6 +14,8 @@ from enzyextract.hungarian.csv_fix import clean_columns_for_valid
 
 def generate_valid_parquet(fpath,
     *,
+    corresp_df = None, 
+    llm_provider = 'openai',
     write_fpath = None, # write destination
     silence = True,
     use_yaml=True,
@@ -31,9 +34,21 @@ def generate_valid_parquet(fpath,
     total_ingested = 0
     
     stats = {}
+
     
-    for custom_id, content, finish_reason in get_batch_output(fpath):
-        pmid = str(pmid_from_usual_cid(custom_id))
+    # streamed_content = get_batch_output(fpath)
+    streamed_content = (
+        decode_jsonl(fpath, llm_provider=llm_provider, corresp_df=corresp_df)
+        .join(corresp_df.select('custom_id', 'pmid'), on='custom_id', how='left')
+        .select('custom_id', 'content', 'finish_reason', 'pmid')
+        .iter_rows()
+    )
+
+    # streamed_content = streamed_content
+    
+    for custom_id, content, finish_reason, pmid in streamed_content:
+        # pmid = str(pmid_from_usual_cid(custom_id))
+        # pmid = custom_id.rsplit('_', 1)[-1]
         
         content = content.replace('\nextras:\n', '\ndata:\n') # blunder
         if finish_reason == 'length':
@@ -78,7 +93,7 @@ if __name__ == "__main__":
 
     namespace = 'bench dev2'
 
-    llm_log = pl.read_csv('.enzy/llm_log.tsv', separator='\t', schema_overrides=llm_log_schema_overrides)
+    llm_log = read_log('.enzy/llm_log.tsv', separator='\t', schema_overrides=llm_log_schema_overrides)
     fpath = '.enzy/completions/bench dev2_20250301.jsonl'
     write_dir = '.enzy/post/valid'
 
@@ -88,7 +103,10 @@ if __name__ == "__main__":
 
     structured = row.item(row=0, column='structured')
     compl_fpath = row.item(row=0, column='completion_fpath')
+    corresp_fpath = row.item(row=0, column='corresp_fpath')
     write_fpath = os.path.join(write_dir, f"{namespace}_{version}.parquet")
+
+    corresp_df = pl.read_parquet(corresp_fpath)
 
     # merge fragments
     # check to see if we need to merge
@@ -103,7 +121,11 @@ if __name__ == "__main__":
             exit(0)
         merge_chunked_completions(namespace, version=version, compl_folder=compl_folder, dest_folder=compl_folder)
 
-    df, stats = generate_valid_parquet(fpath=compl_fpath,
-              write_fpath=write_fpath,
-              silence=False,
-              use_yaml=not structured)
+    df, stats = generate_valid_parquet(
+        fpath=compl_fpath,
+        corresp_df=corresp_df,
+        llm_provider='openai',
+        write_fpath=write_fpath,
+        silence=False,
+        use_yaml=not structured
+    )

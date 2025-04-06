@@ -45,11 +45,11 @@ def decode_openai_batch(objs: list[dict]) -> pl.DataFrame:
 def decode_anthropic_line(obj) -> dict:
     """decode anthropic batch output (a single line)"""
     custom_id = obj['custom_id']
-    content = obj['results']['message']['content'][0]['text']
-    finish_reason = obj['results']['message']['stop_reason']
+    content = obj['result']['message']['content'][0]['text']
+    finish_reason = obj['result']['message']['stop_reason']
     # end turn
-    input_tokens = obj['results']['usage']['input_tokens']
-    output_tokens = obj['results']['usage']['output_tokens']
+    input_tokens = obj['result']['message']['usage']['input_tokens']
+    output_tokens = obj['result']['message']['usage']['output_tokens']
     return {
         "custom_id": custom_id,
         "content": content,
@@ -73,6 +73,16 @@ def decode_vertex_line(obj: dict, custom_id) -> dict:
     finish_reason = obj['response']['candidates'][0]['finishReason']
     input_tokens = obj['response']['usageMetadata']['promptTokenCount']
     output_tokens = obj['response']['usageMetadata']['candidatesTokenCount']
+
+    # translate finish reason https://cloud.google.com/vertex-ai/generative-ai/docs/reference/python/latest/vertexai.generative_models.FinishReason
+    if finish_reason == 'STOP':
+        finish_reason = 'stop'
+    # elif finish_reason == 'END_OF_TEXT':
+        # finish_reason = 'length'
+    elif finish_reason == 'MAX_TOKENS':
+        finish_reason = 'length'
+    else:
+        print("Unknown finish reason:", finish_reason)
     return {
         "custom_id": custom_id,
         "content": content,
@@ -89,3 +99,15 @@ def decode_vertex_batch(objs: list[dict], corresp_df: pl.DataFrame) -> pl.DataFr
     for obj, custom_id in zip(objs, custom_ids):
         decoded.append(decode_vertex_line(obj, custom_id))
     return pl.DataFrame(decoded, schema_overrides=outputs_schema)
+
+def decode_jsonl(fpath: str, llm_provider: str, corresp_df: pl.DataFrame) -> pl.DataFrame:
+    if fpath is None:
+        raise ValueError("File path is None (batch is not ready?)")
+    source = stream_jsonl(fpath)
+    if llm_provider == 'openai':
+        return decode_openai_batch(source)
+    elif llm_provider == 'anthropic':
+        return decode_anthropic_batch(source)
+    elif llm_provider == 'vertex_ai':
+        return decode_vertex_batch(source, corresp_df)
+    return None

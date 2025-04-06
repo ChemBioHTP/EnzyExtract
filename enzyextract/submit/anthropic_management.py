@@ -1,6 +1,7 @@
 import base64
 import json
 import PIL
+import requests
 import anthropic
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
 from anthropic.types.messages.batch_create_params import Request
@@ -106,7 +107,7 @@ def retrieve_anthropic_batch(batch_id: str):
     """Retrieve anthropic batch."""
     client = get_client()
     message_batch = client.messages.batches.retrieve(
-        batch_id=batch_id,
+        batch_id,
     )
     status = message_batch.processing_status
     # map
@@ -120,7 +121,7 @@ def retrieve_anthropic_batch(batch_id: str):
         raise ValueError(f"Unknown status: {status}")
     return LLMCommonBatch(
         _underlying=message_batch,
-        status=message_batch,
+        status=status,
         output_file_id=message_batch.results_url,
         error_file_id=None,
         endpoint='anthropic_custom'
@@ -132,7 +133,7 @@ class ResponseLike:
         self.content = content
 
 
-def retrieve_anthropic_results(batch_id: str, to_json_response: bool = False):
+def retrieve_anthropic_results(batch_id: str, file_id: str, to_json_response: bool = False):
     """Retrieve anthropic batch results. Assumes that they are ready.
     
     Args:
@@ -141,19 +142,34 @@ def retrieve_anthropic_results(batch_id: str, to_json_response: bool = False):
     """
     client = get_client()
 
-    collector = []
-    for result in client.messages.batches.results(
-        batch_id=batch_id,
-    ):
-        collector.append(result)
+    # collector = []
+    # for result in client.messages.batches.results(
+    #     batch_id,
+    # ):
+    #     collector.append(result)
     
+    # if to_json_response:
+    #     bdr = ''
+    #     for result in collector:
+    #         bdr += json.dumps(result) + '\n'
+    #     return ResponseLike(bdr)
+    # else:
+    #     return collector
+
+    headers = {
+        "x-api-key": client.api_key,
+        "anthropic-version": "2023-06-01"
+    }
+
+    response = requests.get(file_id, headers=headers)
+
+    if response.status_code != 200:
+        raise ValueError(f"Failed to retrieve results: {response.status_code}, {response.text}")
+
     if to_json_response:
-        bdr = ''
-        for result in collector:
-            bdr += json.dumps(result) + '\n'
-        return ResponseLike(bdr)
+        return response
     else:
-        return collector
+        return response.json()
     
     
 
