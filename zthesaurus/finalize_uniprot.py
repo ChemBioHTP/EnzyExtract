@@ -298,4 +298,4 @@ if __name__ == "__main__":
     # df.write_parquet('data/enzymes/accessions/uniprot/all_cited.parquet')
 
     searched = generate_searched_chapter()
-    searched.write_parquet('data/enzymes/thesaurus/uniprots_searched.parquet')
+    searched.write_parquet('data/thesaurus/enzymes/uniprots_searched.parquet')

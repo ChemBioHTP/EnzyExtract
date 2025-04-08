@@ -128,5 +128,5 @@ enzyme_thesaurus = df.select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'best
 uniprot_seq = pl.read_parquet('data/enzymes/accessions/final/uniprot.parquet').select(['uniprot', 'sequence'])
 uniprot_seq = uniprot_seq.unique('uniprot')
 enzyme_thesaurus = enzyme_thesaurus.join(uniprot_seq, on='uniprot', how='left')
-enzyme_thesaurus.write_parquet('data/enzymes/thesaurus/uniprot_enzyme_thesaurus.parquet')
+enzyme_thesaurus.write_parquet('data/thesaurus/enzymes/uniprot_enzyme_thesaurus.parquet')
 # print(gpt_df)

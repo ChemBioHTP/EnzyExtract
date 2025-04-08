@@ -67,7 +67,7 @@ if __name__ == '__main__':
     pmid2canonical = thedata.select(['pmid', 'canonical']).unique()
 
     backcited = generate_backcited_chapter()
-    backcited.write_parquet('data/enzymes/thesaurus/backcited.parquet')
+    backcited.write_parquet('data/thesaurus/enzymes/backcited.parquet')
     exit(0)
 
     cited = generate_cited_chapter()
@@ -83,6 +83,6 @@ if __name__ == '__main__':
 
     pass
 
-    cited.write_parquet('data/enzymes/thesaurus/uniprots_cited.parquet')
+    cited.write_parquet('data/thesaurus/enzymes/uniprots_cited.parquet')
 
     # searched = searched

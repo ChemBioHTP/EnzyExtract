@@ -131,6 +131,6 @@ df = df.select('pmid', 'enzyme', 'enzyme_full', 'organism', 'best').rename({'bes
 df = df.with_columns([
     pl.col('ncbi').replace('null', None)
 ])
-df.write_parquet('data/enzymes/thesaurus/ncbi_picked.parquet')
+df.write_parquet('data/thesaurus/enzymes/ncbi_picked.parquet')
 
 # print(gpt_df)

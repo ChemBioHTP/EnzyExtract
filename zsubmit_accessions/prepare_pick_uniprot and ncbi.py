@@ -57,7 +57,7 @@ cited_unscreened = cited_unscreened.join(pmid2canonical, left_on='pmid', right_o
 
 # Get backward cited accessions per each PMID
 # (only available for uniprot)
-backcited = pl.read_parquet('data/enzymes/thesaurus/backcited.parquet').select('canonical', 'uniprot')
+backcited = pl.read_parquet('data/thesaurus/enzymes/backcited.parquet').select('canonical', 'uniprot')
 
 # combine them
 policy = 'concat_backcited'
@@ -204,7 +204,7 @@ perfect_uniprot = infos_plus_uniprot.filter(
 perfect_uniprot = perfect_uniprot.with_columns(
     (pl.col('max_organism_similarity') + pl.col('similarity_enzyme_name')).alias('total_similarity')
 ).sort('total_similarity', descending=True).unique('index', keep='first')
-perfect_uniprot.write_parquet('data/enzymes/thesaurus/uniprot_similar.parquet')
+perfect_uniprot.write_parquet('data/thesaurus/enzymes/uniprot_similar.parquet')
 
 # write
 comparisons_ncbi = [
@@ -255,8 +255,8 @@ pass # 46843 to 29401
 pdb_no_organism = info_view.filter((pl.col('max_enzyme_similarity') > 99) 
                                    & (pl.col('similarity_organism').is_null())
                                    & ~pl.col('index').is_in(perfect_pdb['index']))
-pdb_no_organism.write_parquet(f'data/enzymes/thesaurus/pdb_similar_no_organism.parquet')
-perfect_pdb.write_parquet(f'data/enzymes/thesaurus/pdb_similar.parquet')
+pdb_no_organism.write_parquet(f'data/thesaurus/enzymes/pdb_similar_no_organism.parquet')
+perfect_pdb.write_parquet(f'data/thesaurus/enzymes/pdb_similar.parquet')
 pass
 
 

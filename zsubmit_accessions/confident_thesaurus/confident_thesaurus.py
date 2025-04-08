@@ -165,7 +165,7 @@ def backward_cites():
     
     # Get backward cited accessions per each PMID
     # (only available for uniprot and PDB)
-    backcited = pl.read_parquet('data/enzymes/thesaurus/backcited.parquet') # .select('canonical', 'uniprot')
+    backcited = pl.read_parquet('data/thesaurus/enzymes/backcited.parquet') # .select('canonical', 'uniprot')
 
     uniprot = backcited.select('canonical', 'uniprot').filter(
         pl.col('uniprot').is_not_null()

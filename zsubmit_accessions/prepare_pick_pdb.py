@@ -60,7 +60,7 @@ cited_unscreened = cited_unscreened.group_by('pmid').agg(
 cited_unscreened = cited_unscreened.join(pmid2canonical, left_on='pmid', right_on='pmid', how='inner')
 
 # Get backward cited accessions per each PMID (when a PDB itself cites a PMID)
-backcited = pl.read_parquet('data/enzymes/thesaurus/backcited.parquet') # .select('canonical', 'pdb')
+backcited = pl.read_parquet('data/thesaurus/enzymes/backcited.parquet') # .select('canonical', 'pdb')
 
 # combine them
 policy = 'concat_backcited'
@@ -222,13 +222,13 @@ pass # 46843 to 29401
 pdb_no_organism = info_view.filter((pl.col('max_enzyme_similarity') > 99) 
                                    & (pl.col('max_organism_similarity').is_null())
                                    & ~pl.col('index').is_in(perfect_pdb['index']))
-print("Similars at data/enzymes/thesaurus/pdb_similar.parquet")
-pdb_no_organism.write_parquet(f'data/enzymes/thesaurus/pdb_similar_no_organism.parquet')
+print("Similars at data/thesaurus/enzymes/pdb_similar.parquet")
+pdb_no_organism.write_parquet(f'data/thesaurus/enzymes/pdb_similar_no_organism.parquet')
 
 perfect_pdb = perfect_pdb.with_columns([
     (pl.col('max_enzyme_similarity') + pl.col('max_organism_similarity')).alias('total_similarity')
 ])
-perfect_pdb.write_parquet(f'data/enzymes/thesaurus/pdb_similar.parquet')
+perfect_pdb.write_parquet(f'data/thesaurus/enzymes/pdb_similar.parquet')
 
 pass
 
