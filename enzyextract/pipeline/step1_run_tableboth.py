@@ -13,16 +13,17 @@ from tqdm import tqdm
 
 from enzyextract.pipeline.llm_log import read_log, update_log
 from enzyextract.pre.table.reocr_for_gmft import load_correction_df
+from enzyextract.submit.base import SubmitConsent, do_presubmit
 from enzyextract.utils import prompt_collections
 from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
 from enzyextract.pre.reocr.micro_fix import duplex_mM_corrected_text
-from enzyextract.submit.litellm_management import process_env, submit_batch_file
+from enzyextract.submit.litellm_management import process_env, submit_litellm_batch_file
 from enzyextract.utils.namespace_management import glean_model_name, validate_namespace
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from
 from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
-from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
+from enzyextract.submit.openai_schema import to_openai_batch_request_with_schema
 from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_control_re
 
 
@@ -258,40 +259,61 @@ def main(
         if len(need_to_submit) == 1:
             i = None
         
-        try:
-            # if i == 0:
-            #     # write the first one as an inspection, for debugging purposes
-
-            #     # get content 
-            #     prompts = [(x['body']['messages'][0]['content']) for x in chunk]
-            #     contents = ['\n'.join(y['content'] for y in x['body']['messages'][1:]) for x in chunk] # list of strings
-            #     df = pl.DataFrame({'custom_id': [x['custom_id'] for x in chunk], 
-            #             'pmid': [x['custom_id'].split('_', 2)[2] for x in chunk], 
-            #             'content': contents,
-            #                 # 'pages': pagess,
-            #             'prompt': prompts})
-            #     df.write_parquet('_debug/latest_tableboth.parquet')
+        # read to make sure
+        inp = do_presubmit(
+            filepath=will_write_to,
+            submit_suffix=f"Submit to {llm_provider}?",
+        )
         
-            # batchname = submit_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
-            file_uuid, batchname = asyncio.run(submit_batch_file(will_write_to, custom_llm_provider=llm_provider))
-            status = 'submitted'
-            if i is None:
-                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.parquet'
-            else:
-                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.{i}.parquet'
-            corr_df = pl.DataFrame(correspondences)
-            corr_df.write_parquet(corresp_fpath)
+        if inp == SubmitConsent.REMOVE:
+            print("Removing.")
+            # remove the file
+            os.remove(will_write_to)
+            continue
+        elif inp == SubmitConsent.UNTRACK:
+            print("Saved untracked copy at", will_write_to)
+            continue
             
-        except Exception as e:
-            print("Error submitting batch", will_write_to)
-            print(e)
-            file_uuid = None
+        elif inp == SubmitConsent.YES:
+            try:
+                # if i == 0:
+                #     # write the first one as an inspection, for debugging purposes
+
+                #     # get content 
+                #     prompts = [(x['body']['messages'][0]['content']) for x in chunk]
+                #     contents = ['\n'.join(y['content'] for y in x['body']['messages'][1:]) for x in chunk] # list of strings
+                #     df = pl.DataFrame({'custom_id': [x['custom_id'] for x in chunk], 
+                #             'pmid': [x['custom_id'].split('_', 2)[2] for x in chunk], 
+                #             'content': contents,
+                #                 # 'pages': pagess,
+                #             'prompt': prompts})
+                #     df.write_parquet('_debug/latest_tableboth.parquet')
+            
+                # batchname = submit_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
+                file_uuid, batchname = asyncio.run(submit_litellm_batch_file(will_write_to, custom_llm_provider=llm_provider))
+                if i is None:
+                    corresp_fpath = f'{corresp_folder}/{namespace}_{version}.parquet'
+                else:
+                    corresp_fpath = f'{corresp_folder}/{namespace}_{version}.{i}.parquet'
+                corr_df = pl.DataFrame(correspondences)
+                corr_df.write_parquet(corresp_fpath)
+                status = 'submitted'
+            except Exception as e:
+                print("Error submitting batch", will_write_to)
+                print(e)
+                file_uuid = None
+                batchname = None
+                corresp_fpath = None
+                status = 'local'
+        elif inp == SubmitConsent.LOCAL:
+            print("Tracked local copy at", will_write_to)
             batchname = None
             corresp_fpath = None
             status = 'local'
+        else:
+            print("Unknown consent", inp, "exiting.")
+            return
 
-
-        
         # update log
         update_log(
             log_location=log_location,
@@ -309,7 +331,7 @@ def main(
             batch_uuid=batchname,
             batch_fpath=will_write_to,
             corresp_fpath=corresp_fpath,
-            try_to_overwrite=try_to_overwrite
+            update_if_exists=try_to_overwrite
         )
 
 if __name__ == '__main__':

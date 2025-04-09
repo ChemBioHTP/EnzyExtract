@@ -4,16 +4,18 @@ Formerly located in enzyextract.utils.openai_management
 """
 
 import glob
+from dotenv import load_dotenv
 import openai
 import os
 import json
 
 from tqdm import tqdm
 
-from enzyextract.submit.base import get_user_y_n
+from enzyextract.submit.base import do_presubmit
 
 _openai_client = None
 def process_env(filepath):
+    load_dotenv(filepath)
     global _openai_client
     with open(filepath, 'r') as f:
         for line in f:
@@ -34,49 +36,49 @@ def get_openai_client():
 
 
 def submit_batch_file(filepath, pending_file=None):
-    openai_client = get_openai_client()
-    # read to make sure
-    assert filepath.endswith('.jsonl')
-    with open(filepath, 'r') as f:
-        count = sum(1 for _ in f)
-    print(f"Batch of {count} items at {filepath} ready for submission. Submit to OpenAI?")
+    """OpenAI, as a legacy system, still should have the do_presubmit check here."""
 
-
-    inp = get_user_y_n()
+    inp = do_presubmit(
+        filepath=filepath,
+        submit_suffix='Submit to OpenAI?',
+    )
     
-    if inp.lower() == 'y':
-        with open(filepath, 'rb') as f:
-            batch_input_file = openai_client.files.create(
-                file=f,
-                purpose="batch"
-            )
-        batch_input_file_id = batch_input_file.id
-
-        batch_confirm = openai_client.batches.create(
-            input_file_id=batch_input_file_id,
-            endpoint="/v1/chat/completions",
-            completion_window="24h",
-            metadata={
-                "filepath": filepath
-            }
-        )
-        
-        # get the id
-        batch_id = batch_confirm.id
-        print("Submitted as batch", batch_id)
-        
-        if pending_file is not None:
-            with open(pending_file, 'a') as f:
-                f.write(json.dumps({'input': filepath, 'output': batch_id}) + '\n')
-        
-        return batch_id
-        
-        # client.batches.list(limit=10)
-        
-        # check status: 
-        # batch_status = client.batches.retrieve(batch_id)
-    else:
+    if inp.lower() != 'y':
         print("Aborted.")
+        return None
+    
+    openai_client = get_openai_client()
+    with open(filepath, 'rb') as f:
+        batch_input_file = openai_client.files.create(
+            file=f,
+            purpose="batch"
+        )
+    batch_input_file_id = batch_input_file.id
+
+    batch_confirm = openai_client.batches.create(
+        input_file_id=batch_input_file_id,
+        endpoint="/v1/chat/completions",
+        completion_window="24h",
+        metadata={
+            "filepath": filepath
+        }
+    )
+    
+    # get the id
+    batch_id = batch_confirm.id
+    print("Submitted as batch", batch_id)
+    
+    if pending_file is not None:
+        with open(pending_file, 'a') as f:
+            f.write(json.dumps({'input': filepath, 'output': batch_id}) + '\n')
+    
+    return batch_id
+    
+    # client.batches.list(limit=10)
+    
+    # check status: 
+    # batch_status = client.batches.retrieve(batch_id)
+
 
 def get_last_n_batches(n: int = 10):
     openai_client = get_openai_client()

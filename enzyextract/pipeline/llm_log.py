@@ -7,6 +7,7 @@ import polars as pl
 llm_log_schema = {
     'namespace': pl.Utf8,
     'version': pl.Utf8,
+    # 'version': pl.UInt32,
     'shard': pl.UInt32,
     'status': pl.Utf8, # aborted | local | submitted | downloaded
 
@@ -118,7 +119,7 @@ def update_log(
     batch_uuid: str,
     batch_fpath: str,
     corresp_fpath: str,
-    try_to_overwrite: bool = False,
+    update_if_exists: bool = False,
 ):
     # try to extract the enzy_prefix
     # enzy_prefix = os.path.commonprefix([
@@ -149,9 +150,9 @@ def update_log(
         'batch_fpath': [batch_fpath],
         'corresp_fpath': [corresp_fpath],
         'completion_fpath': [None],
-    }, schema_overrides=llm_log_schema)
+    }, schema_overrides=llm_log_schema, strict=False)
     log = read_log(log_location)
-    if try_to_overwrite:
+    if update_if_exists:
         log = log.update(df, on=['namespace', 'version', 'shard'])
     else:
         log = pl.concat([log, df], how='diagonal_relaxed')
@@ -163,3 +164,47 @@ def convert_log(
 ):
     """Update a log file into the newer version. TODO"""
     return df
+
+def relocate_log(
+    enzy_root: str
+):
+    """Fixes an enzy_root, and updates the log file so that everything refers to their new location."""
+    # determine new prefix
+    assert enzy_root.endswith('.enzy'), "Assuming that enzy_root should be a path to a .enzy folder"
+    new_prefix = enzy_root + '/'
+
+    llm_log_fpath = f"{enzy_root}/llm_log.tsv"
+    df = read_log(llm_log_fpath)
+    # read everything in batch_fpath, completion_fpath, corresp_fpath
+    candidates = pl.concat([
+        df['batch_fpath'],
+        df['completion_fpath'],
+        df['corresp_fpath'],
+    ]).drop_nulls().unique().to_list()
+
+    
+    common_prefix = os.path.commonprefix(candidates)
+    if not common_prefix.endswith('.enzy/'):
+        print("Common prefix found, but it does not end with .enzy/ therefore, skipping.")
+        return df
+    else:
+        print("Previous prefix found:", common_prefix)
+        print("New prefix:", new_prefix)
+        if common_prefix == new_prefix:
+            print("No changes needed.")
+            return df
+        yn = input("Continue? (y/n)")
+        if yn != 'y':
+            print("Aborting.")
+            return df
+    # remove the common prefix from all paths
+    df = df.with_columns([
+        (new_prefix + pl.col('batch_fpath').str.strip_prefix(common_prefix)).alias('batch_fpath'),
+        (new_prefix + pl.col('completion_fpath').str.strip_prefix(common_prefix)).alias('completion_fpath'),
+        (new_prefix + pl.col('corresp_fpath').str.strip_prefix(common_prefix)).alias('corresp_fpath'),
+    ])
+    return df
+
+if __name__ == "__main__":
+    # raise NotImplementedError("This script is only an example.")
+    relocate_log('C:/conjunct/tmp/.enzy')

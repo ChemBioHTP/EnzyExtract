@@ -18,16 +18,17 @@ from anthropic.types.messages.batch_create_params import Request
 from enzyextract.pipeline.llm_log import read_log, update_log
 from enzyextract.pipeline.step1_run_tableboth import build_manifest
 from enzyextract.submit.anthropic_management import submit_anthropic_batch_file, to_anthropic_batch_request
+from enzyextract.submit.base import SubmitConsent, do_presubmit
 from enzyextract.utils import prompt_collections
 from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
 from enzyextract.pre.reocr.micro_fix import duplex_mM_corrected_text
-from enzyextract.submit.litellm_management import process_env, submit_batch_file
+from enzyextract.submit.litellm_management import process_env
 from enzyextract.utils.namespace_management import glean_model_name, validate_namespace
 from enzyextract.utils.pmid_management import pmids_from_batch, pmids_from_cache, pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from
 from enzyextract.utils.yaml_process import get_pmid_to_yaml_dict
-from enzyextract.utils.openai_schema import to_openai_batch_request_with_schema
+from enzyextract.submit.openai_schema import to_openai_batch_request_with_schema
 from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_control_re
 
 
@@ -171,23 +172,45 @@ def main(
         if len(need_to_submit) == 1:
             i = None
         
-        try:
-            batchname = submit_anthropic_batch_file(chunk)
-            status = 'submitted'
-            if i is None:
-                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.parquet'
-            else:
-                corresp_fpath = f'{corresp_folder}/{namespace}_{version}.{i}.parquet'
-            corr_df = pl.DataFrame(correspondences)
-            corr_df.write_parquet(corresp_fpath)
-        except Exception as e:
-            print("Error submitting batch", will_write_to)
-            print(e)
+        inp = do_presubmit(
+            count=len(chunk),
+            submit_suffix="Submit to Anthropic?"
+        )
+        
+        if inp == SubmitConsent.REMOVE:
+            print("Removing.")
+            # remove the file
+            os.remove(will_write_to)
+            continue
+        elif inp == SubmitConsent.UNTRACK:
+            print("Saved untracked copy at", will_write_to)
+            continue
+            
+        elif inp == SubmitConsent.YES:
+            try:
+                batchname = submit_anthropic_batch_file(chunk)
+                if i is None:
+                    corresp_fpath = f'{corresp_folder}/{namespace}_{version}.parquet'
+                else:
+                    corresp_fpath = f'{corresp_folder}/{namespace}_{version}.{i}.parquet'
+                corr_df = pl.DataFrame(correspondences)
+                corr_df.write_parquet(corresp_fpath)
+                status = 'submitted'
+            except Exception as e:
+                print("Error submitting batch", will_write_to)
+                print(e)
+                batchname = None
+                corresp_fpath = None
+                status = 'local'
+        elif inp == SubmitConsent.LOCAL:
+            print("Tracked local copy at", will_write_to)
             batchname = None
             corresp_fpath = None
             status = 'local'
+        else:
+            print("Unknown consent", inp, "exiting.")
+            return
 
-    
         # update log
         update_log(
             log_location=log_location,
@@ -205,7 +228,7 @@ def main(
             batch_uuid=batchname,
             batch_fpath=will_write_to,
             corresp_fpath=corresp_fpath,
-            try_to_overwrite=try_to_overwrite
+            update_if_exists=try_to_overwrite
         )
 
 if __name__ == '__main__':
@@ -215,14 +238,14 @@ if __name__ == '__main__':
     llm_provider = 'openai'
     model_name, suggested_prompt, structured = glean_model_name('baba-t2neboth')
     
-
+    namespace = 'my-namespace-here' # no colons: needs to be a valid file name
+    pdf_root = 'D:/papers'
+    enzy_root = 'D:/MyExtractionRun/.enzy'
     main(
-        namespace='',
-        pdf_root='pdfs/general',
-        micro_path='.enzy/pre/mM/mM.parquet',
-        tables_from='.enzy/pre/tables/markdown',
-        dest_folder='.enzy/batches',
-        log_location='.enzy/llm_log.tsv',
+        namespace=namespace,
+        pdf_root=pdf_root,
+        dest_folder=f'{enzy_root}/batches',
+        log_location=f'{enzy_root}/llm_log.tsv',
         model_name=model_name,
         llm_provider=llm_provider,
         prompt=suggested_prompt,

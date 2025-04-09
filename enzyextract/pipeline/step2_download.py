@@ -110,7 +110,11 @@ def download(
         if retrieved_batch.status == 'completed':
             # download the file
             output_file_id = retrieved_batch.output_file_id
-            if output_file_id.startswith("gs://"):
+            if output_file_id is None:
+                print(f"Batch {batch_id} has no output file (possibly it all errored).")
+                output_file_id = None
+                write_dest = None
+            elif output_file_id.startswith("gs://"):
                 # rip, litellm does not support GCS
                 output_file_id = output_file_id + '/predictions.jsonl'
                 download_gcs_file(output_file_id, write_dest)
@@ -132,7 +136,7 @@ def download(
                 err_file = retrieve_my_file(
                     batch_id=batch_id,
                     file_id=err_file_id,
-                    custom_llm_provider=llm_provider,
+                    llm_provider=llm_provider,
                 )
                 err_dest = f"{err_folder}/{namespace}_{version}.jsonl"
                 with open(err_dest, 'wb') as f:

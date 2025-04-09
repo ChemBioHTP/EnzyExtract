@@ -9,7 +9,7 @@ from openai.lib._pydantic import to_strict_json_schema
 
 from enzyextract.submit.batch_utils import to_openai_dict_message
 
-client = OpenAI()
+# client = OpenAI()
 
 # goal: convert this schema to pydantic
 # ```yaml

@@ -612,6 +612,20 @@ def add_enzyme_sequences(gpt_df):
     # print(gpt_df)
     return gpt_df
 
+def add_flags(gpt_df: pl.DataFrame) -> pl.DataFrame:
+    """Add flags that indicate possible issues with filtering"""
+
+    gpt_df = gpt_df.with_columns([
+        (
+            pl.col('kcat').str.contains('10^') | pl.col('kcat').str.contains('10^')
+        ).alias('flags.scientific_notation'),
+        (
+            (pl.col('substrate').str.len_chars() <= 2) 
+            | (pl.col('substrate').str.contains('^[0-9]+$'))
+            & pl.col('substrate_full').is_null()
+        ).alias('flags.bad_substrate'),
+    ])
+
 def ec_diversity():
     ecs = load_ecs()
     gpt_df = pl.read_parquet('data/valid/_valid_everything.parquet').filter(pl.col('km').str.contains('\d')).select(['enzyme', 'enzyme_full'])
