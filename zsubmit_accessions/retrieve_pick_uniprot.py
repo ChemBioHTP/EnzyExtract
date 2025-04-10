@@ -131,6 +131,6 @@ df = df.select('pmid', 'enzyme', 'enzyme_full', 'organism', 'best').rename({'bes
 df = df.with_columns([
     pl.col('uniprot').replace('null', None)
 ])
-df.write_parquet('data/enzymes/thesaurus/uniprot_picked.parquet')
+df.write_parquet('data/thesaurus/enzymes/uniprot_picked.parquet')
 
 # print(gpt_df)

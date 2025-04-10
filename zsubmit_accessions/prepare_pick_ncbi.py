@@ -75,7 +75,7 @@ cited_unscreened = cited_unscreened.group_by('pmid').agg(
 cited_unscreened = cited_unscreened.join(pmid2canonical, left_on='pmid', right_on='pmid', how='inner')
 
 # backcited only available for uniprot
-# backcited = pl.read_parquet('data/enzymes/thesaurus/backcited.parquet').select('canonical', 'uniprot')
+# backcited = pl.read_parquet('data/thesaurus/enzymes/backcited.parquet').select('canonical', 'uniprot')
 
 ### Get NCBI: Refseqs and Genbanks
 ncbi_all = pl.read_parquet('data/enzymes/accessions/final/ncbi.parquet')
@@ -156,14 +156,14 @@ pass # 46843 to 29401
 pdb_no_organism = infos_plus_ncbi.filter((pl.col('max_enzyme_similarity') > 99) 
                                    & (pl.col('max_organism_similarity').is_null())
                                    & ~pl.col('index').is_in(perfect_ncbi['index']))
-pdb_no_organism.write_parquet(f'data/enzymes/thesaurus/ncbi_similar_no_organism.parquet')
+pdb_no_organism.write_parquet(f'data/thesaurus/enzymes/ncbi_similar_no_organism.parquet')
 
 
 perfect_ncbi = perfect_ncbi.with_columns(
     (pl.col('max_organism_similarity') + pl.col('max_enzyme_similarity')).alias('total_similarity')
 )
-perfect_ncbi.write_parquet(f'data/enzymes/thesaurus/ncbi_similar.parquet')
-print("Similars at data/enzymes/thesaurus/ncbi_similar.parquet")
+perfect_ncbi.write_parquet(f'data/thesaurus/enzymes/ncbi_similar.parquet')
+print("Similars at data/thesaurus/enzymes/ncbi_similar.parquet")
 pass
 
 

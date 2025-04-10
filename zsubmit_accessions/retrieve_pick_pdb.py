@@ -129,6 +129,6 @@ print(df)
 
 # df.select('pmid', 'enzyme', 'enzyme_full', 'organism', 'best')
 df = df.rename({'best': 'pdb'})
-df.write_parquet('data/enzymes/thesaurus/pdb_picked.parquet')
+df.write_parquet('data/thesaurus/enzymes/pdb_picked.parquet')
 
 # print(gpt_df)
