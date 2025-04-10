@@ -46,6 +46,7 @@ def parse_value_and_unit(value_str):
     # match = re.match(r"(\d+(?:\.\d+)?)\s*(\S+)", value_str)
     # if match:
     #     return float(match.group(1)), match.group(2)
+    value_str = value_str.replace("μ", "µ") # mu -> micro
     exponent_factor = 1
     # ·
     if "10^" in value_str or "x" in value_str or '×' in value_str: # \u00d7
