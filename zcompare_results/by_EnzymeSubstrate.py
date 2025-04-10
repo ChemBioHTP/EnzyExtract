@@ -656,19 +656,20 @@ if __name__ == '__main__':
     # working = 'apogee'
     # working = 'beluga'
     # working = 'cherry-dev'
-    working = 'sabiork'
+    # working = 'sabiork'
     # working = 'bucket'
     # working = 'apatch'
     # working = 'everything'
-    # working = 'thedata'
+    working = 'thedata'
 
     # against = 'runeem'
-    against = 'brenda'
+    # against = 'brenda'
     # against = 'sabiork'
+    against = 'realkcat'
 
-    scino_only = None
+    # scino_only = None
     # scino_only = True
-    # scino_only = False
+    scino_only = False
     # scino_only = 'false_revised'
 
     whitelist = None
@@ -745,14 +746,22 @@ if __name__ == '__main__':
     
 
     if against == 'runeem':
+        os.makedirs(f'data/matched/EnzymeSubstrate/runeem', exist_ok=True)
         matched_view = script_match_base_gpt(want_df, base_df, gpt_df) # matching
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/runeem/runeem_{working}.parquet')
         print("Wrote to", f'data/matched/EnzymeSubstrate/runeem/runeem_{working}.parquet')
+    elif against == 'realkcat':
+        os.makedirs(f'data/matched/EnzymeSubstrate/realkcat', exist_ok=True)
+        base_df = pl.read_parquet('data/external/realkcat/realkcat.parquet')
+        matched_view = script_match_base_gpt(want_df, base_df, gpt_df)
+        matched_view.write_parquet(f'data/matched/EnzymeSubstrate/realkcat/realkcat_{working}.parquet')
     elif against == 'sabiork':
+        os.makedirs(f'data/matched/EnzymeSubstrate/sabiork', exist_ok=True)
         base_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
         matched_view = script_match_base_gpt(want_df, base_df, gpt_df)
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/sabiork/sabiork_{working}.parquet')
     else:
+        os.makedirs(f'data/matched/EnzymeSubstrate/brenda', exist_ok=True)
         matched_view = script_match_brenda_gpt(want_df, gpt_df) # matching
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/brenda/brenda_{working}.parquet')
         print("Wrote to", f'data/matched/EnzymeSubstrate/brenda/brenda_{working}.parquet')

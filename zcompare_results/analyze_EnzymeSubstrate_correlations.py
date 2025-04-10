@@ -278,9 +278,9 @@ def visualize_kcat(df: pl.DataFrame, title, results, log_ratio_threshold=2):
     fig.suptitle(title)
     plt.tight_layout()
     plt.subplots_adjust(left=0.08, right=0.95, bottom=0.1, top=0.90, wspace=0.26, hspace=0.26)
-    # plt.show()
+    plt.show()
     # save to svg
-    plt.savefig(f'kcat_comparison_{title}.svg', dpi=300)
+    # plt.savefig(f'kcat_comparison_{title}.svg', dpi=300)
 def visualize_sns_kde(df: pl.DataFrame, title):
     # Add log transformations to the DataFrame
     df = df.with_columns([
@@ -405,8 +405,9 @@ if __name__ == '__main__':
     working = 'thedata'
 
     # against = 'runeem'
-    against = 'brenda'
+    # against = 'brenda'
     # against = 'sabiork'
+    against = 'realkcat'
 
     # scino_only = True
     scino_only = False
