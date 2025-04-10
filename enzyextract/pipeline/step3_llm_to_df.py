@@ -6,7 +6,7 @@ import json
 import os
 import pandas as pd
 import polars as pl
-from enzyextract.submit.batch_decode import decode_jsonl
+from enzyextract.submit.batch_decode import jsonl_to_decoded_df
 from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid
@@ -19,7 +19,7 @@ def generate_valid_parquet(fpath,
     write_fpath = None, # write destination
     silence = True,
     use_yaml=True,
-):
+) -> pl.DataFrame:
     """
     Warning: if a blacklist/whitelist is provided, the cached matched csv will only contain those which pass.
     """
@@ -37,10 +37,11 @@ def generate_valid_parquet(fpath,
 
     
     # streamed_content = get_batch_output(fpath)
+    decoded_df = jsonl_to_decoded_df(fpath, llm_provider=llm_provider, corresp_df=corresp_df)
     streamed_content = (
-        decode_jsonl(fpath, llm_provider=llm_provider, corresp_df=corresp_df)
-        .join(corresp_df.select('custom_id', 'pmid'), on='custom_id', how='left')
-        .select('custom_id', 'content', 'finish_reason', 'pmid')
+        decoded_df
+        # .select('custom_id', 'content', 'finish_reason', 'pmid')
+        .select('custom_id', 'content', 'finish_reason', 'pmid', 'all_txt')
         .iter_rows()
     )
 
