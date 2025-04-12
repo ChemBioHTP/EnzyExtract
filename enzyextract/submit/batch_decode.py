@@ -93,7 +93,7 @@ def decode_vertex_line(obj: dict) -> dict:
         "output_tokens": output_tokens,
     }
 
-def decode_vertex_batch(objs: list[dict], corresp_df: pl.DataFrame) -> pl.DataFrame:
+def decode_vertex_batch(objs: list[dict]) -> pl.DataFrame:
     """decode vertexAI batch outputs (a list of lines).
     
     VertexAI is actually a pain because it doesn't guarantee the order of the output AND custom_id aren't respected either.
@@ -126,14 +126,18 @@ def jsonl_to_decoded_df(fpath: str, llm_provider: str, corresp_df: pl.DataFrame)
     source = stream_jsonl(fpath)
     if llm_provider == 'openai':
         df = decode_openai_batch(source)
-        df = df.join(corresp_df, on='custom_id', how='left')
+        if corresp_df is not None:
+            df = df.join(corresp_df, on='custom_id', how='left')
         return df
     elif llm_provider == 'anthropic':
         df = decode_anthropic_batch(source)
-        df = df.join(corresp_df, on='custom_id', how='left')
+        if corresp_df is not None:
+            df = df.join(corresp_df, on='custom_id', how='left')
         return df
     elif llm_provider == 'vertex_ai':
         df = decode_vertex_batch(source, corresp_df)
+        if corresp_df is None:
+            raise ValueError("corresp_df is None, but vertexAI requires it")
         df = df.join(corresp_df, on='input_sha256', how='full')
 
         strange = df.filter(pl.col('input_sha256').is_null() | pl.col('input_sha256_right').is_null())

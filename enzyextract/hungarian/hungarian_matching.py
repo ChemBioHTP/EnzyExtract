@@ -109,16 +109,16 @@ def parse_value_and_unit(value_str):
 
 def convert_to_true_value(value, unit, sigfigs=None):
     kcat_conversions = {
-        "ms^-1": 1000,
-        "s^-1": 1,
-        "sec^-1": 1,
+        "ms^-1": 1000.0,
+        "s^-1": 1.0,
+        "sec^-1": 1.0,
         "min^-1": 1/60,
         "m^-1": 1/60,
         "hr^-1": 1/3600,
         "h^-1": 1/3600
     }
     km_conversions = {
-        "M": 1,
+        "M": 1.0,
         "mM": 1e-3,
         "µM": 1e-6, # micro sign, u+00b5
         "μM": 1e-6, # mu sign, u+03bc
@@ -129,6 +129,8 @@ def convert_to_true_value(value, unit, sigfigs=None):
         return value * kcat_conversions[unit]
     elif unit in km_conversions:
         return value * km_conversions[unit]
+    if isinstance(value, int):
+        return float(value)
     return value
 
     

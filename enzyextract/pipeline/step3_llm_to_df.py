@@ -40,8 +40,8 @@ def generate_valid_parquet(fpath,
     decoded_df = jsonl_to_decoded_df(fpath, llm_provider=llm_provider, corresp_df=corresp_df)
     streamed_content = (
         decoded_df
-        # .select('custom_id', 'content', 'finish_reason', 'pmid')
-        .select('custom_id', 'content', 'finish_reason', 'pmid', 'all_txt')
+        .select('custom_id', 'content', 'finish_reason', 'pmid')
+        # .select('custom_id', 'content', 'finish_reason', 'pmid', 'all_txt')
         .iter_rows()
     )
 

@@ -17,7 +17,7 @@ def extract_value_and_unit_df(df: pl.DataFrame, col_name: str) -> pl.DataFrame:
         value, unit, _ = parse_value_and_unit(x)
         true_value = convert_to_true_value(value, unit)
         return {
-            'value': value,
+            'value': float(value) if isinstance(value, int) else value,
             'unit': unit,
             'true_value': true_value,
             # 'log_true_value': math.log10(true_value) if true_value is not None and true_value > 0 else None,
@@ -64,67 +64,128 @@ def _join_closest_asof(gpt_df: pl.DataFrame, truth_df: pl.DataFrame, context_col
     
 
 def asof_precision_recall(
-        gpt_df: pl.DataFrame, 
-        truth_df: pl.DataFrame, 
-        # by_unit=False,
-        tolerance=0.05) -> pl.DataFrame:
+    gpt_df: pl.DataFrame,
+    truth_df: pl.DataFrame,
+    *, 
+    on: str = None,
+    left_on = None, 
+    right_on = None,
+    by=['pmid'],
+    tolerance=1E-6,
+    keep_all_columns=False,
+):
     """
-    Calculate the precision and recall of the dataframe using exact matching.
-    Tolerance is the maximum allowed difference between the predicted and ground truth values.
-    
-    Unfortunately, polars asof "nearest" will not work because it can map multiple truth values to the same gpt value.
-    
-    Note: to make the tolerance work across multiple orders of magnitude, I recommend using log values.
-    
+    Maximize values that are exactly within tolerance.
     """
-    context_cols = ['pmid']
-    # if by_unit:
-    #     val_col = 'kcat.value'
-    #     context_cols.append('kcat.unit')
-    # else:
-    val_col = 'kcat.log_true_value'
-    right_val_col = val_col + '_right' # the value from the truth dataframe (the "right" value)
+    if on is None:
+        assert left_on is not None and right_on is not None, "on must be specified if left_on and right_on are not specified"
+    else:
+        left_on = on
+        right_on = on
+
+    if keep_all_columns:
+        gpt_subset = gpt_df
+        truth_subset = truth_df
+    else:
+        gpt_subset = gpt_df.select(*by, left_on)
+        truth_subset = truth_df.select(*by, right_on)
+
+    if gpt_subset.schema[left_on] == pl.Utf8:
+        # need to convert to float
+        gpt_float = extract_value_and_unit_df(gpt_subset, left_on)
+        left_on = f'{left_on}.true_value'
+    else:
+        assert gpt_subset.schema[left_on].is_numeric(), f"Unsupported type {gpt_subset.schema[left_on]} for {left_on}"
+        gpt_float = gpt_subset
     
-    if val_col not in gpt_df.columns:
-        gpt_df = extract_value_and_unit_df(gpt_df, 'kcat')
-    if right_val_col not in truth_df.columns:
-        truth_df = extract_value_and_unit_df(truth_df, 'kcat')
+    if truth_subset.schema[right_on] == pl.Utf8:
+        # need to convert to float
+        truth_float = extract_value_and_unit_df(truth_subset, right_on)
+        right_on = f'{right_on}.true_value'
+    else:
+        assert truth_subset.schema[right_on].is_numeric(), f"Unsupported type {truth_subset.schema[right_on]} for {right_on}"
+        truth_float = truth_subset
     
-    joined_df = _join_closest_asof(
-        gpt_df, 
-        truth_df, 
-        context_cols=context_cols, 
-        val_col=val_col,
-        tolerance=tolerance)
+
+    # a = 0 if a is None else a
+
+    # remove None, as it is a waste of computation
+    gpt_float = gpt_float.filter(pl.col(left_on).is_not_null())
+    truth_float = truth_float.filter(pl.col(right_on).is_not_null())
+
+    joined_df = gpt_float.join_asof(
+        truth_float, 
+        left_on=left_on, 
+        right_on=right_on, 
+        by=by, 
+        strategy='nearest',
+        coalesce=False,
+        suffix='_2'
+    )
+
+    if left_on != right_on:
+        # the value from the truth dataframe (the "right" value)
+        right_on = f'{right_on}_2' 
     
-    
-    # Calculate precision and recall
-    
-    
+    # calculate closeness
+    joined_df = joined_df.with_columns(
+        pl.when(
+            (pl.col(left_on) > 0) & (pl.col(right_on) > 0)
+        ).then(
+            (pl.col(left_on) - pl.col(right_on)) / pl.min_horizontal(left_on, right_on).abs() < tolerance
+        ).otherwise(
+            pl.col(left_on) == pl.col(right_on)
+        ).alias('is_close')
+    )
+
     TP = joined_df.filter(
-        pl.col(val_col).is_not_null() &
-        pl.col(right_val_col).is_not_null()
-        # pl.col(f'metrics.{val_col}.is_close')
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_not_null() 
+        & pl.col('is_close')
     )
     
-    FP = joined_df.filter(
-        pl.col(val_col).is_not_null() &
-        pl.col(right_val_col).is_null()
+    left_only = joined_df.filter(
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_null()
+        # & ~pl.col(col_is_close)
     )
     
      
-    FN = joined_df.filter(
-        pl.col(val_col).is_null() &
-        pl.col(right_val_col).is_not_null()
+    right_only = joined_df.filter(
+        pl.col(left_on).is_null() &
+        pl.col(right_on).is_not_null()
+        # & ~pl.col(col_is_close)
     )
     
-    # wrong = joined_df.filter(
-    #     pl.col(val_col).is_not_null() &
-    #     pl.col(right_val_col).is_not_null() &
-    #     pl.col(f'metrics.{val_col}.is_close').is_false()
-    # )
+    wrong = joined_df.filter(
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_not_null()
+        & ~pl.col('is_close')
+    )
     
-    return joined_df, TP, FP, FN
+    TPnum = TP.height
+    FPnum = left_only.height + wrong.height
+    FNnum = right_only.height + wrong.height
+    precision = TPnum / (TPnum + FPnum) if (TPnum + FPnum) > 0 else 0
+    recall = TPnum / (TPnum + FNnum) if (TPnum + FNnum) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
+    dfs = {
+        'joined': joined_df,
+        'TP': TP,
+        'FP': left_only,
+        'FN': right_only,
+        'wrong': wrong,
+    }
+    metrics = {
+        'TP': TPnum,
+        'FP': FPnum,
+        'FN': FNnum,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+    }
+    return dfs, metrics
 
 
 
@@ -194,6 +255,26 @@ def exact_precision_recall(
         objective_column='z'
     )
 
+    if joined_df.height == 0:
+        print("Warning: no commonality found.")
+        dfs = {
+            'joined': joined_df,
+            'TP': joined_df,
+            'FP': joined_df,
+            'FN': joined_df,
+            'wrong': joined_df,
+        }
+        metrics = {
+            'num_pmids': 0,
+            'TP': 0,
+            'FP': 0,
+            'FN': 0,
+            'precision': 0.0,
+            'recall': 0.0,
+            'f1': 0.0,
+        }
+        return dfs, metrics
+
     left_on = f'{left_on}_1'
     right_on = f'{right_on}_2' # the value from the truth dataframe (the "right" value)
 
@@ -229,6 +310,7 @@ def exact_precision_recall(
     precision = TPnum / (TPnum + FPnum) if (TPnum + FPnum) > 0 else 0
     recall = TPnum / (TPnum + FNnum) if (TPnum + FNnum) > 0 else 0
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    num_pmids = set(gpt_df['pmid']).intersection(set(truth_df['pmid']))
 
     dfs = {
         'joined': joined_df,
@@ -238,6 +320,7 @@ def exact_precision_recall(
         'wrong': wrong,
     }
     metrics = {
+        'num_pmids': len(num_pmids),
         'TP': TPnum,
         'FP': FPnum,
         'FN': FNnum,

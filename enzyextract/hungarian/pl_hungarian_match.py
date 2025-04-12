@@ -200,6 +200,9 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
                 .select(*partition_by, cs.exclude(partition_by))
             )
             builder.append(matches)
+        if not builder:
+            print("Warning: No matches found")
+            return pl.DataFrame()
         return pl.concat(builder)
 
 
