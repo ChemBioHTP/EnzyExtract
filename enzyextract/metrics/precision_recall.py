@@ -307,8 +307,12 @@ def exact_precision_recall(
     TPnum = TP.height
     FPnum = left_only.height + wrong.height
     FNnum = right_only.height + wrong.height
+    # Note that false negatives (FN) do not make sense in our context
+
     precision = TPnum / (TPnum + FPnum) if (TPnum + FPnum) > 0 else 0
     recall = TPnum / (TPnum + FNnum) if (TPnum + FNnum) > 0 else 0
+    accuracy = TPnum / (TPnum + FPnum + FNnum) if (TPnum + FPnum + FNnum) > 0 else 0
+    
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     num_pmids = set(gpt_df['pmid']).intersection(set(truth_df['pmid']))
 
@@ -327,6 +331,7 @@ def exact_precision_recall(
         'precision': precision,
         'recall': recall,
         'f1': f1,
+        'accuracy': accuracy,
     }
     return dfs, metrics
 

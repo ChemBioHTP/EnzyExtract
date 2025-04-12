@@ -97,6 +97,12 @@ def main(
     km_df = km_df.filter(
         pl.col('pmid').is_in(set(known_km_df['pmid']))
     )
+    known_kcat_df = known_kcat_df.filter(
+        pl.col('pmid').is_in(set(kcat_df['pmid']))
+    )
+    known_km_df = known_km_df.filter(
+        pl.col('pmid').is_in(set(km_df['pmid']))
+    )
     # dfs, metrics = asof_precision_recall(kcat_df, known_kcat_df, on='kcat.true_value', tolerance=1E-6, keep_all_columns=True)
     kcat_dfs, kcat_metrics = exact_precision_recall(kcat_df, known_kcat_df, on='kcat.true_value', tolerance=1E-6, keep_all_columns=True)
 

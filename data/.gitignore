@@ -1,5 +1,6 @@
 manifest.parquet
 export
+external
 humaneval
 enzymes/accessions
 valid
