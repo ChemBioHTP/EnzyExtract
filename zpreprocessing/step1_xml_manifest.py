@@ -53,7 +53,7 @@ manifest_df = manifest_df.with_columns([
 
 
 ### add sabiork
-sabiork = pl.read_parquet('data/sabiork/sabiork.parquet')
+sabiork = pl.read_parquet('data/external/sabiork/sabiork.parquet')
 sabiork = sabiork.select('PubMedID').unique()
 sabiork = sabiork.cast({'PubMedID': pl.Utf8})
 manifest_df = manifest_df.with_columns([

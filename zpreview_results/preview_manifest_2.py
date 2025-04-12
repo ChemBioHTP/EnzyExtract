@@ -3,7 +3,7 @@ import polars as pl
 
 
 print("SabioRK pmids:")
-df = pl.read_parquet('data/sabiork/sabiork.parquet')
+df = pl.read_parquet('data/external/sabiork/sabiork.parquet')
 print(df.select('PubMedID').n_unique())
 
 manifest = pl.read_parquet('data/manifest.parquet')

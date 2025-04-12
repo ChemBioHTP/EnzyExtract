@@ -484,11 +484,11 @@ def generate_sabiork():
         'Temperature': pl.Utf8,
         'pH': pl.Utf8,
     }
-    df1 = pl.read_csv('data/sabiork/sabioExport (1).tsv', separator='\t', schema_overrides=so)
-    df2 = pl.read_csv('data/sabiork/sabioExport (2).tsv', separator='\t', schema_overrides=so)
-    df3 = pl.read_csv('data/sabiork/sabioExport (4).tsv', separator='\t', schema_overrides=so)
+    df1 = pl.read_csv('data/external/sabiork/sabioExport (1).tsv', separator='\t', schema_overrides=so)
+    df2 = pl.read_csv('data/external/sabiork/sabioExport (2).tsv', separator='\t', schema_overrides=so)
+    df3 = pl.read_csv('data/external/sabiork/sabioExport (4).tsv', separator='\t', schema_overrides=so)
     df = pl.concat([df1, df2, df3], how='diagonal')
-    df.write_parquet('data/sabiork/sabiork.parquet')
+    df.write_parquet('data/external/sabiork/sabiork.parquet')
     exit(0)
 
 def check_for_lame():

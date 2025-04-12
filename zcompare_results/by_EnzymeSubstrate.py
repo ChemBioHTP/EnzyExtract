@@ -691,7 +691,7 @@ if __name__ == '__main__':
     elif working == 'cherry-dev' and against == 'runeem':
         gpt_df = pl.read_parquet('data/valid/_valid_cherry-dev-manifold_1.parquet')
     elif working == 'sabiork':
-        gpt_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
+        gpt_df = pl.read_parquet('data/external/sabiork/valid_sabiork.parquet')
     elif working == 'everything':
         gpt_df = pl.read_parquet('data/valid/_valid_everything.parquet')
     elif working == 'thedata':
@@ -760,7 +760,7 @@ if __name__ == '__main__':
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/realkcat/realkcat_{working}.parquet')
     elif against == 'sabiork':
         os.makedirs(f'data/matched/EnzymeSubstrate/sabiork', exist_ok=True)
-        base_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
+        base_df = pl.read_parquet('data/external/sabiork/valid_sabiork.parquet')
         matched_view = script_match_base_gpt(want_df, base_df, gpt_df)
         matched_view.write_parquet(f'data/matched/EnzymeSubstrate/sabiork/sabiork_{working}.parquet')
     else:
