@@ -90,9 +90,9 @@ def main(
     km_df = km_df.filter(
         pl.col('pmid').is_in(set(known_km_df['pmid']))
     )
-    matched_view, TP, FP, FN = exact_precision_recall(kcat_df, known_kcat_df, col='kcat.true_value', tolerance=0.05)
+    dfs, metrics = exact_precision_recall(kcat_df, known_kcat_df, on='kcat.true_value', tolerance=1E-6, keep_all_columns=True)
 
-
+    print(metrics)
     return matched_view
     # step 2b: match with brenda
     # _no_scientific_notation

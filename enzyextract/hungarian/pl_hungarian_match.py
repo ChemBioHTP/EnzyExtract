@@ -105,6 +105,7 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
         Left: keep all rows from the left dataframe, and matching in rows from the right dataframe
         Right: keep all rows from the right dataframe, and matching in rows from the left dataframe.
         Outer: keep all rows from both dataframes, matching in rows where possible.
+    objective_column (str): If specified, then the value of the objective function will be deposited into this column.
     """
 
     if partition_by is None:

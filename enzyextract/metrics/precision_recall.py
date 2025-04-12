@@ -1,8 +1,10 @@
 import math
+from typing import Callable
 import polars as pl
 
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
 from enzyextract.hungarian.pl_hungarian_match import join_optimally
+from enzyextract.metrics.mantissa_distances import within_tolerance
 
 
 def extract_value_and_unit_df(df: pl.DataFrame, col_name: str) -> pl.DataFrame:
@@ -61,7 +63,7 @@ def _join_closest_asof(gpt_df: pl.DataFrame, truth_df: pl.DataFrame, context_col
     return joined_df
     
 
-def _asof_exact_precision_recall(
+def asof_precision_recall(
         gpt_df: pl.DataFrame, 
         truth_df: pl.DataFrame, 
         # by_unit=False,
@@ -125,12 +127,127 @@ def _asof_exact_precision_recall(
     return joined_df, TP, FP, FN
 
 
-def norm_sq(x, y):
-    x = 0 if x is None else x
-    y = 0 if y is None else y
-    return (x - y)**2
 
 def exact_precision_recall(
+    gpt_df: pl.DataFrame,
+    truth_df: pl.DataFrame,
+    *, 
+    on: str = None,
+    left_on = None, 
+    right_on = None,
+    by=['pmid'],
+    tolerance=1E-6,
+    keep_all_columns=False,
+):
+    """
+    Maximize values that are exactly within tolerance.
+    """
+    if on is None:
+        assert left_on is not None and right_on is not None, "on must be specified if left_on and right_on are not specified"
+    else:
+        left_on = on
+        right_on = on
+
+    if keep_all_columns:
+        gpt_subset = gpt_df
+        truth_subset = truth_df
+    else:
+        gpt_subset = gpt_df.select(*by, left_on)
+        truth_subset = truth_df.select(*by, right_on)
+
+    if gpt_subset.schema[left_on] == pl.Utf8:
+        # need to convert to float
+        gpt_float = extract_value_and_unit_df(gpt_subset, left_on)
+        left_on = f'{left_on}.true_value'
+    else:
+        assert gpt_subset.schema[left_on].is_numeric(), f"Unsupported type {gpt_subset.schema[left_on]} for {left_on}"
+        gpt_float = gpt_subset
+    
+    if truth_subset.schema[right_on] == pl.Utf8:
+        # need to convert to float
+        truth_float = extract_value_and_unit_df(truth_subset, right_on)
+        right_on = f'{right_on}.true_value'
+    else:
+        assert truth_subset.schema[right_on].is_numeric(), f"Unsupported type {truth_subset.schema[right_on]} for {right_on}"
+        truth_float = truth_subset
+    
+    def exact_objective(row1, row2):
+        left = row1[left_on]
+        right = row2[right_on]
+
+        return within_tolerance(left, right, tolerance=tolerance)
+
+    # a = 0 if a is None else a
+
+    # remove None, as it is a waste of computation
+    gpt_float = gpt_float.filter(pl.col(left_on).is_not_null())
+    truth_float = truth_float.filter(pl.col(right_on).is_not_null())
+
+    joined_df = join_optimally(
+        gpt_float,
+        truth_float,
+        objective_fn=exact_objective,
+        partition_by=by,
+        how='inner',
+        progress_bar=True,
+        maximize=True,
+        objective_column='z'
+    )
+
+    left_on = f'{left_on}_1'
+    right_on = f'{right_on}_2' # the value from the truth dataframe (the "right" value)
+
+    TP = joined_df.filter(
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_not_null() 
+        & (pl.col('z') == 1)
+    )
+    
+    left_only = joined_df.filter(
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_null()
+        # & ~pl.col(col_is_close)
+    )
+    
+     
+    right_only = joined_df.filter(
+        pl.col(left_on).is_null() &
+        pl.col(right_on).is_not_null()
+        # & ~pl.col(col_is_close)
+    )
+    
+    wrong = joined_df.filter(
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_not_null()
+        # ~pl.col(col_is_close)
+        & (pl.col('z') == 0)
+    )
+    
+    TPnum = TP.height
+    FPnum = left_only.height + wrong.height
+    FNnum = right_only.height + wrong.height
+    precision = TPnum / (TPnum + FPnum) if (TPnum + FPnum) > 0 else 0
+    recall = TPnum / (TPnum + FNnum) if (TPnum + FNnum) > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+
+    dfs = {
+        'joined': joined_df,
+        'TP': TP,
+        'FP': left_only,
+        'FN': right_only,
+        'wrong': wrong,
+    }
+    metrics = {
+        'TP': TPnum,
+        'FP': FPnum,
+        'FN': FNnum,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+    }
+    return dfs, metrics
+
+def _exact_precision_recall_by_norm(
         gpt_df: pl.DataFrame, 
         truth_df: pl.DataFrame, 
         col,
@@ -167,37 +284,37 @@ def exact_precision_recall(
     
     
     # Calculate precision and recall
-    left_col = f'{col}_1'
-    right_col = f'{col}_2' # the value from the truth dataframe (the "right" value)
+    left_on = f'{col}_1'
+    right_on = f'{col}_2' # the value from the truth dataframe (the "right" value)
 
     col_is_close = f'metrics.{col.split(".")[0]}.is_close'
     joined_df = joined_df.with_columns(
-        ((pl.col(left_col) - pl.col(right_col)).abs() / pl.min_horizontal(left_col, right_col).abs() < tolerance).alias(col_is_close)
+        ((pl.col(left_on) - pl.col(right_on)).abs() / pl.min_horizontal(left_on, right_on).abs() < tolerance).alias(col_is_close)
     )
 
     
     TP = joined_df.filter(
-        pl.col(left_col).is_not_null() &
-        pl.col(right_col).is_not_null() &
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_not_null() &
         pl.col(col_is_close)
     )
     
     FP = joined_df.filter(
-        pl.col(left_col).is_not_null() &
-        pl.col(right_col).is_null()
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_null()
         # & ~pl.col(col_is_close)
     )
     
      
     FN = joined_df.filter(
-        pl.col(left_col).is_null() &
-        pl.col(right_col).is_not_null()
+        pl.col(left_on).is_null() &
+        pl.col(right_on).is_not_null()
         # & ~pl.col(col_is_close)
     )
     
     wrong = joined_df.filter(
-        pl.col(left_col).is_not_null() &
-        pl.col(right_col).is_not_null() &
+        pl.col(left_on).is_not_null() &
+        pl.col(right_on).is_not_null() &
         ~pl.col(col_is_close)
     )
     
