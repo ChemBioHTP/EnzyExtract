@@ -1,6 +1,7 @@
 import math
-from typing import Callable
+from typing import Callable, Optional
 import polars as pl
+import polars.selectors as cs
 
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
 from enzyextract.hungarian.pl_hungarian_match import join_optimally
@@ -249,7 +250,7 @@ def exact_precision_recall(
         truth_float,
         objective_fn=exact_objective,
         partition_by=by,
-        how='inner',
+        how='outer',
         progress_bar=True,
         maximize=True,
         objective_column='z'
@@ -334,6 +335,141 @@ def exact_precision_recall(
         'accuracy': accuracy,
     }
     return dfs, metrics
+
+def offby_matches(
+    gpt_float: pl.DataFrame,
+    truth_float: pl.DataFrame,
+    offby_seq: Optional[list],
+    *, 
+    joined_df: pl.DataFrame = None,
+    on: str = None,
+    left_on = None, 
+    right_on = None,
+    by=['pmid'],
+    left_spectators=None,
+    right_spectators=None,
+    tolerance=1E-6,
+    keep_all_columns=False,
+    symmetric=True,
+):
+    """
+    spectators: list of spectator columns to include. Default (None): include all.
+    Can be polars selectors.
+    """
+    if isinstance(by, str) and not isinstance(by, list):
+        raise ValueError("by must be a list")
+        # by = [by]
+        
+    """
+    similar to exact_precision_recall, but uses a sequence of off-by values to match.
+    returns solely the "dfs" portion, which is a dictionary that maps
+    {
+        '1000': df
+        '1000000': df
+        '100': df
+        'remainder': df
+    }
+    """
+    if gpt_float is None or truth_float is None:
+        assert joined_df is not None, "gpt_df and truth_df must be provided if joined_df is not provided"
+        # only care about offby matches
+        joined_df = joined_df.filter(
+            pl.col('z').is_null() |
+            (pl.col('z') != 1)
+        )
+        gpt_float = joined_df.select(*by, cs.ends_with('_1')).rename({
+            x: x[:-2] for x in joined_df.columns if x.endswith('_1')
+        })
+        truth_float = joined_df.select(*by, cs.ends_with('_2')).rename({
+            x: x[:-2] for x in joined_df.columns if x.endswith('_2')
+        })
+
+
+    if offby_seq is None:
+        offby_seq = [10**3, 10**6, 10**9, 10**4, 10**5, 10**7, 10**8]
+    
+    if on is None:
+        assert left_on is not None and right_on is not None, "on must be specified if left_on and right_on are not specified"
+    else:
+        left_on = on
+        right_on = on
+    
+    def offby_objective(row1, row2, offby, symmetric=True):
+        left = row1[left_on]
+        right = row2[right_on]
+
+        if left is None and right is None:
+            return True
+        if left is None or right is None:
+            return False
+        result = within_tolerance(left, right * offby)
+        if symmetric:
+            result = result or within_tolerance(left * offby, right)
+        return result
+
+    # a = 0 if a is None else a
+
+    # remove None, as it is a waste of computation
+    gpt_float = gpt_float.filter(pl.col(left_on).is_not_null())
+    truth_float = truth_float.filter(pl.col(right_on).is_not_null())
+
+    if left_spectators is None:
+        left_spectators = [cs.exclude(*by, left_on)]
+    if right_spectators is None:
+        right_spectators = [cs.exclude(*by, right_on)]
+    left_df = gpt_float.select(*by, left_on, *left_spectators)
+    right_df = truth_float.select(*by, right_on, *right_spectators)
+    left_df = left_df.filter(pl.col(left_on).is_not_null())
+    right_df = right_df.filter(pl.col(right_on).is_not_null())
+    
+    prev_height = left_df.height + right_df.height
+    collector = {}
+    for offby in offby_seq:
+        if joined_df.height == 0:
+            collector[str(offby)] = joined_df.clear()
+            continue
+            # break
+        joined_df = join_optimally(
+            left_df,
+            right_df,
+            objective_fn=lambda a, b: offby_objective(a, b, offby=offby_seq[0], symmetric=symmetric),
+            partition_by=by,
+            how='outer',
+            progress_bar=False,
+            maximize=True,
+            objective_column='z'
+        )
+        offby_df = joined_df.filter(pl.col('z') == 1)
+        collector[str(offby)] = offby_df
+
+        joined_df = joined_df.filter(
+            pl.col('z').is_null() |
+            (pl.col('z') != 1)
+        )
+
+
+        # split again
+        left_df = joined_df.select(*by, cs.ends_with('_1')).rename({
+            x: x[:-2] for x in joined_df.columns if x.endswith('_1')
+        })
+        right_df = joined_df.select(*by, cs.ends_with('_2')).rename({
+            x: x[:-2] for x in joined_df.columns if x.endswith('_2')
+        })
+        left_df = left_df.filter(pl.col(left_on).is_not_null())
+        right_df = right_df.filter(pl.col(right_on).is_not_null())
+
+        curr_height = 2 * offby_df.height + left_df.height + right_df.height 
+        # number of non-null entries should stay the same
+        if curr_height != prev_height:
+            print("Assertion failed: we lost material")
+            pass
+        prev_height = left_df.height + right_df.height
+    collector['left_only'] = left_df
+    collector['right_only'] = right_df
+    return collector
+        
+
+
 
 def _exact_precision_recall_by_norm(
         gpt_df: pl.DataFrame, 

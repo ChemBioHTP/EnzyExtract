@@ -24,6 +24,7 @@ def calculate_similarity_matrix(df1: pl.DataFrame, df2: pl.DataFrame, objective_
     for i, df1row in enumerate(df1.iter_rows(named=True)):
         for j, df2row in enumerate(df2.iter_rows(named=True)):
             similarity = objective_fn(df1row, df2row)
+            assert similarity is not None, f"Similarity function returned None for rows {i} and {j}"
             similarity_matrix[i, j] = similarity
     
     return similarity_matrix
@@ -82,7 +83,9 @@ def assign_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn, objecti
     return pl.DataFrame(matches_dict)
 
 def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn, 
-                   partition_by=None, how='inner', progress_bar=False, maximize=True, **kwargs):
+                   partition_by=None, how='inner', progress_bar=False, maximize=True, 
+                   objective_column=None, 
+                   **kwargs):
     """
     Join in a SQL-like fashion, but by maximizing an objective function to find assignments. 
 
@@ -109,7 +112,7 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
     """
 
     if partition_by is None:
-        matches = assign_optimally(df1, df2, objective_fn, **kwargs)
+        matches = assign_optimally(df1, df2, objective_fn, objective_column=objective_column, **kwargs)
         
         
         df1 = df1.rename({col: f"{col}_1" for col in df1.columns})
@@ -168,7 +171,14 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
             )
             if df1.is_empty():
                 if how in ['right', 'outer']:
-                    builder.append(subset.select(cs.exclude('from_df1')).select(*partition_by, cs.exclude(partition_by)))
+                    builder.append(
+                        subset
+                        .select(cs.exclude('from_df1')).select(*partition_by, cs.exclude(partition_by))
+                        .insert_column(
+                            len(partition_by),
+                            pl.lit(None).alias(objective_column)
+                        )
+                    )
                 continue
             df1orig = df1.rename({f'{col}_1': col for col in df1_columns})
             df1 = df1.with_row_index('_hungarian_index')
@@ -179,13 +189,20 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
             )
             if df2.is_empty():
                 if how in ['outer', 'left']:
-                    builder.append(subset.select(cs.exclude('from_df1')).select(*partition_by, cs.exclude(partition_by)))
+                    builder.append(
+                        subset
+                        .select(cs.exclude('from_df1')).select(*partition_by, cs.exclude(partition_by))
+                        .insert_column(
+                            len(partition_by),
+                            pl.lit(None).alias(objective_column)
+                        )
+                    )
                 continue
             df2orig = df2.rename({f'{col}_2': col for col in df2_columns})
             df2 = df2.with_row_index('_hungarian_index')
             
 
-            matches = assign_optimally(df1orig, df2orig, objective_fn, maximize=maximize, **kwargs)
+            matches = assign_optimally(df1orig, df2orig, objective_fn, maximize=maximize, objective_column=objective_column, **kwargs)
             matches = matches.join(df1, left_on='index_1', right_on='_hungarian_index', how='full')
 
             matches = (
@@ -203,7 +220,7 @@ def join_optimally(df1: pl.DataFrame, df2: pl.DataFrame, objective_fn,
         if not builder:
             print("Warning: No matches found")
             return pl.DataFrame()
-        return pl.concat(builder)
+        return pl.concat(builder, how='diagonal_relaxed')
 
 
 

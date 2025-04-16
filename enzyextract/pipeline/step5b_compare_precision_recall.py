@@ -4,7 +4,7 @@ import re
 from Bio.Data.IUPACData import protein_letters_3to1_extended
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
-from enzyextract.metrics.precision_recall import asof_precision_recall, exact_precision_recall, extract_value_and_unit_df
+from enzyextract.metrics.precision_recall import asof_precision_recall, exact_precision_recall, extract_value_and_unit_df, offby_matches
 from enzyextract.pipeline.step5_compare_dfs import _remove_bad_es_calc_kcat_value_and_clean_mutants, gpt_dataframe, load_runeem_df
 from enzyextract.thesaurus.mutant_patterns import amino3
 from datetime import datetime
@@ -28,6 +28,7 @@ def main(
     gpt_df: pl.DataFrame, # the unknown df
     known_df: pl.DataFrame, # the known df
     is_brenda: bool = False,
+    offby: bool = True,
 ):
     so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
 
@@ -109,7 +110,35 @@ def main(
     # print(metrics)
 
     km_dfs, km_metrics = exact_precision_recall(km_df, known_km_df, on='km.true_value', tolerance=1E-6, keep_all_columns=True)
-    return kcat_dfs, kcat_metrics, km_dfs, km_metrics
+
+    offby_dfs = {}
+    offby_metrics = {}
+    if offby:
+        # now, calculate "off by" metrics
+        kcat_offby_dfs = offby_matches(
+            None, None, [60, 3600, 1000], 
+            joined_df=kcat_dfs['joined'],
+            on='kcat.true_value',
+            by=['pmid'])
+        km_offby_dfs = offby_matches(
+            None, None, [10**3, 10**6, 10**9, 10**4, 10**5, 10**7, 10**8, 10**10],
+            joined_df=km_dfs['joined'],
+            on='km.true_value',
+            by=['pmid'])
+        offby_dfs = {
+            'kcat': kcat_offby_dfs,
+            'km': km_offby_dfs,
+        }
+        offby_metrics = {
+            'kcat': {
+                k: v.height for k, v in kcat_offby_dfs.items()
+            },
+            'km': {
+                k: v.height for k, v in km_offby_dfs.items()
+            }
+        }
+
+    return kcat_dfs, kcat_metrics, km_dfs, km_metrics, offby_dfs, offby_metrics
     # step 2b: match with brenda
     # _no_scientific_notation
     # if not os.path.exists(match_dest):
