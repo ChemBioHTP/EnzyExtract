@@ -380,7 +380,6 @@ def script_count_pdfs():
 
 
 def convert_parquet():
-    # convert shit to parquet
     # df = pl.read_csv('fetch_sequences/substrates/brenda_inchi_all.tsv', separator='\t', schema_overrides={'brenda_id': pl.Utf8})
     so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
     df = pl.read_csv('data/_compiled/apogee-all.tsv', separator='\t', schema_overrides=so)
