@@ -5,6 +5,7 @@ __pycache__
 *.csv
 *.tsv
 *.md
+!README.md
 *.fasta
 
 *.env

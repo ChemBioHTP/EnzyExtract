@@ -5,7 +5,7 @@ from Bio.Data.IUPACData import protein_letters_3to1_extended
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from enzyextract.metrics.precision_recall import asof_precision_recall, exact_precision_recall, extract_value_and_unit_df, offby_matches
-from enzyextract.pipeline.step5_compare_dfs import _remove_bad_es_calc_kcat_value_and_clean_mutants, gpt_dataframe, load_runeem_df
+from enzyextract.pipeline.step5_compare_dfs import _remove_bad_es_calc_kcat_value_and_clean_mutants, gpt_dataframe, load_rumble_df
 from enzyextract.thesaurus.mutant_patterns import amino3
 from datetime import datetime
 import polars as pl
@@ -158,7 +158,7 @@ if __name__ == '__main__':
     # working = 'everything'
     working = 'thedata'
 
-    against = 'runeem'
+    against = 'rumble'
     # against = 'brenda'
     # against = 'sabiork'
 
@@ -182,8 +182,8 @@ if __name__ == '__main__':
         working += '_no_scientific_revised'
     
     is_brenda = False
-    if against == 'runeem':
-        known_df = load_runeem_df(exclude_train=True)
+    if against == 'rumble':
+        known_df = load_rumble_df(exclude_train=True)
     elif against == 'sabiork':
         known_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
     else:

@@ -408,7 +408,7 @@ if __name__ == '__main__':
     # working = 'everything'
     working = 'thedata'
 
-    # against = 'runeem'
+    # against = 'rumble'
     against = 'brenda'
     # against = 'sabiork'
 

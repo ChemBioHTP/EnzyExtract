@@ -36,9 +36,9 @@ def compute_string_similarities(df: pl.DataFrame, to_ec_df=None, brenda_mode=Non
     ])
     # use ec match to create viable_ecs
 
-    # if runeem_df is the GT, then viable_ecs_2 will be created.
+    # if rumble_df is the GT, then viable_ecs_2 will be created.
 
-    # if runeem_df is the analyte, then drop viable_ecs.
+    # if rumble_df is the analyte, then drop viable_ecs.
     if 'viable_ecs' in df.columns:
         df.drop_in_place('viable_ecs')
     # df = df.join(to_ec_df, left_on=['enzyme'], right_on=['alias'], how='left') # creates viable_ecs for the LHS
@@ -61,7 +61,7 @@ def compute_string_similarities(df: pl.DataFrame, to_ec_df=None, brenda_mode=Non
             .otherwise(pl.lit(None)).alias('ec_match')
         ])
     else:
-        # compare ours.viable_ecs vs runeem_ec.viable_ecs_2
+        # compare ours.viable_ecs vs rumble.viable_ecs_2
         df = df.with_columns([
             pl.col('viable_ecs_2').str.split('; ').alias('viable_ecs_2'),
         ])

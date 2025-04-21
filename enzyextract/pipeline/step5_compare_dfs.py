@@ -403,7 +403,7 @@ def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
 def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: pl.DataFrame):
 
 
-    # base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
+    # base_df = pl.read_csv('data/humaneval/rumble/rumble_20241205_ec.csv', schema_overrides=so)
     those_pmids = set(base_df['pmid'].unique())
 
     # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
@@ -540,7 +540,7 @@ def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     """
 
     so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
-    # _base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
+    # _base_df = pl.read_csv('data/humaneval/rumble/rumble_20241205_ec.csv', schema_overrides=so)
     # del _base_df
 
     # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
@@ -625,9 +625,9 @@ def add_diff(df):
         )
     )
 
-def load_runeem_df(exclude_train=False):
+def load_rumble_df(exclude_train=False):
     so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
-    base_df = pl.read_csv('data/humaneval/runeem/runeem_20241219.csv', schema_overrides=so)
+    base_df = pl.read_csv('data/humaneval/rumble/rumble_20241219.csv', schema_overrides=so)
 
     if exclude_train:
         train_pmids = pl.read_parquet('data/pmids/t2neboth_train.parquet')
@@ -649,8 +649,8 @@ def main(
     # step 1: thesaurus
     if not os.path.exists((want_dest := 'data/thesaurus/substrate/apogee_substrate_thesaurus.parquet')): #  or True:
         
-        # base_df = pl.read_csv('data/humaneval/runeem/runeem_20241205_ec.csv', schema_overrides=so)
-        known_df = load_runeem_df()
+        # base_df = pl.read_csv('data/humaneval/rumble/rumble_20241205_ec.csv', schema_overrides=so)
+        known_df = load_rumble_df()
         abbr_df = pl.read_parquet('data/thesaurus/abbr/beluga-abbrs-4ostruct_20241213.parquet')
         # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
         # gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
@@ -757,7 +757,7 @@ if __name__ == '__main__':
     # working = 'everything'
     working = 'thedata'
 
-    # against = 'runeem'
+    # against = 'rumble'
     against = 'brenda'
     # against = 'sabiork'
 
@@ -782,8 +782,8 @@ if __name__ == '__main__':
         working += '_no_scientific_revised'
     
     is_brenda = False
-    if against == 'runeem':
-        known_df = load_runeem_df(exclude_train=True)
+    if against == 'rumble':
+        known_df = load_rumble_df(exclude_train=True)
     elif against == 'sabiork':
         known_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
     else:
