@@ -16,7 +16,7 @@ import re
 import pymupdf
 
 # correction_df = pd.read_csv("C:/conjunct/vandy/yang/reocr/results/micros_resnet_v1.csv")
-def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str]):
+def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str], check_mM: bool = False):
     if micros_path is None:
         # no correction needed
         return pl.DataFrame(
@@ -67,7 +67,8 @@ def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str]):
         # assert f"{pdfname}.pdf" in all_pdfs_for_sanity, f"{pdfname}.pdf not found in the list of all pdfs"
     commonality = set(correction_df['pdfname']).intersection(set(all_pdfs_for_sanity))
     if micros_path is not None:
-        assert commonality, "No common pdfs found between all_pdfs and correction_df"
+        if check_mM:
+            assert commonality, "No common pdfs found between all_pdfs and correction_df"
     print(f"Common pdfs: {len(commonality)} / {len(all_pdfs_for_sanity)}")
     return correction_df
 

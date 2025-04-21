@@ -150,7 +150,7 @@ def main(
 
 
         # apply micro fix
-        micro_df = load_correction_df(micro_path, manifest_view['filename'])
+        micro_df = load_correction_df(micro_path, manifest_view['filename'].to_list())
 
         # only want 
         true_micro_df = micro_df.filter(
