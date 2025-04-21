@@ -652,7 +652,7 @@ def main(
 ):
     ### Step 1: Generate thesaurus    
     # so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
-    # base_df = pl.read_csv('data/humaneval/rumble/rumble_20241219.csv', schema_overrides=so)
+    # base_df = pl.read_csv('data/humaneval/runeem/runeem_20241219.csv', schema_overrides=so)
     # abbr_df = pl.read_parquet('data/thesaurus/abbr/beluga-abbrs-4ostruct_20241213.parquet')
 
     # thesaurus = script_generate_thesaurus(gpt_df, base_df, abbr_df)
