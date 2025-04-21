@@ -22,6 +22,7 @@ dependencies = [
   "seaborn",
   "google-cloud-storage",
   "anthropic",
+  "gmft",
 ]
 
 
