@@ -230,24 +230,3 @@ def main(
             corresp_fpath=corresp_fpath,
             update_if_exists=try_to_overwrite
         )
-
-if __name__ == '__main__':
-    raise NotImplementedError("This script is only an example.")
-    process_env('.env')
-
-    llm_provider = 'openai'
-    model_name, suggested_prompt, structured = glean_model_name('baba-t2neboth')
-    
-    namespace = 'my-namespace-here' # no colons: needs to be a valid file name
-    pdf_root = 'D:/papers'
-    enzy_root = 'D:/MyExtractionRun/.enzy'
-    main(
-        namespace=namespace,
-        pdf_root=pdf_root,
-        dest_folder=f'{enzy_root}/batches',
-        log_location=f'{enzy_root}/llm_log.tsv',
-        model_name=model_name,
-        llm_provider=llm_provider,
-        prompt=suggested_prompt,
-        structured=structured,
-    )

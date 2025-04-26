@@ -14,7 +14,7 @@ from tqdm import tqdm
 from enzyextract.submit.base import do_presubmit
 
 _openai_client = None
-def process_env(filepath):
+def process_env(filepath, raise_if_openai_not_found=True):
     load_dotenv(filepath)
     global _openai_client
     with open(filepath, 'r') as f:
@@ -24,7 +24,8 @@ def process_env(filepath):
                 _openai_client = openai.OpenAI(api_key=value)
                 break
         else:
-            raise ValueError("No OpenAI key found!")
+            if raise_if_openai_not_found:
+                raise ValueError("No OpenAI key found!")
                 
 def get_openai_client():
     global _openai_client

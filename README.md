@@ -27,7 +27,7 @@ VERTEXAI_PROJECT=...
 
 # Usage
 
-See `enzyextract/pipeline/step*.py` for example scripts. The scripts should be run sequentially, though file paths may need to be adjusted.
+See `experiments/example/pipeline/ex_step*.py` for example scripts. The scripts should be run sequentially, though file paths may need to be adjusted.
 
 Steps:
 1. step0_run_preprocessing.py:
