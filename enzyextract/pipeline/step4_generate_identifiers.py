@@ -645,7 +645,7 @@ def cid_diversity():
     print(df)
     df.write_parquet('data/thesaurus/cids/latest_cids.parquet')
 
-def main(
+def step4_main(
     gpt_df: pl.DataFrame,
     subs_df: pl.DataFrame,
     include_enzyme_sequences: bool = False,

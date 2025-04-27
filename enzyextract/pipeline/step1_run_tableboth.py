@@ -42,7 +42,7 @@ def build_manifest(pdf_root):
     })
     return manifest
 
-def main(
+def step1_main(
     *, 
     namespace: str, # ids
     pdf_root: str, # read from

@@ -1,6 +1,6 @@
 import polars as pl
 import os
-from enzyextract.pipeline.step5b_compare_precision_recall import gpt_dataframe, load_rumble_df, main
+from enzyextract.pipeline.step5b_compare_precision_recall import gpt_dataframe, load_rumble_df, step5b_main
 if __name__ == '__main__':
     # raise NotImplementedError("This script is only an example.")
     
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         is_brenda = True
 
 
-    matched_view = main(
+    matched_view = step5b_main(
         working=working,
         against_known=against,
         scino_only=scino_only,

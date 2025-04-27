@@ -20,7 +20,7 @@ from enzyextract.thesaurus.mutant_patterns import mutant_pattern, mutant_v3_patt
 
 
 
-def main(
+def step5b_main(
     working: str,
     against_known: str,
     scino_only: str,

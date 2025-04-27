@@ -1,7 +1,7 @@
 import polars as pl
 import os
 
-from enzyextract.pipeline.step5_compare_dfs import gpt_dataframe, load_rumble_df, main as step5_main
+from enzyextract.pipeline.step5_compare_dfs import gpt_dataframe, load_rumble_df, step5_main
 
 
 if __name__ == '__main__':

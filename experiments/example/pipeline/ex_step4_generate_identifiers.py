@@ -1,5 +1,5 @@
 import polars as pl
-from enzyextract.pipeline.step4_generate_identifiers import main as step4_main
+from enzyextract.pipeline.step4_generate_identifiers import step4_main
 if __name__ == "__main__":
     # raise NotImplementedError("This script is only an example.")
     # gpt_df = pl.read_parquet('data/gpt/apogee_gpt.parquet')

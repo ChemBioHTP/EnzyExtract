@@ -1,7 +1,7 @@
 
 
 from enzyextract.pipeline.step1b_run_pdf_binaries import process_env, glean_model_name
-from enzyextract.pipeline.step1b_run_pdf_binaries import main as step1b_main
+from enzyextract.pipeline.step1b_run_pdf_binaries import step1b_main
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 
-from enzyextract.pipeline.step1_run_tableboth import process_env, glean_model_name, main as step1_main
+from enzyextract.pipeline.step1_run_tableboth import process_env, glean_model_name, step1_main
 
 if __name__ == '__main__':
     raise NotImplementedError("This script is only an example.")

@@ -635,7 +635,7 @@ def load_rumble_df(exclude_train=False):
     return base_df
 
 
-def main(
+def step5_main(
     working: str,
     against_known: str,
     scino_only: str,

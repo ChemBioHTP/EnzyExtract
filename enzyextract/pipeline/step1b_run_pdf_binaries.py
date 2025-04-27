@@ -34,7 +34,7 @@ from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_c
 
 
 
-def main(
+def step1b_main(
     *, 
     namespace: str, # ids
     pdf_root: str, # read from
