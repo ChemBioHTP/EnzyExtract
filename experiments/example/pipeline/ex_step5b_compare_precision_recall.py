@@ -1,6 +1,6 @@
 import polars as pl
 import os
-from enzyextract.pipeline.step5b_compare_precision_recall import gpt_dataframe, load_runeem_df, main
+from enzyextract.pipeline.step5b_compare_precision_recall import gpt_dataframe, load_rumble_df, main
 if __name__ == '__main__':
     # raise NotImplementedError("This script is only an example.")
     
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     # working = 'everything'
     working = 'thedata'
 
-    against = 'runeem'
+    against = 'rumble'
     # against = 'brenda'
     # against = 'sabiork'
 
@@ -38,8 +38,8 @@ if __name__ == '__main__':
         working += '_no_scientific_revised'
     
     is_brenda = False
-    if against == 'runeem':
-        known_df = load_runeem_df(exclude_train=True)
+    if against == 'rumble':
+        known_df = load_rumble_df(exclude_train=True)
     elif against == 'sabiork':
         known_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
     else:

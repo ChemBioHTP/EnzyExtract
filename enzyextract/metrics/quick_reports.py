@@ -18,7 +18,7 @@ def report_precision_recall(df):
     print("Recall:", recall)
 
     agree, total = get_accuracy_score(df, allow_brenda_missing=False)
-    print(f"Runeem agreement score: ={agree}/{total} which is ({agree/total:.2f})")
+    print(f"Ground truth (ours) agreement score: ={agree}/{total} which is ({agree/total:.2f})")
 
     # calculate percent error
     kcat_error = mean_log_relative_ratio(df, 'kcat')

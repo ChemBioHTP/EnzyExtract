@@ -5,7 +5,7 @@ from Bio.Data.IUPACData import protein_letters_3to1_extended
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from enzyextract.metrics.precision_recall import asof_precision_recall, exact_precision_recall, extract_value_and_unit_df, offby_matches
-from enzyextract.pipeline.step5_compare_dfs import _remove_bad_es_calc_kcat_value_and_clean_mutants, gpt_dataframe, load_runeem_df
+from enzyextract.pipeline.step5_compare_dfs import _remove_bad_es_calc_kcat_value_and_clean_mutants, gpt_dataframe, load_rumble_df
 from enzyextract.thesaurus.mutant_patterns import amino3
 from datetime import datetime
 import polars as pl

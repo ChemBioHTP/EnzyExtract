@@ -17,4 +17,5 @@ _debug
 settings.json
 
 experiments
+!experiments/example/pipeline/**
 *.svg
