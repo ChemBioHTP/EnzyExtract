@@ -1,6 +1,6 @@
 import litellm
 import os
-from enzyextract.submit.base import SubmitConsent, do_presubmit
+from enzyextract.submit.base import SubmitPreference, do_presubmit
 from dotenv import load_dotenv
 
 def process_env(filepath):

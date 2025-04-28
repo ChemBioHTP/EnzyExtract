@@ -119,7 +119,7 @@ def update_log(
     batch_uuid: str,
     batch_fpath: str,
     corresp_fpath: str,
-    update_if_exists: bool = False,
+    replace_existing_record: bool = False,
 ):
     # try to extract the enzy_prefix
     # enzy_prefix = os.path.commonprefix([
@@ -152,7 +152,7 @@ def update_log(
         'completion_fpath': [None],
     }, schema_overrides=llm_log_schema, strict=False)
     log = read_log(log_location)
-    if update_if_exists:
+    if replace_existing_record:
         log = log.update(df, on=['namespace', 'version', 'shard'])
     else:
         log = pl.concat([log, df], how='diagonal_relaxed')

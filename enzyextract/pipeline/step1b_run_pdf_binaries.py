@@ -18,7 +18,7 @@ from anthropic.types.messages.batch_create_params import Request
 from enzyextract.pipeline.llm_log import read_log, update_log
 from enzyextract.pipeline.step1_run_tableboth import build_manifest
 from enzyextract.submit.anthropic_management import submit_anthropic_batch_file, to_anthropic_batch_request
-from enzyextract.submit.base import SubmitConsent, do_presubmit
+from enzyextract.submit.base import SubmitPreference, do_presubmit
 from enzyextract.utils import prompt_collections
 from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.utils.fresh_version import next_available_version
@@ -177,16 +177,16 @@ def step1b_main(
             submit_suffix="Submit to Anthropic?"
         )
         
-        if inp == SubmitConsent.REMOVE:
+        if inp == SubmitPreference.REMOVE:
             print("Removing.")
             # remove the file
             os.remove(will_write_to)
             continue
-        elif inp == SubmitConsent.UNTRACK:
+        elif inp == SubmitPreference.UNTRACK:
             print("Saved untracked copy at", will_write_to)
             continue
             
-        elif inp == SubmitConsent.YES:
+        elif inp == SubmitPreference.YES:
             try:
                 batchname = submit_anthropic_batch_file(chunk)
                 if i is None:
@@ -202,7 +202,7 @@ def step1b_main(
                 batchname = None
                 corresp_fpath = None
                 status = 'local'
-        elif inp == SubmitConsent.LOCAL:
+        elif inp == SubmitPreference.LOCAL:
             print("Tracked local copy at", will_write_to)
             batchname = None
             corresp_fpath = None
@@ -228,5 +228,5 @@ def step1b_main(
             batch_uuid=batchname,
             batch_fpath=will_write_to,
             corresp_fpath=corresp_fpath,
-            update_if_exists=try_to_overwrite
+            replace_existing_record=try_to_overwrite
         )

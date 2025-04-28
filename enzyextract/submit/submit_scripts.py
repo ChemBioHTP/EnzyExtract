@@ -5,7 +5,7 @@ import random
 from tqdm import tqdm
 
 from enzyextract.pipeline.llm_log import read_log, update_log
-from enzyextract.submit.base import SubmitConsent, do_presubmit
+from enzyextract.submit.base import SubmitPreference, do_presubmit
 from enzyextract.submit.batch_utils import to_openai_batch_request, write_to_jsonl
 from enzyextract.submit.litellm_management import submit_litellm_batch_file
 from enzyextract.submit.openai_management import process_env
@@ -85,14 +85,14 @@ def stream_submit_batch(
             submit_suffix=f"Submit to {llm_provider}?",
         )
         
-        if inp == SubmitConsent.REMOVE:
+        if inp == SubmitPreference.REMOVE:
             print("Removing.")
             os.remove(batch_fpath)
             continue
-        elif inp == SubmitConsent.UNTRACK:
+        elif inp == SubmitPreference.UNTRACK:
             print("Saved untracked copy at", batch_fpath)
             continue
-        elif inp == SubmitConsent.YES:
+        elif inp == SubmitPreference.YES:
             try:
             
                 file_uuid, batchname = asyncio.run(submit_litellm_batch_file(batch_fpath, custom_llm_provider=llm_provider))
@@ -106,7 +106,7 @@ def stream_submit_batch(
                 print("Error submitting batch", batch_fpath)
                 print(e)
                 yield 'local', None, None, batch_fpath
-        elif inp == SubmitConsent.LOCAL:
+        elif inp == SubmitPreference.LOCAL:
             print("Tracked local copy at", batch_fpath)
             yield 'local', None, None, batch_fpath
         else:
@@ -259,7 +259,7 @@ def script_classify_images(
             batch_uuid=batchname,
             batch_fpath=batch_fpath,
             corresp_fpath=corresp_fpath,
-            update_if_exists=update_if_exists
+            replace_existing_record=update_if_exists
         )
 
 

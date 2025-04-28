@@ -7,7 +7,7 @@ from enzyextract.pre.reocr.micro_fix import true_widest_mM_re, ends_with_ascii_c
 from enzyextract.pre.reocr.reocr_schema import reocr_df_schema, reocr_df_schema_overrides
 from gmft_pymupdf import PyMuPDFPage, PyMuPDFDocument
 from gmft.pdf_bindings.common import BasePage
-from gmft.table_function_algorithm import _iob
+from gmft.algorithm.structure import _iob
 
 import pandas as pd
 import polars as pl

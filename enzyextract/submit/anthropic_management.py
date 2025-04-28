@@ -7,7 +7,7 @@ from anthropic.types.message_create_params import MessageCreateParamsNonStreamin
 from anthropic.types.messages.batch_create_params import Request
 
 from enzyextract.submit.batch_utils import image_to_base64
-from enzyextract.submit.base import LLMCommonBatch, SubmitConsent, do_presubmit
+from enzyextract.submit.base import LLMCommonBatch, SubmitPreference, do_presubmit
 
 _client = None
 def get_client():
@@ -93,7 +93,7 @@ def submit_anthropic_batch_file(reqs: list[Request]):
         submit_suffix="Submit to Anthropic?"
     )
     
-    if inp.lower() != SubmitConsent.YES:
+    if inp.lower() != SubmitPreference.YES:
         print("Aborted.")
         return None
 
