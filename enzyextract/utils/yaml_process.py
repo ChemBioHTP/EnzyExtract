@@ -1,6 +1,7 @@
 from typing import Optional
 
 import yaml
+import ryaml
 
 import pandas as pd
 
@@ -295,9 +296,11 @@ def parse_yaml(content: str, debugpmid=None):
         
 
     try:
-        obj = yaml.safe_load(content)
+        # obj = yaml.safe_load(content)
+        # obj = yaml.load(content, Loader=yaml.CSafeLoader)
+        obj = ryaml.loads(content)
         obj = {} if obj is None else obj
-    except yaml.YAMLError as e:
+    except (yaml.YAMLError, ryaml.InvalidYamlError) as e:
         if debugpmid: print(f"[{debugpmid}] WARNING: Invalid YAML", e)
         obj = {}
     return obj

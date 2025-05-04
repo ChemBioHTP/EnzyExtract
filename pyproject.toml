@@ -23,6 +23,7 @@ dependencies = [
   "google-cloud-storage",
   "anthropic",
   "gmft",
+  "ryaml",
 ]
 
 
