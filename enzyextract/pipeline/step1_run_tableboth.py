@@ -421,7 +421,7 @@ def step1_main(
             _wrote_corr |= try_write_corr_df(corr_df, corresp_fpath, reuse_pref, _wrote_corr)
             try:
             
-                # batchname = submit_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
+                # batchname = submit_openai_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
                 file_uuid, batchname = asyncio.run(submit_litellm_batch_file(will_write_to, custom_llm_provider=llm_provider))
                 status = 'submitted'
             except Exception as e:

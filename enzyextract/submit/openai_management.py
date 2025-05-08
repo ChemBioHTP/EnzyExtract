@@ -36,13 +36,20 @@ def get_openai_client():
     return _openai_client
 
 
-def submit_batch_file(filepath, pending_file=None):
+def submit_openai_batch_file(filepath, pending_file=None):
     """OpenAI, as a legacy system, still should have the do_presubmit check here."""
 
-    inp = do_presubmit(
-        filepath=filepath,
-        submit_suffix='Submit to OpenAI?',
-    )
+    # inp = do_presubmit(
+    #     filepath=filepath,
+    #     submit_suffix='Submit to OpenAI?',
+    # )
+
+    # Count the number of lines in the input file
+    with open(filepath, 'r') as f:
+        line_count = sum(1 for _ in f)
+    print(f'Batch of {line_count} items at {filepath} ready for submission. Submit to OpenAI?')
+
+    inp = input("Proceed ([y]es, [n]o): ")
     
     if inp.lower() != 'y':
         print("Aborted.")

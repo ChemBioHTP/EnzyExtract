@@ -6,7 +6,7 @@ import json
 import os
 import pandas as pd
 import polars as pl
-from enzyextract.submit.batch_decode import jsonl_to_decoded_df
+from enzyextract.post.decode import jsonl_to_decoded_df
 from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid
