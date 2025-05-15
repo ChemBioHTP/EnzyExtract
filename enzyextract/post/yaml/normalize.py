@@ -30,7 +30,7 @@ def explode_strings_into_lists(obj: list[dict], schema, explode_unexpected=True)
                     if fixed:
                         row[k] = fixed
 
-def _normalize_data(data: list[dict]) -> tuple[list[dict], bool]:
+def normalize_data(data: list[dict]) -> tuple[list[dict], bool]:
     """
     Fixes the data in-place.
 
@@ -51,13 +51,16 @@ def _normalize_data(data: list[dict]) -> tuple[list[dict], bool]:
     }
 
     ### Fix bad
-    for datum in data:
+    delete_items = []
+    for i, datum in enumerate(data):
         delete_keys = [] # clean up keys that are not 
         if not isinstance(datum, dict):
             errors.append({
                 'msg': f"In data, item should be dict but is {type(datum)}",
-                'stacktrace': str(datum)
+                'stacktrace': str(datum),
+                'status': Severity.SEVERE
             })
+            delete_items.append(i)
             continue
         for k, v in datum.items():
             # if k in ['descriptor', 'kcat', 'Km', 'km', 'kcat/Km', 'substrate']:
@@ -100,6 +103,9 @@ def _normalize_data(data: list[dict]) -> tuple[list[dict], bool]:
         # add fragments
         datum['fragments'] = datum.get('descriptor') or ''
 
+    # remove bad items
+    for i in reversed(delete_items):
+        data.pop(i)
     explode_strings_into_lists(data, {'fragments': pl.List(pl.Utf8)}, explode_unexpected=False)
 
     return errors
@@ -153,12 +159,12 @@ def homogenize_list(
         else:
             # good, we are the right type
             if errors: errors.append({
-                'msg': f"In {self_name}, item should be dict but is {type(substrate)}",
+                'msg': f"In {self_name}, item should be dict but is {type(item)}",
                 'stacktrace': str(item),
                 'status': Severity.SEVERE
             })
 
-def _normalize_context(obj: dict):
+def normalize_context(obj: dict):
     """
     This function does a lot of heavy lifting in turning the context into a single consistent schema.
     """
@@ -166,6 +172,14 @@ def _normalize_context(obj: dict):
     errors = []
 
     remove_keys = []
+
+    if obj is None or obj == '{}' or obj == '':
+        errors.append({
+            'msg': 'Context is empty',
+            'stacktrace': str(obj),
+            'status': Severity.SEVERE
+        })
+        return errors
     
     if not isinstance(obj, dict):
         errors.append({
@@ -188,6 +202,25 @@ def _normalize_context(obj: dict):
         if k in obj:
             obj[to] = obj[k]
             del obj[k]
+    
+    # first, try to move "conditions" into the main object
+    if 'conditions' in obj:
+        conditions = obj['conditions']
+        if isinstance(conditions, dict):
+            for condition_k, condition_v in conditions.items():
+                if condition_k in obj:
+                    # this is a collision
+                    errors.append({
+                        'msg': f"In context, key {condition_k} is already present",
+                        'stacktrace': str(condition_v),
+                        'status': Severity.SEVERE
+                    })
+                    obj['conditions_' + condition_k] = condition_v
+                else:
+                    obj[condition_k] = condition_v
+            del obj['conditions']
+        else: # skip if list or str 
+            pass # skip
 
     dynamic_renames = {}
     for k, v in obj.items():
@@ -216,6 +249,14 @@ def _normalize_context(obj: dict):
                 #             'stacktrace': str(enzyme),
                 #             'status': Severity.SEVERE
                 #         })
+            elif isinstance(v, dict):
+                # convert to list of dicts and hope for the best
+                errors.append({
+                    'msg': f"In enzymes, should be list but got dict",
+                    'stacktrace': str(v),
+                    'status': Severity.MINOR
+                })
+                obj[k] = [v]
             else:
                 errors.append({
                     'msg': f"In enzymes, should be list but is {type(v)}",
@@ -229,6 +270,14 @@ def _normalize_context(obj: dict):
             if isinstance(v, list):
                 # for i, substrate in enumerate(v):
                 homogenize_list(v, errors=errors, self_name='substrates', default_key='fullname')
+            elif isinstance(v, dict):
+                # convert to list of dicts and hope for the best
+                errors.append({
+                    'msg': f"In substrates, should be list but got dict",
+                    'stacktrace': str(v),
+                    'status': Severity.MINOR
+                })
+                obj[k] = [v] # convert to list of dicts
             else:
                 errors.append({
                     'msg': f"In substrates, should be list but is {type(v)}",

@@ -8,7 +8,8 @@ from tqdm import tqdm
 import yaml
 import ryaml
 
-from enzyextract.post.yaml.normalize import Severity, _normalize_context, _normalize_data, explode_strings_into_lists
+from enzyextract.post.yaml.schemas import _data_schema, _enzyme_ctx_schema, _substrate_ctx_schema, _general_ctx_schema, _errors_schema
+from enzyextract.post.yaml.normalize import Severity, normalize_context, normalize_data, explode_strings_into_lists
 from enzyextract.utils.yaml_process import explode_field, extract_yaml_code_blocks, fix_multiple_yamls, force_escape_str
 
 def clean_yaml_str_convert_to_dict(content: str) -> dict:
@@ -28,35 +29,7 @@ def clean_yaml_str_convert_to_dict(content: str) -> dict:
 
     return obj
 
-_data_schema = {
-    'descriptor': pl.Utf8,
-    'substrate': pl.Utf8,
-    'kcat': pl.Utf8,
-    'km': pl.Utf8,
-    'kcat_km': pl.Utf8,
-    'fragments': pl.List(pl.Utf8),
-}
-_enzyme_ctx_schema = {
-    'fullname': pl.Utf8,
-    'synonyms': pl.List(pl.Utf8),
-    'organisms': pl.List(pl.Utf8),
-    'mutants': pl.List(pl.Utf8),
-}
-_substrate_ctx_schema = {
-    'fullname': pl.Utf8,
-    'synonyms': pl.List(pl.Utf8),
-}
-_general_ctx_schema = {
-    'temperatures': pl.List(pl.Utf8),
-    'pHs': pl.List(pl.Utf8),
-    # 'solutions': pl.List(pl.Utf8),
-    'other': pl.List(pl.Utf8),
-}
-_errors_schema = {
-    'pmid': pl.Utf8,
-    'msg': pl.Utf8,
-    'stacktrace': pl.Utf8,
-}
+
 
 def old_yaml_to_pl_dfs():
     return False
@@ -98,7 +71,7 @@ def data_to_df(
     """
     # expect km is str
 
-    errors = _normalize_data(data)
+    errors = normalize_data(data)
 
     is_severe = any([e['status'] >= Severity.SEVERE for e in errors])
     
@@ -119,20 +92,28 @@ def data_to_df(
     return df, errors
 
 
-def generic_construct_ctx(records: list, schema_overrides, errors, name) -> pl.DataFrame:
+def generic_construct_ctx(records: list, schema_overrides, errors, name, strict=True) -> pl.DataFrame:
     empty_df = pl.DataFrame(schema=schema_overrides)
 
     try:
         explode_strings_into_lists(records, schema_overrides)
-        generic_ctx = pl.DataFrame(records, schema_overrides=schema_overrides)
-        generic_ctx = pl.concat([empty_df, generic_ctx], how='diagonal_relaxed')
+
+        if strict:
+            # coerce into schema, drop extra columns
+            generic_ctx = pl.DataFrame(records, schema=schema_overrides, strict=True)
+            # reorder
+            generic_ctx = pl.concat([empty_df, generic_ctx], how='diagonal_relaxed')
+        else:
+            generic_ctx = pl.DataFrame(records, schema_overrides=schema_overrides)
+            generic_ctx = pl.concat([empty_df, generic_ctx], how='diagonal_relaxed')
         return generic_ctx
     except (pl.exceptions.SchemaError, 
             pl.exceptions.SchemaFieldNotFoundError, 
             pl.exceptions.ShapeError) as e:
         errors.append({
-            'msg': f"Unable to create enzymes context dataframe",
-            'stacktrace': str(e)
+            'msg': f"Unable to create {name} context dataframe",
+            'stacktrace': str(e),
+            'status': Severity.FATAL
         })
         return empty_df
 
@@ -141,6 +122,8 @@ def context_to_dfs(
     *, 
     fix=True) -> Tuple[dict[str, pl.DataFrame], dict]:
     """
+    This method does a lot of heavy lifting, since LLM struggles to keep to the context schema.
+
     Expect context:
     - enzymes: list of dicts with keys:
         - fullname: str
@@ -153,7 +136,8 @@ def context_to_dfs(
     """
     # expect km is str
 
-    errors = _normalize_context(context)
+    # Fix the context
+    errors = normalize_context(context)
 
     is_severe = any([e['status'] >= Severity.SEVERE for e in errors])
 
@@ -163,7 +147,6 @@ def context_to_dfs(
             'substrate_ctx': pl.DataFrame(schema=_substrate_ctx_schema),
             'general_ctx': pl.DataFrame(schema=_general_ctx_schema),
         }, errors
-
     
     enzyme_ctx = generic_construct_ctx(context.get('enzymes', []), _enzyme_ctx_schema, errors, 'enzyme')
     substrate_ctx = generic_construct_ctx(context.get('substrates', []), _substrate_ctx_schema, errors, 'substrate')
@@ -214,7 +197,7 @@ def yaml_to_pl_dfs(content: str, pmid) -> dict[str, pl.DataFrame]:
 
             obj = clean_yaml_str_convert_to_dict(content)
         except (yaml.YAMLError, ryaml.InvalidYamlError) as e:
-            errors.append({'pmid': pmid, 'msg': f"Invalid YAML", 'stacktrace': str(e)})
+            errors.append({'pmid': pmid, 'msg': f"Invalid YAML", 'stacktrace': str(e), 'status': Severity.FATAL})
             return {
                 'data': pl.DataFrame(schema=_data_schema),
                 'enzyme_ctx': pl.DataFrame(schema=_enzyme_ctx_schema),
@@ -230,6 +213,8 @@ def yaml_to_pl_dfs(content: str, pmid) -> dict[str, pl.DataFrame]:
     errors.extend(data_errors)
     
     context_list = obj.get('context') or {}
+    if context_list == '{}':
+        context_list = {}
     context_dfs, context_errors = context_to_dfs(
         context_list, 
         fix=True
@@ -271,7 +256,7 @@ def str_completions_to_dfs(
     #     # assume json content
     #     _generator = [(0, equivalent_from_json_schema(content))]
     extraction_per_yaml = []
-    for c, pmid in tqdm(zip(contents, pmids)):
+    for c, pmid in tqdm(zip(contents, pmids), total=len(contents)):
         # pmid = str(pmid_from_usual_cid(custom_id))
         # pmid = custom_id.rsplit('_', 1)[-1]
         
