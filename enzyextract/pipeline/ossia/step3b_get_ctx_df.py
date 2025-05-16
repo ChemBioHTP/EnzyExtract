@@ -14,6 +14,7 @@ from enzyextract.post.yaml.thresh_yaml import threshed_str_completions_to_dfs
 def scan_completions(
     compl_folder: Union[str, list[str]],
     top_n: int = 400,
+    exclude_partial: bool = True,
 ):
 
     if isinstance(compl_folder, (str, os.PathLike)):
@@ -31,6 +32,8 @@ def scan_completions(
     cumul = []
     for fname, fpath in tqdm(_possible_files):
         if fname.endswith('.jsonl'):
+            if exclude_partial and fname.endswith('0.jsonl'):
+                continue
             compl = jsonl_to_decoded_df(fpath, "openai", None)
             cumul.append(compl)
     
@@ -38,6 +41,7 @@ def scan_completions(
 
     fnames = []
     contents = []
+    custom_ids = []
     _selected = df.select('custom_id', 'content')
     if top_n is not None:
         _selected = _selected.head(top_n)
@@ -45,9 +49,10 @@ def scan_completions(
         fname = custom_id.split('_', 2)[2]
         fnames.append(fname)
         contents.append(content)
+        custom_ids.append(custom_id)
     
     # result = str_completions_to_dfs(contents, fnames)
-    result = threshed_str_completions_to_dfs(contents, fnames)
+    result = threshed_str_completions_to_dfs(contents, fnames, custom_ids)
 
     # skip the joining
     return result

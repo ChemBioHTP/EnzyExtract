@@ -50,18 +50,22 @@ def str_completion_to_records(content: str) -> dict[str, pl.DataFrame]:
         raise TypeError(f"Expected str or dict, got {type(content)}")
 
     data_list = obj.get('data') or []
-    # data_df, data_errors = data_to_df(data_list)
-    data_errors = normalize_data(data_list)
+    data_df, data_errors = data_to_df(data_list)
+    # data_errors = normalize_data(data_list)
     errors.extend(data_errors)
     
     context_list = obj.get('context') or {}
     if context_list == '{}':
         context_list = {}
     grain, context_chaff = thresh_context(context_list)
+    if not context_chaff:
+        context_chaff_out = []
+    else:
+        context_chaff_out = [context_chaff]
     result = {
-        'data': data_list,
+        'data': data_df,
         'context_grain': [grain],
-        'context_chaff': [context_chaff],
+        'context_chaff': context_chaff_out,
         'errors': errors
     }
     return result
@@ -86,7 +90,7 @@ def _smart_create_df(
             schema_overrides=schema
         )
     # ], how='diagonal_relaxed')
-    ], how='diagonal')
+    ], how='diagonal_relaxed')
     return df
 
 def str_completion_to_dfs(content: str, pmid: str) -> dict[str, pl.DataFrame]:
@@ -99,7 +103,11 @@ def str_completion_to_dfs(content: str, pmid: str) -> dict[str, pl.DataFrame]:
         records['context_grain'],
         _complete_ctx_schema
     )
-    rulebreakers_df = records_wide_to_long_df(records['context_chaff'], pmid)
+    chaff = records['context_chaff']
+    if chaff:
+        rulebreakers_df = records_wide_to_long_df(records['context_chaff'], pmid)
+    else:
+        rulebreakers_df = None
     errors_df = _smart_create_df(
         records['errors'],
         _errors_schema
@@ -122,6 +130,7 @@ def str_completion_to_dfs(content: str, pmid: str) -> dict[str, pl.DataFrame]:
 def threshed_str_completions_to_dfs(
     contents: Union[str, List[str]], 
     pmids: Union[str, List[str]],
+    custom_ids: Union[str, List[str]],
 ):
     """
     Looks for yaml code blocks in the content and converts them to dataframes.
@@ -139,20 +148,56 @@ def threshed_str_completions_to_dfs(
     #     _generator = [(0, equivalent_from_json_schema(content))]
     extraction_per_yaml = {
         'data': [],
-        'context': [],
+        'context_grain': [],
         'rulebreakers': [],
         'errors': [],
     }
-    for c, pmid in tqdm(zip(contents, pmids), total=len(contents)):
+
+    yaml_idx = 0
+    for c, pmid, custom_id in tqdm(zip(contents, pmids, custom_ids), total=len(contents)):
         # pmid = str(pmid_from_usual_cid(custom_id))
         # pmid = custom_id.rsplit('_', 1)[-1]
         
         c = c.replace('\nextras:\n', '\ndata:\n') # blunder
         _generator = fix_multiple_yamls(yaml_blocks=extract_yaml_code_blocks(c, current_pmid=pmid))
         for _, yaml in _generator: # 
-            new_stuff = str_completion_to_dfs(yaml, pmid)
+            # new_stuff = str_completion_to_dfs(yaml, pmid)
+            # for k, vlist in new_stuff.items():
+            #     extraction_per_yaml[k].append(vlist)
+
+            new_stuff = str_completion_to_records(yaml)
             for k, vlist in new_stuff.items():
-                extraction_per_yaml[k].append(vlist)
+                if isinstance(vlist, list):
+                    # put the 'pmid' column in there
+                    if k == 'context_chaff':
+                        # special case
+                        if not vlist or vlist == [{}]:
+                            pass
+                        else:
+                            extraction_per_yaml['rulebreakers'].append(
+                                records_wide_to_long_df(vlist, custom_id)
+                            )
+                    else:
+                        # in general
+                        for i, v in enumerate(vlist):
+                            if isinstance(v, dict):
+                                vlist[i] = {'pmid': pmid, 'custom_id': custom_id, **v}
+                        extraction_per_yaml[k].extend(vlist)
+                elif isinstance(vlist, pl.DataFrame):
+                    extraction_per_yaml[k].append(
+                        vlist.insert_column(
+                            0,
+                            pl.lit(pmid).alias('pmid')
+                        ).insert_column(
+                            1,
+                            pl.lit(custom_id).alias('custom_id')
+                        )
+                    )
+                elif vlist is None:
+                    pass
+                else:
+                    raise TypeError(f"Expected list, got {type(vlist)}")
+            yaml_idx += 1   
     
     # concat all the dataframes
     # generals = [x['general_ctx'] for x in extraction_per_yaml]
@@ -161,8 +206,43 @@ def threshed_str_completions_to_dfs(
     #     general_agg = pl.concat([general_agg, g], how='diagonal_relaxed')
     #     pass
 
+    data_df = pl.concat(
+        extraction_per_yaml['data'],
+        how='vertical'
+        # schema=_data_schema
+    )
+    del extraction_per_yaml['data']
+    context_df = pl.DataFrame(
+        extraction_per_yaml['context_grain'],
+        schema={
+            'pmid': pl.Utf8,
+            'custom_id': pl.Utf8,
+            **_complete_ctx_schema,
+        }
+    )
+    del extraction_per_yaml['context_grain']
+
+    # for df in extraction_per_yaml['rulebreakers']:
+    #     for col in df.columns:
+    #         if col not in _validate_schema:
+    #             _validate_schema[col] = set()
+    #         dtype = df.schema[col]
+    #         _validate_schema[col].add(dtype)
+    rulebreakers_df = pl.concat(
+        extraction_per_yaml['rulebreakers'],
+        how='vertical'
+    )
+    del extraction_per_yaml['rulebreakers']
+    errors_df = pl.DataFrame(
+        extraction_per_yaml['errors'],
+        schema=_errors_schema
+    )
+    del extraction_per_yaml['errors']
     result = {
-        k: pl.concat(v, how='vertical') for k, v in extraction_per_yaml.items()
+        'data': data_df,
+        'context': context_df,
+        'rulebreakers': rulebreakers_df,
+        'errors': errors_df
     }
     return result
 
