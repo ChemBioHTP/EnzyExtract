@@ -5,6 +5,7 @@ import pandas as pd
 import polars as pl
 
 from enzyextract.fetch_sequences.read_pdfs_for_idents import amino3
+from enzyextract.post.regexes import r_mutant_many_1to4_amino1_legacy, r_pH, r_recombinant, r_temp, r_wildtype, r_wt
 
 _strange_kcat_units = set()
 _strange_km_units = set()
@@ -164,13 +165,13 @@ def widen_df(df: pd.DataFrame, brenda=True) -> pd.DataFrame:
     def extract_pH(comment: str):
         if not pd.isna(comment) and "pH" in comment:
             # pH (\b\d+\.?\d+\b)
-            pH = re.findall(r"pH (\b\d+(?:\.\d+)?\b)", comment)
+            pH = re.findall(r_pH, comment)
             if pH:
                 return pH[0]
         return pd.NA
     def extract_temp(comment: str):
         if not pd.isna(comment) and "°C" in comment:
-            temp = re.findall(r"\b(\d+(?:\.\d+)?) ?°C\b", comment)
+            temp = re.findall(r_temp, comment)
             if temp:
                 return temp[0]
         return pd.NA
@@ -205,19 +206,19 @@ def pl_widen_df(df: pl.DataFrame) -> pl.DataFrame:
     # mutant ([A-Z]\d{1,4}[A-Z](?:\/[A-Z]\d{1,4}[A-Z])*)\b
     # r"\bwild[\- ]?type?\b"
     # r"\bWT\b"
-    r_mutant_1 = r"\b([A-Z]\d{1,4}[A-Z](?:\/[A-Z]\d{1,4}[A-Z])*)\b"
+    # r_mutant_1 = r"\b([A-Z]\d{1,4}[A-Z](?:\/[A-Z]\d{1,4}[A-Z])*)\b"
     # r_mutant_2 = r"mutant ([A-Z]\d{1,4}[A-Z](?:\/[A-Z]\d{1,4}[A-Z])*)\b"
-    r_wildtype = r"(?i)\bwild[\- ]?type?\b"
-    r_wt = r"\bWT\b"
+    # r_wildtype = r"(?i)\bwild[\- ]?type?\b"
+    # r_wt = r"\bWT\b"
 
     df = df.with_columns([
-        pl.col('comments').str.extract(r"pH (\b\d+(?:\.\d+)?\b)", 1).alias('pH'),
-        pl.col('comments').str.extract(r"\b(\d+(?:\.\d+)?) ?°C\b", 1).alias('temperature'),
+        pl.col('comments').str.extract(r_pH, 1).alias('pH'),
+        pl.col('comments').str.extract(r_temp, 1).alias('temperature'),
         pl.coalesce([
             pl.when(
-                pl.col("comments").str.contains("(?i)mutant|recombinant")
+                pl.col("comments").str.contains(r_recombinant)
             ).then(
-                pl.col('comments').str.extract_all(r_mutant_1).list.join('; ').replace('', None)
+                pl.col('comments').str.extract_all(r_mutant_many_1to4_amino1_legacy).list.join('; ').replace('', None)
             ),
             # pl.col('comments').str.extract(r_mutant_2, 1),
             pl.when(pl.col('comments').str.contains(r_wildtype)).then(pl.lit('wild-type')),

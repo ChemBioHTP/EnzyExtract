@@ -4,10 +4,8 @@ import polars as pl
 import polars.selectors as cs
 import re
 
-from enzyextract.hungarian.hungarian_matching import is_wildtype
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
-from enzyextract.hungarian import pl_hungarian_match
-from enzyextract.thesaurus.mutant_patterns import mutant_pattern, mutant_v3_pattern, amino3, amino3to1, standardize_mutants1_re, with_clean_mutants
+from enzyextract.thesaurus.mutant_patterns import with_clean_mutants
 from enzyextract.thesaurus.ascii_patterns import pl_to_ascii
 from enzyextract.thesaurus.organism_patterns import pl_fix_organism
 

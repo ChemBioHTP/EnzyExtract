@@ -17,6 +17,8 @@ standardize_mutants1_re = re.compile(rf"({amino3})-?(\d{{1,4}})(\s*→\s*|\s*to\
 
 mutant_to_wt = re.compile('([A-Z]\d+)[A-Z]')
 
+# RECOMMENDED patterns: standardize_mutants1_re, mutant_pattern, mutant_v3_pattern
+
 import polars as pl
 import polars.selectors as cs
 
