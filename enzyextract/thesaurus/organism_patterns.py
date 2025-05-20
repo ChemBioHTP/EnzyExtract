@@ -2,38 +2,35 @@ import polars as pl
 
 # TODO: https://www.uniprot.org/help/taxonomy
 organism_patterns = {
-    'Human': 'Homo sapiens',
     'human': 'Homo sapiens',
+    'humans': 'Homo sapiens',
     'H. sapiens': 'Homo sapiens',
-    'Mouse': 'Mus musculus',
     'mouse': 'Mus musculus',
-    'Rat': 'Rattus norvegicus',
+    'mice': 'Mus musculus',
     'rat': 'Rattus norvegicus',
+    'rats': 'Rattus norvegicus',
     'E. coli': 'Escherichia coli',
+    'E.coli': 'Escherichia coli',
     'HIV-1': 'Human immunodeficiency virus 1',
 
     # these tend to be the same
     'bovine': 'Bos taurus',
-    'Bovine': 'Bos taurus',
-    'Porcine': 'Sus scrofa',
     'porcine': 'Sus scrofa',
     'pig': 'Sus scrofa',
-    'Pig': 'Sus scrofa',
+    'pigs': 'Sus scrofa',
     'chicken': 'Gallus gallus',
-    'Chicken': 'Gallus gallus',
     'barley': 'Hordeum vulgare',
-    'Barley': 'Hordeum vulgare',
     'soybean': 'Glycine max',
-    'Soybean': "Glycine max",
     'wheat': 'Triticum aestivum',
-    'Wheat': 'Triticum aestivum',
     'maize': 'Zea mays',
-    'Maize': 'Zea mays',
-    'Corn': 'Zea mays',
     'corn': 'Zea mays',
-    'Horse': 'Equus caballus',
     'horse': 'Equus caballus'
 }
+
+# auto-add capitalized variant
+for k, v in list(organism_patterns.items()):
+    if k[0].islower():
+        organism_patterns[k.capitalize()] = v
 
 str_replacements = {
     'SARS-CoV': 'Severe acute respiratory syndrome coronavirus',

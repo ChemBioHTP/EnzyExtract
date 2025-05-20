@@ -24,7 +24,15 @@ def unicode_fix_list(plcol: pl.Expr) -> pl.Expr:
         )
     )
 
-r_unclassified = r"(?i)^purified( enzyme)?|soluble|free( enzyme)?|control|average|In cells|in vitro|in vivo$"
+# 1.57 µmol L^-1 Cu 
+# 0.25 mg/mL QL-67 latex 
+r_concentration = r'([mnµ]?mol L^-1|[mnµ]?g( [mnµ]?L^-1|\/[mnµ]?L)|[mnµ]?M|[kmnµ]g)' # allow pure M
+r_cofactor_single = r'\d+(\.\d+)? {concen} [^,]+'.replace('{concen}', r_concentration)
+r_cofactor_many = r'([ \+\(]|\d+(\.\d+)\-|^)' + rf'{r_cofactor_single}(, {r_cofactor_single})*'
+
+r_unclassified = (
+    r"(?i)^soluble|(enzyme|buffer)|(free|pure|purified)? ?(enzyme|buffer)|control|average|mean|in cells|in vitro|in vivo|female|male|normal|(pre-?|fast |slow )?steady[\- ]state|immobilized|(un)?bound$"
+)
 
 r_recombinant = r"(?i)mutant|recombinant"
 
@@ -41,7 +49,7 @@ r_mutant_single_1to4_amino3plus = enzyextract.thesaurus.mutant_patterns.standard
 def _to_many(r: str):
     """convert a regex to a many regex"""
     r_no_b = r.removeprefix(r'\b').removesuffix(r'\b')
-    return r'\b{r_no_b}((\/| ?[\-\+] ?|[ ]){r_no_b})*\b'.replace(r'{r_no_b}', r_no_b)
+    return r'\b{r_no_b}((\/| ?[,\-\+] ?|[ ]){r_no_b})*\b'.replace(r'{r_no_b}', r_no_b)
 r_mutant_many_2to4_amino1 = _to_many(r_mutant_single_2to4_amino1)
 r_mutant_many_1to4_amino3 = _to_many(r_mutant_single_1to4_amino3)
 r_mutant_many_1to4_amino3plus = _to_many(r_mutant_single_1to4_amino3plus)
@@ -72,17 +80,21 @@ r_pH = r"pH (\b\d+(?:\.\d+)?\b)"
 # a string could be parsed incorrectly. So if you wish to use this regex
 # as a substring-filter-out regex, remove the '\/' character.
 r_pH_range = (
-    r'^(optimal )?pH( ?[=~><] ?| )' # "pH = "
+    r'^(optimal )?pH( ?[=~><≥≤] ?| )' # "pH = "
     r'\d+(\.\d+)?' # "7.5"
     r'(( ?[±\/\-] ?| to )\d+(\.\d+)?)?$' # "± 0.5" (optional range or error)
 )
-
+r_pH_suffixed = (
+    r'^\d+(\.\d+)?'
+    r'(( ?[±\/\-] ?| to )\d+(\.\d+)?)?'
+    r' pH$'
+)
 # r_temp_exact = r'^-?\d+(\.\d+)?°C$'
 r_temp = r"\b(\d+(?:\.\d+)?) ?°C\b"
 
 # NOTE: see note for r_pH_range.
 r_temp_range = (
-    r'^(T ?|(optimal )?temperature )?[=~><]? ?' # "T = " (optional)
+    r'^(T ?|(optimal )?temperature )?[=~><≥≤]? ?' # "T = " (optional)
     r'[+\-]?\d+(\.\d+)?' # "-43.5"
     r'(( ?°C)?( ?[±\/\-] ?| to )-?\d+(\.\d+)?)' # "°C to 100" (optional range or error)
     r'? ?°C$' # "°C"
@@ -90,11 +102,40 @@ r_temp_range = (
 r_temp_kelvin = r_temp_range.replace('°C', 'K')
 
 # r'(-?\d+(\.\d+)?°C)'
-r_temp_range_lite = r'\b' + r_temp_range[1:-1] + r'\b'
+
+def r_lite(regex: str) -> str:
+    """convert a regex to a "lite" regex"""
+    regex = regex.removeprefix('^').removesuffix('$')
+    regex = regex.removeprefix(r'\b').removesuffix(r'\b')
+    return r'\b' + regex + r'\b'
 
 # https://www.leonschools.net/cms/lib/FL01903265/Centricity/Domain/4929/polyatomic%20ion%20ref%20sheet.pdf
-r_ions= r'\b((Li|Na|K|Rb|Cs|Ag|Cu)[+⁺]|(Mg|Ca|Sr|Ba|Zn|Cd|Cr|Mn|Fe|Co|Sn|Pb|Hg)(2+|²⁺)|Mn(2+|⁴+)|Cr(2+|³+)|Pb(2+|⁴+))|((F|Cl|Br|I)[-]|(NO3|SO4)(2-|²-)|PO4(3-|³-))\b'
+# r_ions= r'\b((Li|Na|K|Rb|Cs|Ag|Cu)[+⁺]|(Mg|Ca|Sr|Ba|Zn|Cd|Cr|Mn|Fe|Co|Sn|Pb|Hg)(2+|²⁺)|Mn(2+|⁴+)|Cr(2+|³+)|Pb(2+|⁴+))|((F|Cl|Br|I)[-]|(NO3|SO4)(2-|²-)|PO4(3-|³-))\b'
+r_ions = (
+    # r'(?: |\+|^)'
+    r'\b'
+    r'([A-Z][a-z][²³⁴][⁺⁻]|'
+        # 1+ cations
+        r'(Li|Na|K|Rb|Cs|Ag)[+]|'
+        # 2+ cations
+        r'(Mg|Ca|Sr|Ba|Zn|Cd|Fe|Ni|Co|Pb|Hg|Cu|Sn|Mn|Cr)(2[+])|'
+        # 3+ cations
+        r'(Al|Bi|Fe|Co|Cr|Mn|La|Eu|Lb)(3[+])|' # TODO: rare earths aren't completely enumerated
+        # 4+ cations
+        r'(Pb|Sn|Mn)(4[+])|'
+        # 1- anions
+        r'^(F|Cl|Br|I)[-]$'
+        # 2- anions
+        # + r'(O|S)(2[-])|'
+        # 3- anions
+        # r'(N|P)(3[-])|' +
+        # 4- anions
+        # r'C(4[-])' +
+        # + r'[NF]AD(P|H|H2|PH)\+?'
+    r')(?:[, \-\+\/\(\)]|$)'
+)
 
+r_organisms_sg = r'^([A-Z]\. [a-z][a-z][a-z]+)$'
 
 __all__ = [
     "r_hyphens",
@@ -121,7 +162,6 @@ __all__ = [
     "r_pH_range",
     "r_temp",
     "r_temp_range",
-    "r_temp_range_lite",
     "r_temp_kelvin",
     "r_ions",
 ]
