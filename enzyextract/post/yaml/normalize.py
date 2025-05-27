@@ -98,7 +98,7 @@ def normalize_data(data: list[dict]) -> tuple[list[dict], bool]:
         # rename (ie. Km --> km)
         for k in rename_keys:
             if k in datum:
-                datum[rename_keys[k]] = v
+                datum[rename_keys[k]] = datum[k]
                 del datum[k]
         # add fragments
         datum['fragments'] = datum.get('descriptor') or ''

@@ -67,3 +67,18 @@ def scan_completions(
     #     'enzyme_ctx': enz_pkey,
     #     'general_ctx': result['general_ctx'],
     # }
+
+if __name__ == '__main__':
+    raise RuntimeError("This script is not meant to be run directly.")
+    compl_folders = [
+    ]
+
+    result = scan_completions(
+        compl_folder=compl_folders,
+        top_n=None
+        # top_n=100
+    )
+
+    result['data'].write_parquet('data/recontext/1_fromyaml/data.parquet')
+    result['context'].write_parquet('data/recontext/1_fromyaml/context.parquet')
+    result['rulebreakers'].write_parquet('data/recontext/1_fromyaml/rulebreakers.parquet')
