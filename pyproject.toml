@@ -24,6 +24,7 @@ dependencies = [
   "anthropic",
   "gmft",
   "ryaml",
+  "tenacity",
 ]
 
 

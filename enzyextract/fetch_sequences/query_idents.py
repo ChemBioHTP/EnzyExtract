@@ -291,8 +291,8 @@ if __name__ == "__main__":
     # uniprot_ids = ['P12345', 'Q8N158', 'P67890']
     # df = fetch_uniprots(uniprot_ids)
     # print(df)
-    
-    Entrez.email = "galen.wei@vanderbilt.com"
+    raise ValueError("Provide an Entrez email first.")
+    # Entrez.email = Your Email Here
     
     identifiers = ['P12345', 'Q67890', 'A11111', 'B22222', 'C33333']
     fasta_sequences, errors = fetch_fasta_by_ids(identifiers)

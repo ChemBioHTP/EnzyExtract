@@ -1,6 +1,8 @@
 import requests
 import json
 
+from enzyextract.fetch_sequences.accession_schemas import uniprot_df_schema
+
     # entryType
     # primaryAccession
     # uniProtkbId
@@ -17,6 +19,8 @@ import json
     #   submissionNames
     #     fullName?
     #       value?
+
+
 
 
 def _fetch_uniprot_info_expanded(uniprot_ids):
@@ -257,21 +261,7 @@ def fetch_uniprots_individually(uniprot_ids: list) -> pl.DataFrame:
         time.sleep(0.5)
     
     
-    df = pl.DataFrame(results, schema_overrides={
-        'query_uniprot': pl.Utf8,
-        'uniprot': pl.Utf8,
-        'uniprot_aliases': pl.List(pl.Utf8),
-        'enzyme_name': pl.Utf8,
-        'organism': pl.Utf8,
-        'organism_common': pl.Utf8,
-        'sequence': pl.Utf8,
-        'ec_numbers': pl.List(pl.Utf8),
-        'dois': pl.List(pl.Utf8),
-        'pmids': pl.List(pl.Utf8),
-        'uniparc': pl.Utf8,
-        'why_deleted': pl.Utf8,
-        'full_response': pl.Utf8,
-    })
+    df = pl.DataFrame(results, schema_overrides=uniprot_df_schema)
     return df
 
 import re
@@ -352,21 +342,7 @@ def fetch_uniprots_latest(uniprot_ids: list) -> pl.DataFrame:
     for entry in uniprot_info['results']:
         extract_uniprotkb_fields(entry, results)
         
-    df = pl.DataFrame(results, schema_overrides={
-        'query_uniprot': pl.Utf8,
-        'uniprot': pl.Utf8,
-        'uniprot_aliases': pl.List(pl.Utf8),
-        'enzyme_name': pl.Utf8,
-        'organism': pl.Utf8,
-        'organism_common': pl.Utf8,
-        'sequence': pl.Utf8,
-        'ec_numbers': pl.List(pl.Utf8),
-        'dois': pl.List(pl.Utf8),
-        'pmids': pl.List(pl.Utf8),
-        'uniparc': pl.Utf8,
-        'why_deleted': pl.Utf8,
-        'full_response': pl.Utf8,
-    })
+    df = pl.DataFrame(results, schema_overrides=uniprot_df_schema)
     return df
 
 
@@ -417,20 +393,6 @@ def fetch_uniprots_from_pmids(pmids: list) -> pl.DataFrame:
     for entry in uniprot_info['results']:
         extract_uniprotkb_fields(entry, results)
         
-    df = pl.DataFrame(results, schema_overrides={
-        'query_uniprot': pl.Utf8,
-        'uniprot': pl.Utf8,
-        'uniprot_aliases': pl.List(pl.Utf8),
-        'enzyme_name': pl.Utf8,
-        'organism': pl.Utf8,
-        'organism_common': pl.Utf8,
-        'sequence': pl.Utf8,
-        'ec_numbers': pl.List(pl.Utf8),
-        'dois': pl.List(pl.Utf8),
-        'pmids': pl.List(pl.Utf8),
-        'uniparc': pl.Utf8,
-        'why_deleted': pl.Utf8,
-        'full_response': pl.Utf8,
-    })
+    df = pl.DataFrame(results, schema_overrides=uniprot_df_schema)
     return df
 

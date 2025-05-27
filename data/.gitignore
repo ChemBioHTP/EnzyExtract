@@ -11,3 +11,7 @@ brenda/brenda_kcat_v3.parquet
 brenda/brenda_kcat_cleanest.parquet
 brenda/brenda_inchi_all.parquet
 brenda/brenda_enzyme_synonyms.parquet
+
+scans
+recontext
+enzymes

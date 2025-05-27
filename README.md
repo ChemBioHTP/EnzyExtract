@@ -48,3 +48,16 @@ Steps:
     - Evaluate and benchmark LLM data against a trusted dataset.
 8. step6_plot_dfs.py
     - Plot the data from `step5`.
+
+## Enzyme Accessions
+
+Enzyme accession pipeline is a WIP. Please refer to the following files:
+
+1. `enzyextract.pre.scans.scan_to_parquet` 
+    - Scans PDFs, conveniently storing them in text form.
+2. `enzyextract.pre.scans.scan_accessions`
+    - Scans those text files for enzyme accessions.
+3. `enzyextract.thesaurus.enzyme.step1_regroup_accessions`
+    - Determines which accessions have yet to be processed.
+4. `enzyextract.thesaurus.enzyme.step2_run_accessions`
+    - Queries UniProt/PDB/NCBI databases for enzyme accessions.

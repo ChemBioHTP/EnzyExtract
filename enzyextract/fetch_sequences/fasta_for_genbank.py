@@ -95,7 +95,8 @@ def main_script_for_pdb():
     
 if __name__ == "__main__":
     # Set your email address (required by NCBI)
-    Entrez.email = "galen.wei@vanderbilt.com"
+    raise ValueError("Provide an Entrez email first.")
+    # Entrez.email = Your Email Here
 
     # accession_numbers = ["AAH44107"] # AF_125042"]
     
