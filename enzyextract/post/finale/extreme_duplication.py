@@ -1,5 +1,7 @@
 import polars as pl
 
+from enzyextract.dependency.injection import REQUIRE, resolve
+from enzyextract.dependency.prereqs import export
 from enzyextract.post.finale.deduplication import count_kcat_conventionally, deduplicate
 
 
@@ -36,9 +38,14 @@ def highly_duplicated(df: pl.DataFrame) -> pl.DataFrame:
 
     return kcat_stats, km_stats
 
-
-if __name__ == "__main__":
-    df = pl.read_parquet('data/export/TheData_kcat.parquet')
+@resolve
+@export("data/export/2_dedup/TheData_dup_stats.parquet")
+@export("data/export/2_dedup/TheData_kcat_dedup.parquet")
+@export("data/export/2_dedup/TheData_kcat_duplicated.parquet")
+def script_detect_extreme_duplication(
+    df = REQUIRE('data/export/TheData_kcat.parquet')
+):
+    # df = pl.read_parquet('data/export/TheData_kcat.parquet')
     df = deduplicate(df)
     kcat_stats, km_stats = highly_duplicated(df)
 
@@ -53,7 +60,7 @@ if __name__ == "__main__":
     # filter out those with high duplication
     suspicious = pl.concat([
         stats.filter(
-            pl.col('unique_percent') < 1/7
+            pl.col('unique_percent').is_not_null() # < 1/7
         ).select('pmid'),
     ]).unique()
     suspicious_df = df.join(
@@ -67,8 +74,8 @@ if __name__ == "__main__":
         how='anti'
     )
     stats.write_parquet('data/export/2_dedup/TheData_dup_stats.parquet')
-    dedup_df.write_parquet('data/export/2_dedup/TheData_kcat_dedup.parquet')
-    suspicious_df.write_parquet('data/export/2_dedup/TheData_kcat_xduplicated.parquet')
+    # dedup_df.write_parquet('data/export/2_dedup/TheData_kcat_dedup.parquet')
+    # suspicious_df.write_parquet('data/export/2_dedup/TheData_kcat_duplicated.parquet')
 
     conventional_kcat_df = count_kcat_conventionally(dedup_df)
     print(conventional_kcat_df.height)
@@ -76,4 +83,7 @@ if __name__ == "__main__":
     # Here are the changes after deduplication:
     # 1. Documents processed twice are removed
     # 2. PMIDs where <1/7 of either kcat or km values are unique are removed
+
+if __name__ == "__main__":
+    script_detect_extreme_duplication()
 

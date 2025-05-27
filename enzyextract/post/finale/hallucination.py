@@ -2,6 +2,8 @@ import typing
 from typing import Callable, List, Tuple, Union
 import polars as pl
 
+from enzyextract.dependency.injection import REQUIRE, resolve
+from enzyextract.dependency.prereqs import export
 from enzyextract.post.finale.deduplication import deduplicate
 from enzyextract.post.pl_validation import expect_columns
 
@@ -233,11 +235,15 @@ def detect_hallucinations(pdfdata: pl.DataFrame, scan_df: pl.DataFrame, *, theda
     return pdfdata_sus
 
 
-
-if __name__ == "__main__":
+@resolve
+@export("data/export/2_dedup/TheData_kcat_hallucinations.parquet")
+def script_detect_hallucinations(
+    thedata_df: pl.DataFrame = REQUIRE('data/export/TheData_kcat.parquet'),
+    custom_ids: pl.DataFrame = REQUIRE('data/recontext/1_fromyaml/data.parquet')
+):
     # Example usage
-    thedata_df = pl.read_parquet('data/export/TheData_kcat.parquet')
-    custom_ids = pl.read_parquet('data/recontext/1_fromyaml/data.parquet')
+    # thedata_df = pl.read_parquet('data/export/TheData_kcat.parquet')
+    # custom_ids = pl.read_parquet('data/recontext/1_fromyaml/data.parquet')
     
     thedata_df = deduplicate(thedata_df)
     # move pmid to the front
@@ -346,4 +352,5 @@ if __name__ == "__main__":
 
 
 
-
+if __name__ == "__main__":
+    script_detect_hallucinations()

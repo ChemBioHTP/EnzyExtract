@@ -7,6 +7,8 @@ from tqdm import tqdm
 import pymupdf
 import polars as pl
 
+from enzyextract.dependency.prereqs import export
+
 def scan_papers(pdfs_folder, recursive=False):
     # round up all the PDFs
     pdfs = []
@@ -44,3 +46,13 @@ def scan_papers(pdfs_folder, recursive=False):
         'text': pl.Utf8
     })
     return df
+
+
+@export("data/scans/{alias}.parquet")
+def script_scan_papers(pdf_folder, alias, *, recursive=True):
+    df = scan_papers(pdf_folder, recursive=recursive)
+    os.makedirs('data/scans', exist_ok=True)
+    df.write_parquet(f'data/scans/{alias}.parquet')
+
+if __name__ == "__main__":
+    script_scan_papers("D:/papers/brenda/wiley", "brenda_wiley")
