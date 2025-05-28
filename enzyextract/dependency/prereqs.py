@@ -66,3 +66,12 @@ if __name__ == "__main__":
         print(hello)
     
     my_func("Hello, World!") # input_df is injected
+
+
+    # example where cannot be found
+    @require("data/non_existent.parquet", to="input_df")
+    def my_func(hello, input_df=None):
+        print(input_df)
+        print(hello)
+
+    my_func("Hello, World!") # input_df is injected

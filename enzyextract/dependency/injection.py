@@ -3,7 +3,7 @@ from typing import Literal, overload
 import polars as pl
 import inspect
 
-from enzyextract.dependency.base import _load_asset
+from enzyextract.dependency.base import DependencyNotFoundError, _load_asset
 
 class InjectedData:
     def __init__(self, path: str, eager=True):
@@ -60,12 +60,22 @@ def resolve(func):
         if isinstance(v.default, InjectedData)
     }
 
+    not_found = []
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         bound = sig.bind_partial(*args, **kwargs)
         for name, dep in defaults.items():
             if name not in bound.arguments:
-                kwargs[name] = dep.load()
+                try:
+                    kwargs[name] = dep.load()
+                except DependencyNotFoundError as e:
+                    not_found.append(dep.path)
+        if not_found:
+            raise DependencyNotFoundError(
+                f"EnzyExtract cannot find the specified dependencies: {{{', '.join(not_found)}}}. "
+                "Please locate the script(s) that produces them. "
+                "(Hint: Ctrl+Shift+F @export. Future versions will offer automatic dependency resolution.)"
+            )
         return func(*args, **kwargs)
     
     # Attach introspection metadata
@@ -98,3 +108,14 @@ if __name__ == "__main__":
     my_func("Hello, World!") # input_df is injected
 
     print(introspect_dependencies(my_func)) # {'input_df': 'data/brenda/brenda_to_ec.parquet'}
+
+
+    @resolve
+    def another_func(
+        hello, 
+        input_df=REQUIRE("data/non_existent.parquet"),
+        another_df=REQUIRE("data/another_non_existent.parquet", eager=False)
+    ):
+        pass
+
+    another_func("Hello, World!")  # This will raise DependencyNotFoundError for both dependencies

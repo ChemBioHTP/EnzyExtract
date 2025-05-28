@@ -61,3 +61,7 @@ Enzyme accession pipeline is a WIP. Please refer to the following files:
     - Determines which accessions have yet to be processed.
 4. `enzyextract.thesaurus.enzyme.step2_run_accessions`
     - Queries UniProt/PDB/NCBI databases for enzyme accessions.
+5. `enzyextract.thesaurus.enzyme.step3_run_uniprot_from_pmid`
+    - **Optional**: Queries UniProt database for enzyme accessions, querying based on PMID.
+5. `enzyextract.thesaurus.enzyme.step4_run_uniprot_searched`
+    - **Optional**: Queries UniProt database for enzyme accessions, querying based on enzyme and organism names.

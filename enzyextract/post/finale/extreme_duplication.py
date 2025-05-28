@@ -1,3 +1,4 @@
+from typing import Tuple
 import polars as pl
 
 from enzyextract.dependency.injection import REQUIRE, resolve
@@ -5,7 +6,7 @@ from enzyextract.dependency.prereqs import export
 from enzyextract.post.finale.deduplication import count_kcat_conventionally, deduplicate
 
 
-def highly_duplicated(df: pl.DataFrame) -> pl.DataFrame:
+def highly_duplicated_separately(df: pl.DataFrame) -> Tuple[pl.DataFrame, pl.DataFrame]:
     """
     Find highly duplicated rows in the dataframe.
 
@@ -38,6 +39,22 @@ def highly_duplicated(df: pl.DataFrame) -> pl.DataFrame:
 
     return kcat_stats, km_stats
 
+def highly_duplicated(df: pl.DataFrame) -> pl.DataFrame:
+    """
+    Find highly duplicated rows in the dataframe.
+
+    Deduplicate on basis of the tuple (kcat, km).
+    """
+
+    stats = df.group_by(['pmid']).agg(
+        pl.struct('kcat', 'km').count().alias('count'),
+        pl.struct('kcat', 'km').n_unique().alias('unique_count')
+    ).with_columns(
+        (pl.col('unique_count') / pl.col('count')).alias('unique_percent')
+    ).sort('unique_percent')
+
+    return stats
+
 @resolve
 @export("data/export/2_dedup/TheData_dup_stats.parquet")
 @export("data/export/2_dedup/TheData_kcat_dedup.parquet")
@@ -47,37 +64,60 @@ def script_detect_extreme_duplication(
 ):
     # df = pl.read_parquet('data/export/TheData_kcat.parquet')
     df = deduplicate(df)
-    kcat_stats, km_stats = highly_duplicated(df)
+    # kcat_stats, km_stats = highly_duplicated(df)
 
-    stats = pl.concat([
-        kcat_stats.with_columns(
-            pl.lit('kcat').alias('type')
-        ),
-        km_stats.with_columns(
-            pl.lit('km').alias('type')
-        )
-    ]).sort('unique_percent')
+    # stats = pl.concat([
+    #     kcat_stats.with_columns(
+    #         pl.lit('kcat').alias('type')
+    #     ),
+    #     km_stats.with_columns(
+    #         pl.lit('km').alias('type')
+    #     )
+    # ]).sort('unique_percent')
+    stats = highly_duplicated(df)
     # filter out those with high duplication
     suspicious = pl.concat([
         stats.filter(
-            pl.col('unique_percent').is_not_null() # < 1/7
-        ).select('pmid'),
+            pl.col('unique_percent') < 1/7
+        ).select('pmid', 'unique_percent'),
     ]).unique()
-    suspicious_df = df.join(
-        suspicious,
-        on='pmid',
-        how='semi'
-    )
-    dedup_df = df.join(
+
+    deduplicated_df = df.join(
         suspicious,
         on='pmid',
         how='anti'
     )
-    stats.write_parquet('data/export/2_dedup/TheData_dup_stats.parquet')
-    # dedup_df.write_parquet('data/export/2_dedup/TheData_kcat_dedup.parquet')
-    # suspicious_df.write_parquet('data/export/2_dedup/TheData_kcat_duplicated.parquet')
 
-    conventional_kcat_df = count_kcat_conventionally(dedup_df)
+    duplication_df = df.join(
+        stats,
+        on='pmid',
+        how='left'
+        # how='semi'
+    ).select(
+        'pmid',
+        pl.selectors.exclude(
+            'pmid',
+            'cid', 
+            'brenda_id', 
+            'smiles', 
+            'cid_full', 
+            'brenda_id_full', 
+            'enzyme_ecs', 
+            'sequence', 
+            'sequence_source', 
+            'uniprot', 
+            'ncbi', 
+            'pdb', 
+            'max_enzyme_similarity', 
+            'max_organism_similarity', 
+            'total_similarity'
+        )
+    )
+    stats.write_parquet('data/export/2_dedup/TheData_dup_stats.parquet')
+    deduplicated_df.write_parquet('data/export/2_dedup/TheData_kcat_dedup.parquet')
+    duplication_df.write_parquet('data/export/2_dedup/TheData_kcat_duplicated.parquet')
+
+    conventional_kcat_df = count_kcat_conventionally(deduplicated_df)
     print(conventional_kcat_df.height)
 
     # Here are the changes after deduplication:

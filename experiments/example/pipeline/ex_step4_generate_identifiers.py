@@ -1,6 +1,12 @@
 import polars as pl
+from enzyextract.dependency.base import DependencyNotFoundError
+from enzyextract.dependency.prereqs import export
 from enzyextract.pipeline.step4_generate_identifiers import step4_main
-if __name__ == "__main__":
+
+@export("data/export/TheData_bare.parquet")
+@export("data/export/TheData.parquet")
+@export("data/export/TheData_kcat.parquet")
+def main():
     # raise NotImplementedError("This script is only an example.")
     # gpt_df = pl.read_parquet('data/gpt/apogee_gpt.parquet')
     # gpt_df = pl.read_parquet('data/valid/_valid_apogee-rebuilt.parquet')
@@ -14,18 +20,36 @@ if __name__ == "__main__":
 
     subs_df = pl.read_parquet('data/thesaurus/substrate/latest_substrate_thesaurus.parquet')
 
-    df = step4_main(
+    df_bare = step4_main(
         gpt_df=gpt_df,
         subs_df=subs_df,
-        include_enzyme_sequences=True,
-    )
-    df.write_parquet('data/export/TheData.parquet')
-
-    df = df.filter(
+        include_enzyme_sequences=False,
+    ).filter(
         pl.col('kcat').is_not_null()
     )
-    # 242115
-    print("generating data/export/TheData_kcat.parquet")
-    df.write_parquet('data/export/TheData_kcat.parquet')
+    df_bare.write_parquet('data/export/TheData_bare.parquet')
+
+    # At this point, you will need to run the enzyme accession steps first
+    # before attaching enzyme sequences to the data.
+    try:
+        df = step4_main(
+            gpt_df=gpt_df,
+            subs_df=subs_df,
+            include_enzyme_sequences=True,
+        )
+        df.write_parquet('data/export/TheData.parquet')
+
+        df_kcat = df.filter(
+            pl.col('kcat').is_not_null()
+        )
+        print("generating data/export/TheData_kcat.parquet")
+        df_kcat.write_parquet('data/export/TheData_kcat.parquet')
+    except DependencyNotFoundError as e:
+        raise RuntimeError(
+            "You need to run the enzyme accession steps before being able to generate TheData.parquet."
+        ) from e
+
+if __name__ == "__main__":
+    main()
 
     

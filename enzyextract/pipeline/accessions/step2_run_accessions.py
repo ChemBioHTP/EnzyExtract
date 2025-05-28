@@ -14,30 +14,7 @@ from enzyextract.dependency.injection import REQUIRE, resolve
 
 from enzyextract.fetch_sequences.query_idents import fetch_pdbs, fetch_uniprots, fetch_ncbis
 from enzyextract.fetch_sequences.query_uniprot import fetch_uniprots_expanded, fetch_uniparc, fetch_uniprots_individually, fetch_uniprots_latest
-
-def read_all_dfs(folderpath, blacklist: Callable[[str], bool] = None, so=None, allow_empty=True) -> pl.DataFrame:
-    """
-    Read all dataframes in a folder and concatenate them.
-    """
-    dfs = []
-    if not os.path.exists(folderpath):
-        if allow_empty:
-            return pl.DataFrame()
-    for filename in os.listdir(folderpath):
-        if blacklist is not None and blacklist(filename):
-            continue
-        if filename.endswith('.tsv'):
-            df = pl.read_csv(f'{folderpath}/{filename}', separator='\t', schema_overrides=so)
-            dfs.append(df)
-        elif filename.endswith('.csv'):
-            df = pl.read_csv(f'{folderpath}/{filename}', schema_overrides=so)
-            dfs.append(df)
-        elif filename.endswith('.parquet'):
-            df = pl.read_parquet(f'{folderpath}/{filename}')
-            dfs.append(df)
-    if allow_empty and len(dfs) == 0:
-        return pl.DataFrame()
-    return pl.concat(dfs, how='diagonal')
+from enzyextract.thesaurus.enzyme_io import read_all_dfs
 
 
 def submit_script_pdb(df: pl.DataFrame, write_to):

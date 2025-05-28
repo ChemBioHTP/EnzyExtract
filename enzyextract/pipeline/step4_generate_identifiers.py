@@ -4,6 +4,7 @@ import polars as pl
 import polars.selectors as cs
 import re
 
+from enzyextract.dependency.injection import REQUIRE, resolve
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
 from enzyextract.thesaurus.mutant_patterns import with_clean_mutants
 from enzyextract.thesaurus.ascii_patterns import pl_to_ascii
@@ -228,7 +229,23 @@ def add_identifiers(gpt_df, subs_df):
     )
     return gpt_df
 
-def add_enzyme_sequences(gpt_df):
+
+@resolve
+def add_enzyme_sequences(
+    gpt_df,
+    *,
+    uniprot_conf = REQUIRE('data/thesaurus/confident/uniprot.parquet'),
+    pdb_conf = REQUIRE('data/thesaurus/confident/pdb.parquet'),
+    ncbi_conf = REQUIRE('data/thesaurus/confident/ncbi.parquet'),
+    uniprot2seq = REQUIRE('data/enzymes/accessions/final/uniprot.parquet'),
+    uniprot_picked = REQUIRE('data/thesaurus/enzymes/uniprot_picked.parquet'),
+    uniprot_cited = REQUIRE('data/thesaurus/enzymes/uniprot_cited.parquet'),
+    pdb_picked = REQUIRE('data/thesaurus/enzymes/pdb_picked.parquet'),
+    pdb2seq = REQUIRE('data/enzymes/accessions/final/pdb.parquet'),
+    ncbi2seq = REQUIRE('data/enzymes/accessions/final/ncbi.parquet'),
+    ncbi_picked = REQUIRE('data/thesaurus/enzymes/ncbi_picked.parquet'),
+    uniprot_searched = REQUIRE('data/thesaurus/enzymes/uniprots_searched.parquet')
+):
     ##### Add enzyme sequences
 
     gpt_df = gpt_df.with_columns([
@@ -243,7 +260,7 @@ def add_enzyme_sequences(gpt_df):
     ])
 
     uniprot_conf = (
-        pl.read_parquet('data/thesaurus/confident/uniprot.parquet')
+        uniprot_conf # pl.read_parquet
         .with_columns(
             # multiplication of percentages
             # no organism present: confidence is 50%
@@ -251,7 +268,7 @@ def add_enzyme_sequences(gpt_df):
         )
     )
     pdb_conf = (
-        pl.read_parquet('data/thesaurus/confident/pdb.parquet')
+        pdb_conf # pl.read_parquet
         .with_columns(
             # multiplication of percentages
             # no organism present: confidence is 50%
@@ -259,7 +276,7 @@ def add_enzyme_sequences(gpt_df):
         )
     )
     ncbi_conf = (
-        pl.read_parquet('data/thesaurus/confident/ncbi.parquet')
+        ncbi_conf # pl.read_parquet
         .with_columns(
             # multiplication of percentages
             # no organism present: confidence is 50%
@@ -268,7 +285,7 @@ def add_enzyme_sequences(gpt_df):
     )
     ##### UNIPROT
     uniprot2seq = (
-        pl.read_parquet('data/enzymes/accessions/final/uniprot.parquet')
+        uniprot2seq # pl.read_parquet
         .select(['uniprot', 'sequence']).filter(
             pl.col('sequence').is_not_null()
         ).unique('uniprot')
@@ -276,7 +293,7 @@ def add_enzyme_sequences(gpt_df):
 
     ### add uniprot (picked, pick-uniprot-prod2)
     uniprot_picked = (
-        pl.read_parquet('data/thesaurus/enzymes/uniprot_picked.parquet')
+        uniprot_picked # pl.read_parquet
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot'])
         .filter(pl.col('uniprot').is_not_null()) 
         .join(uniprot2seq, on='uniprot', how='left', validate='m:1') # adds sequence
@@ -301,7 +318,7 @@ def add_enzyme_sequences(gpt_df):
 
     ### add uniprot (old cited, pick-uniprot-prod1)
     uniprot_cited = (
-        pl.read_parquet('data/thesaurus/enzymes/uniprots_cited.parquet')
+        uniprot_cited # pl.read_parquet
         .filter(pl.col('uniprot').is_not_null() & pl.col('sequence').is_not_null())
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot', 'sequence'])
         .rename({
@@ -383,14 +400,15 @@ def add_enzyme_sequences(gpt_df):
     ##### PDB
     ### add pdb
     p_coalescables = ['pdb', *coalescables]
-    pdb_picked = pl.read_parquet('data/thesaurus/enzymes/pdb_picked.parquet').filter(
-        pl.col('pdb').is_not_null()
+    pdb_picked = (
+        pdb_picked # pl.read_parquet
+        .filter(pl.col('pdb').is_not_null())
     )
     # pdb_similar = pl.read_parquet('data/thesaurus/enzymes/pdb_similar.parquet')
     # pdb_similar_no_organism = pl.read_parquet('data/thesaurus/enzymes/pdb_similar_no_organism.parquet')
 
     pdb2seq = (
-        pl.read_parquet('data/enzymes/accessions/final/pdb.parquet')
+        pdb2seq # pl.read_parquet
         .select(['pdb', 'seq_can'])
         .filter(pl.col('seq_can').is_not_null())
         .unique('pdb')
@@ -451,13 +469,13 @@ def add_enzyme_sequences(gpt_df):
 
     ##### NCBI
     ncbi2seq = (
-        pl.read_parquet('data/enzymes/accessions/final/ncbi.parquet')
+        ncbi2seq # pl.read_parquet
         .select(['ncbi', 'sequence'])
         .filter(pl.col('sequence').is_not_null())
         .unique('ncbi')
     ) # columns: ncbi, sequence
     ncbi_picked = (
-        pl.read_parquet('data/thesaurus/enzymes/ncbi_picked.parquet')
+        ncbi_picked # pl.read_parquet
         .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'ncbi'])
         .unique(['pmid', 'enzyme', 'enzyme_full', 'organism'], keep='first')
         .filter(pl.col('ncbi').is_not_null())
@@ -509,8 +527,7 @@ def add_enzyme_sequences(gpt_df):
 
     n_coalescables = ['ncbi', *coalescables]
     ncbi_similar = (
-        ncbi_conf
-        # pl.read_parquet('data/thesaurus/confident/ncbi.parquet')
+        ncbi_conf # pl.read_parquet
         .filter(
             (pl.col('max_enzyme_similarity') >= 90) 
             & ((pl.col('max_organism_similarity') >= 90)
@@ -538,7 +555,7 @@ def add_enzyme_sequences(gpt_df):
     ### add uniprot, searched
     s_coalescables = ['uniprot', 'sequence', 'sequence_source', 'max_enzyme_similarity', 'max_organism_similarity'] # , 'total_similarity']
     uniprot_searched = (
-        pl.read_parquet('data/thesaurus/enzymes/uniprots_searched.parquet')
+        uniprot_searched # pl.read_parquet
         .select(['query_enzyme', 'query_organism', 'uniprot', 'sequence', 'max_enzyme_similarity', 'max_organism_similarity']) # , 'enzyme_source'])
         .filter(pl.col('sequence').is_not_null())
         .with_columns([

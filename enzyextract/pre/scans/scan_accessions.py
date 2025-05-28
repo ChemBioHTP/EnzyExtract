@@ -138,6 +138,10 @@ def script_look_for_protein_identifiers_xml_abstract(
     
     # print(df.head(10).collect())
 
+
+@require("data/enzymes/sequence_scans/{alias}_sequences.parquet")
+@require("data/enzymes/sequence_scans/xml_sequences.parquet")
+@export('data/enzymes/sequence_scans/latest_sequence_scans.parquet')
 def consolidate_sequence_scans():
     from enzyextract.thesaurus.enzyme_io import read_all_dfs
     def blacklist(x):
@@ -152,6 +156,7 @@ def consolidate_sequence_scans():
     }, strict=False)
     df = pl.concat([df, df2], how='diagonal')
     df.write_parquet('data/enzymes/sequence_scans/latest_sequence_scans.parquet')
+    return df
 
 
 if __name__ == "__main__":
