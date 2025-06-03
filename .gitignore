@@ -16,6 +16,4 @@ _debug
 .hidden
 settings.json
 
-experiments
-!experiments/example/pipeline/**
 *.svg

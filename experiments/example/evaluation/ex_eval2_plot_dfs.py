@@ -1,6 +1,6 @@
 import polars as pl
 import os
-from enzyextract.pipeline.step6_plot_dfs import analyze_correlations
+from enzyextract.pipeline.evaluation.eval2_plot_dfs import analyze_correlations
 
 if __name__ == '__main__':
     # raise NotImplementedError("This script is only an example.")

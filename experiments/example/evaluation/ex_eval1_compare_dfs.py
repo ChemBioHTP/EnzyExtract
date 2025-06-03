@@ -1,6 +1,9 @@
 import polars as pl
 import os
-from enzyextract.pipeline.step5b_compare_precision_recall import gpt_dataframe, load_rumble_df, step5b_main
+
+from enzyextract.pipeline.evaluation.eval1_compare_dfs import gpt_dataframe, load_rumble_df, step5_main
+
+
 if __name__ == '__main__':
     # raise NotImplementedError("This script is only an example.")
     
@@ -14,8 +17,8 @@ if __name__ == '__main__':
     # working = 'everything'
     working = 'thedata'
 
-    against = 'rumble'
-    # against = 'brenda'
+    # against = 'rumble'
+    against = 'brenda'
     # against = 'sabiork'
 
     # scino_only = None
@@ -28,6 +31,7 @@ if __name__ == '__main__':
     # whitelist = 'hallucinated_micro'
 
     # step 2: matching
+    # '_debug/cache/beluga_matched_based_on_EnzymeSubstrate.parquet'
     gpt_df = gpt_dataframe(working)
 
     if scino_only is True:
@@ -47,7 +51,7 @@ if __name__ == '__main__':
         is_brenda = True
 
 
-    matched_view = step5b_main(
+    matched_view = step5_main(
         working=working,
         against_known=against,
         scino_only=scino_only,
@@ -58,4 +62,5 @@ if __name__ == '__main__':
     )
     fdir = f'data/metrics/{against}'
     os.makedirs(fdir, exist_ok=True)
+    matched_view.write_parquet(f'{fdir}/{against}_{working}.parquet')
     pass

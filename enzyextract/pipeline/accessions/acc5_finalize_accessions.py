@@ -1,6 +1,6 @@
 
 from enzyextract.dependency.prereqs import export
-from enzyextract.pipeline.accessions.step1_regroup_accessions import get_known_accessions
+from enzyextract.pipeline.accessions.acc1_regroup_accessions import get_known_accessions
 
 
 @export("data/enzymes/accessions/final/pdb.parquet")
