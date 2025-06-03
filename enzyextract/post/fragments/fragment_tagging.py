@@ -4,10 +4,14 @@ enzyextract.hungarian.csv_fix.pl_widen_df
 """
 
 
+from typing import List, Tuple, Union
 import polars as pl
 
 # from enzyextract.post.regexes import r_hyphens, r_mutant_2to4, r_pH_range, r_recombinant, r_temp_kelvin, r_temp_range, r_unclassified, r_wt_exact, r_wt_inexact, unicode_fix
+from enzyextract.post.fragments.coalescing import coalesce_collect
+from enzyextract.post.fragments.exfiltrate import filter_list_out, filter_out, join_out, join_out_lower, subfilter_out, subjoin_out
 from enzyextract.post.regexes import *
+from enzyextract.thesaurus.fuzz_utils import compute_fuzz_with_progress
 from enzyextract.thesaurus.organism_patterns import organism_patterns
 from enzyextract.thesaurus.uniprot_organisms import load_uniprot_names
 
@@ -40,190 +44,6 @@ fragments = descriptors.explode('fragments').with_row_index('fragment_id')
 remf = fragments.clone() # remaining fragments
 # 531_459
 
-def filter_out(regex: str, remf: pl.DataFrame, *, on='fragments', extract=False) -> pl.DataFrame:
-    """
-    Filter a DataFrame by a regex pattern.
-    """
-    mask = remf.select(
-        pl.col(on).str.contains(regex)
-    ).fill_null(False).to_series()
-    subset = remf.filter(mask)
-    remf = remf.filter(~mask)
-
-    if extract:
-        subset = subset.with_columns(
-            pl.col(on).str.extract(regex, 0).alias('extract')
-        ) # .drop('shrinkable', strict=False)
-    return subset, remf
-
-
-def subfilter_out(regex: str, remf: pl.DataFrame, drop_shrinkable=True) -> pl.DataFrame:
-    """
-    Filter a DataFrame by a regex pattern, and extract substrings
-    """
-    assert not regex.endswith('$')
-
-    # subset = remf.filter(remf['shrinkable'].str.contains(regex))
-
-    # remove additional punctuation
-    regex_out = rf"\(?{regex}\)?(, | ?\/ ?)?"
-
-    subset = remf.with_columns(
-        pl.col('shrinkable').str.extract(regex, 0).alias('extract'),
-        # pl.col('shrinkable').str.replace(regex_out, '').alias('rest')
-    ).drop_nulls('extract').drop('fragment_lower', strict=False)
-    if drop_shrinkable:
-        subset = subset.drop('shrinkable')
-    remf = remf.with_columns(
-        pl.col('shrinkable')
-        .str.replace(regex_out, '')
-        # .str.strip_suffix(', ')
-        .alias('shrinkable')
-    ).filter(
-        pl.col('shrinkable').str.len_chars() > 0 # remove empty strings
-    )
-    return subset, remf
-
-def join_out(rhs: pl.DataFrame, remf: pl.DataFrame, right_on: str, **kwargs) -> pl.DataFrame:
-    subset = remf.join(
-        rhs,
-        left_on=['context_id', 'fragments'],
-        right_on=['context_id', right_on],
-        how='inner',
-        **kwargs
-    ).drop('shrinkable', strict=False).drop('fragment_lower', strict=False)
-    # remf = remf.filter(~pl.col('fragment_id').is_in(set(subset['fragment_id'])))
-    remf = remf.join(
-        subset,
-        on='fragment_id',
-        how='anti',
-    )
-    return subset, remf
-
-def join_out_lower(rhs: pl.DataFrame, remf: pl.DataFrame, right_on: str, **kwargs) -> pl.DataFrame:
-    subset = remf.join(
-        rhs,
-        left_on=['context_id', 'fragment_lower'],
-        right_on=['context_id', right_on],
-        how='inner',
-        **kwargs
-    ).drop('fragment_lower')
-    # remf = remf.filter(~pl.col('fragment_id').is_in(set(subset['fragment_id'])))
-    remf = remf.join(
-        subset,
-        on='fragment_id',
-        how='anti',
-    )
-    return subset, remf
-
-def substring_by_column(df: pl.DataFrame, haystack_col: str, needle_col: str) -> pl.DataFrame:
-    df = df.with_columns(
-        pl.when(pl.col(needle_col).is_not_null()).then(
-            pl.col(haystack_col)
-            # .str.replace(pl.col('extract'), '', literal=True)
-            # https://github.com/pola-rs/polars/issues/14367
-            .str.replace(pl.col(needle_col).first(), '', literal=True).over(needle_col)
-            .str.replace(r', (, |$)', '') # remove extra commas
-            .str.replace(r' \(\)', '') # remove extra parentheses
-            .str.strip_chars()
-            .alias(haystack_col)
-        ).otherwise(pl.col(haystack_col))
-    ).filter(
-        pl.col(haystack_col).str.len_chars() > 0 # remove empty strings
-    )
-    return df
-
-def subjoin_out(rhs: pl.DataFrame, remf: pl.DataFrame, right_on: str, *, remf_on='shrinkable', drop_shrinkable=True, **kwargs) -> pl.DataFrame:
-    """
-    Extracts substrings (described by rhs) from remf. Uses the 'shrinkable' column.
-    So rhs should contain shorter strings.
-    
-    If multiple matches are found, the first one is used. 
-    (A recommendation: sort rhs by decreasing length, so the longest substring is used.)
-
-    Outputs in 'extract' column.
-    """
-    product = remf.join(
-        rhs,
-        left_on=['context_id'],
-        right_on=['context_id'],
-        how='inner',
-        **kwargs
-    )
-    subset = product.filter(
-        pl.col(remf_on).str.contains(pl.col(right_on), literal=True)
-    ).rename({
-        right_on: 'extract'
-    }) # .drop(right_on)
-    successful_matches = subset.select(
-        'fragment_id', 
-        'extract'
-    ).unique('fragment_id', keep='first')
-    successful_remf = remf.join(successful_matches, on='fragment_id', validate='m:1', how='inner', coalesce=True)
-    rest_remf = remf.join(successful_matches, on='fragment_id', how='anti')
-
-    # successful_remf = successful_remf.with_columns(
-    #     pl.when(pl.col('extract').is_not_null()).then(
-    #         pl.col('shrinkable')
-    #         # .str.replace(pl.col('extract'), '', literal=True)
-    #         # https://github.com/pola-rs/polars/issues/14367
-    #         .str.replace(pl.col('extract').first(), '', literal=True).over('extract')
-    #         .str.replace(r', (, |$)', '') # remove extra commas
-    #         .str.strip_chars()
-    #         .alias('shrinkable')
-    #     ).otherwise(pl.col('shrinkable'))
-    # ).filter(
-    #     pl.col('shrinkable').str.len_chars() > 0 # remove empty strings
-    # )
-    successful_remf = substring_by_column(successful_remf, remf_on, 'extract')
-    successful_remf.drop_in_place('extract')
-    remf = rest_remf.merge_sorted(successful_remf, key='fragment_id')
-    subset = subset.drop('fragment_lower', strict=False)
-    if drop_shrinkable:
-        subset = subset.drop(remf_on)
-    return subset, remf
-
-def pick_longest_string(plcol: pl.Expr) -> pl.Expr:
-    """
-    From a column of list of strings, pick the longest string.
-    If list is empty, return null.
-    """
-    return plcol.list.get(
-        plcol.list.eval(
-            pl.element().str.len_chars().arg_max()
-        ).list.get(0, null_on_oob=True) # get the index of the longest string
-    ) # get it from the list
-
-def filter_list_out(many: list[str], remf: pl.DataFrame, ascii_case_insensitive=False) -> pl.DataFrame:
-    """
-    Filter a DataFrame by a list of strings.
-    TODO: what doesn't work is respecting word boundaries.
-    """
-
-    # temporarily add space to shrinkable, as a form of word boundary respecting
-    remf = remf.with_columns(
-        (' ' + pl.col('shrinkable') + ' ').alias('shrinkable')
-    )
-    subset = remf.with_columns(
-        pick_longest_string(
-            pl.col('shrinkable').str.extract_many(many, overlapping=True, ascii_case_insensitive=ascii_case_insensitive)
-        ).alias('extract')
-    ).drop('literal', strict=False)
-    rest_remf = subset.filter(
-        pl.col('extract').is_null()
-    )
-    subset = subset.filter(
-        pl.col('extract').is_not_null()
-    )
-
-    successful_remf = substring_by_column(subset, 'shrinkable', 'extract')
-    remf = rest_remf.merge_sorted(successful_remf, key='fragment_id')
-    remf = remf.with_columns(
-        pl.col('shrinkable').str.strip_chars() # remove space added to shrinkable
-    )
-    remf = remf.drop('extract')
-    return subset, remf
-
 ### STEP 1.1: pH
 ## 1.1a) exact pH matches
 pH_exact, remf = filter_out(r_pH_range, remf)
@@ -254,6 +74,34 @@ enzymedf = contextdf.select('context_id', 'enzymes').explode('enzymes').unnest('
 #     unicode_fix_list('mutants'),
 # )
 enzymedf_synonyms = enzymedf.select('context_id', 'enzyme_id', 'synonyms').explode('synonyms')
+
+
+
+enzymedf_names = pl.concat([
+        enzymedf.select('context_id', 'enzyme_id', 'fullname').rename({
+            'fullname': 'enzyme_name',
+        }).with_columns(
+            pl.lit(True).alias('is_fullname')
+        ),
+        enzymedf_synonyms.rename({
+            'synonyms': 'enzyme_name',
+        }).with_columns(
+            pl.lit(False).alias('is_fullname')
+        )
+    ], how='diagonal'
+).filter(
+    pl.col('enzyme_name').is_not_null() 
+    & (pl.col('enzyme_name').str.len_chars() > 0)
+).sort(
+    pl.col('enzyme_name').str.len_chars().over('context_id'),
+    descending=True
+)
+"""
+Columns: 
+- context_id
+- enzyme_id
+- fullname
+"""
 
 ## 1.4a) exact fullname matches
 enzyme_exact_full, remf = join_out(
@@ -383,10 +231,10 @@ unclassified_known, remf = filter_out(r_unclassified, remf)
 remf = remf.with_columns(
     pl.col('fragments').str.to_lowercase().alias('fragment_lower'),
 )
-enzymedfi = enzymedf.with_columns(
-    pl.col('fullname').str.to_lowercase().alias('fullname_lower'),
-    pl.col('synonyms').list.eval(pl.element().str.to_lowercase()).alias('synonyms_lower'),
-)
+# enzymedfi = enzymedf.with_columns(
+#     pl.col('fullname').str.to_lowercase().alias('fullname_lower'),
+#     pl.col('synonyms').list.eval(pl.element().str.to_lowercase()).alias('synonyms_lower'),
+# )
 substratedfi = substratedf.with_columns(
     pl.col('fullname').str.to_lowercase().alias('fullname_lower'),
     pl.col('synonyms').list.eval(pl.element().str.to_lowercase()).alias('synonyms_lower'),
@@ -394,20 +242,31 @@ substratedfi = substratedf.with_columns(
 ### 2.4: enzymes
 
 ## 2.4a) case-insensitive enzyme fullname matches
-enzyme_casei_full, remf = join_out_lower(
-    enzymedfi.select('context_id', 'enzyme_id', 'fullname_lower'),
-    remf,
-    'fullname_lower',
-    # validate='m:1'
-) # 722
+# enzyme_casei_full, remf = join_out_lower(
+#     enzymedfi.select('context_id', 'enzyme_id', 'fullname_lower'),
+#     remf,
+#     'fullname_lower',
+#     # validate='m:1'
+# ) # 718
 
-## 2.4b) case-insensitive enzyme synonym matches
-enzyme_casei_syn, remf = join_out_lower(
-    enzymedfi.select('context_id', 'enzyme_id', 'synonyms_lower').explode('synonyms_lower'),
+# # ## 2.4b) case-insensitive enzyme synonym matches
+# enzyme_casei_syn, remf = join_out_lower(
+#     enzymedfi.select('context_id', 'enzyme_id', 'synonyms_lower').explode('synonyms_lower'),
+#     remf,
+#     'synonyms_lower',
+#     # validate='m:1'
+# ) # 181
+
+enzyme_casei, remf = join_out_lower(
+    enzymedf_names.select(
+        'context_id',
+        'enzyme_id',
+        pl.col('enzyme_name').str.to_lowercase().alias('name_lower'),
+    ),
     remf,
-    'synonyms_lower',
+    'name_lower',
     # validate='m:1'
-) # 188
+) # 899
 
 ### 2.6: organisms
 ### 2.7: substrates
@@ -451,22 +310,6 @@ recombinant_inexact, _ = filter_out(r_recombinant, remf) # 6_742
 
 ### 3.5: enzymes
 
-enzymedf_names = pl.concat([
-        enzymedf.select('context_id', 'enzyme_id', 'fullname').rename({
-            'fullname': 'enzyme_name',
-        }).with_columns(
-            pl.lit(True).alias('is_fullname')
-        ),
-        enzymedf_synonyms.rename({
-            'synonyms': 'enzyme_name',
-        }).with_columns(
-            pl.lit(False).alias('is_fullname')
-        )
-    ], how='diagonal'
-).sort(
-    pl.col('enzyme_name').str.len_chars().over('context_id'),
-    descending=True
-)
 
 enzymes_inexact, remf = subjoin_out(
     enzymedf_names,
@@ -516,4 +359,81 @@ organs, remf = subfilter_out(r'(?i)\b(heart|lung|brain|kidney|liver|stomach|(sma
 # Mg2+ Ca2+ Na+ K+ Cl-
 # 220_955
 # 189_572 -> 184_089 -> 180_822 -> 178_256
+
+## 4. string similarity based
+
+# enzymes_fuzzy, remf = fuzzyjoin_out(
+#     enzymedf_names,
+#     remf,
+#     'enzyme_name',
+#     remf_on='fragments',
+#     remf_min_length=3,  # minimum length of the fragment to be considered
+#     threshold=99,  # 100% similarity
+#     case_insensitive=True,
+# ) # 1_000_000 -> 1_000_000 -> 1_000_000 -> 1_000_000
+
+# enzymes_fuzzy_2, remf = fuzzyjoin_out(
+#     enzymedf_names,
+#     remf,
+#     'enzyme_name',
+#     remf_on='shrinkable',
+#     remf_min_length=3,  # minimum length of the fragment to be considered
+#     threshold=99,  # 100% similarity
+#     case_insensitive=True,
+# ) # 1_000_000 -> 1_000_000 -> 1_000_000 -> 1_000_000
+
+
+
+enzyme_coalesce_instructions = [
+    (enzyme_exact_full, 'fullname', ['fragments', 'enzyme_id']),
+    (enzyme_exact_syn, 'synonyms', ['fragments', 'enzyme_id']),
+    # (enzyme_casei_full, 'fullname_lower', ['fragments', 'enzyme_id']),
+    # (enzyme_casei_syn, 'synonyms_lower', ['fragments', 'enzyme_id']),
+    (enzyme_casei, 'name_lower', ['fragments', 'enzyme_id']),
+    (enzymes_inexact, 'inexact', ['extract', 'enzyme_id']),
+    # (enzymes_fuzzy, 'fragments', 'fuzzy_name'),
+    # (enzymes_fuzzy_2, 'shrinkable', 'fuzzy_name_2'),
+]
+
+
+
+enzyme_coalesced, coalesced_values = coalesce_collect(
+    enzyme_coalesce_instructions,
+    # additional_columns=['enzyme_id'],
+    # common_column_name='fragment_id',
+    # final_column_name='enzyme_name'
+    column_renames=['match', 'enzyme_id']
+) # 178471 - 177738 = 733
+
+pass
+# enzyme_coalesced = coalesce_collect(
+#     enzyme_coalesce_instructions,
+#     # additional_columns=['enzyme_id'],
+#     # common_column_name='fragment_id',
+#     # final_column_name='enzyme_name'
+#     column_renames=['match', 'enzyme_id']
+# ).join(
+#     fragments.select('fragment_id', 'fragments'),
+#     on='fragment_id',
+#     how='left',
+# ).join(
+#     remf.select('fragment_id', 'shrinkable'),
+#     on='fragment_id',
+#     how='left',
+# )
+
+enzyme_coalesced_by_data_id = coalesce_collect(
+    enzyme_coalesce_instructions,
+    additional_columns=['enzyme_id'],
+    common_column_name='data_id',
+    final_column_name='enzyme_name'
+) 
+
+
+enzyme_coalesced.write_parquet('_debug/enzyme_coalesced.parquet')
+enzyme_coalesced_by_data_id.write_parquet('_debug/enzyme_coalesced_by_data_id.parquet')
+# print(enzyme_coalesced.schema)
+# Schema([('fragment_id', UInt32), ('fullname', List(String)), ('fragment_id_right', UInt32), ('synonyms', List(String)), ('fullname_lower', List(String)), ('synonyms_lower', List(String)), ('inexact', List(String)), ('fuzzy_name', List(String)), ('fuzzy_name_2', List(String)), ('enzyme_name', List(String)), ('fragments', String), ('shrinkable', String)])
+# 'fragment_id', 'fullname', 'fragment_id_right', 'synonyms', 'fullname_lower', 'synonyms_lower', 'inexact', 'fuzzy_name', 'fuzzy_name_2', 'enzyme_name', 'fragments', 'shrinkable'
+# enzyme_coalesced.select('fragment_id', 'fullname', 'fragment_id_right', 'synonyms', 'fullname_lower', 'synonyms_lower', 'inexact', 'fuzzy_name', 'fuzzy_name_2', 'enzyme_name', 'fragments', 'shrinkable').write_parquet('_debug/uneditable_df.parquet')
 pass
