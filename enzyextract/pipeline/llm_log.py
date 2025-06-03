@@ -205,6 +205,15 @@ def relocate_log(
     ])
     return df
 
+__all__ = [
+    'llm_log_schema',
+    'read_log',
+    'separate_prefix',
+    'write_log',
+    'update_log',
+    'convert_log',
+    'relocate_log',
+]
 if __name__ == "__main__":
     # raise NotImplementedError("This script is only an example.")
     relocate_log('C:/conjunct/tmp/.enzy')

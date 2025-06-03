@@ -4,8 +4,10 @@ Formerly generate_valid.py
 
 import json
 import os
+from typing import Optional
 import pandas as pd
 import polars as pl
+from enzyextract.pipeline.llm_log import llm_log_schema, read_log
 from enzyextract.post.decode import jsonl_to_decoded_df
 from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
@@ -86,3 +88,65 @@ def generate_valid_parquet(fpath,
             valid_df.to_csv(write_fpath, index=False)
     
     return valid_df, stats
+
+def namespace_to_parquet(
+    namespace: str,
+    log_location: str, # e.g. '.enzy/llm_log.tsv'
+    write_dir: Optional[str],
+) -> pl.DataFrame:
+    """
+    If `namespace` is unique, then it will read the log file at `log_location` with namespace
+    and the latest version, and produce a polars DataFrame.
+
+    If `namespace` is not unique, then unexpected things may occur!
+
+    If `write_dir` is provided, the DataFrame will automatically be written to {write_dir}/{namespace}_{version}.parquet.
+    If not provided, it will not write to disk.
+    """
+
+    llm_log = read_log(log_location)
+
+    row = llm_log.filter(pl.col('namespace') == namespace)
+
+    if row.select('version').n_unique() > 1:
+        print(f"Warning: namespace has multiple versions. Using the latest version only.")
+        row = row.sort('version', descending=True)
+
+    version = row.item(row=0, column='version')
+    print("Using namespace:", namespace, "version:", version)
+
+    row = row.filter(pl.col('version') == version)
+
+    structured = row.item(row=0, column='structured')
+    compl_fpath = row.item(row=0, column='completion_fpath')
+    corresp_fpath = row.item(row=0, column='corresp_fpath')
+
+    if write_dir is not None:
+        write_fpath = os.path.join(write_dir, f"{namespace}_{version}.parquet")
+    else:
+        write_fpath = None
+
+    corresp_df = pl.read_parquet(corresp_fpath)
+
+    # merge fragments
+    # check to see if we need to merge
+    need_merge = row.height > 1
+    if need_merge:
+        compl_folder = os.path.dirname(compl_fpath)
+        filename = os.path.basename(compl_fpath)
+
+        from enzyextract.submit.openai_management import merge_chunked_completions
+        print(f"Merging all chunked completions for {filename} v{version}. Confirm? (y/n)")    
+        if input() != 'y':
+            exit(0)
+        merge_chunked_completions(namespace, version=version, compl_folder=compl_folder, dest_folder=compl_folder)
+
+    df, stats = generate_valid_parquet(
+        fpath=compl_fpath,
+        corresp_df=corresp_df,
+        llm_provider='openai',
+        write_fpath=write_fpath,
+        silence=False,
+        use_yaml=not structured
+    )
+    return df

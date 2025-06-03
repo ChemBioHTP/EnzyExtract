@@ -147,9 +147,7 @@ def main():
             real_filename = pdfname[:-5]
             pdf = real_filename.rsplit("_", 1)[0] + '.pdf'
             all_pdfnames.add(pdf)
-    
-    # whitelist = pl.read_parquet('data/pmids/manifold_tune.parquet')['filename']
-    
+        
     # file location lookup
     manifest = pl.read_parquet('data/manifest.parquet')
     manifest = manifest.filter(
@@ -162,7 +160,6 @@ def main():
 
     from enzyextract.pre.table.reocr_for_gmft import load_correction_df
 
-    # _all_possible_pdfs = list(os.listdir(root))
     correction_df = load_correction_df(micros_path, all_pdfnames)
 
     if not os.path.exists(save_dir):
