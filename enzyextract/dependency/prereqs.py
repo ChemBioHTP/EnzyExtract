@@ -14,7 +14,7 @@ DATA_REGISTRY = {
 
 
 
-def require(dest: str, to: Optional[str] = None, eager=True):
+def require(dest: str, to: Optional[str] = None, eager=True, instructions=None):
     """
     Dependency injection. Specify an explicit dependency.
     
