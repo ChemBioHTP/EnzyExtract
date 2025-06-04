@@ -46,6 +46,11 @@ def highly_duplicated(df: pl.DataFrame) -> pl.DataFrame:
     Deduplicate on basis of the tuple (kcat, km).
     """
 
+    # filter out rows where both kcat and km are null
+    df = df.filter(
+        pl.col('kcat').is_not_null() | pl.col('km').is_not_null()
+    )
+
     stats = df.group_by(['pmid']).agg(
         pl.struct('kcat', 'km').count().alias('count'),
         pl.struct('kcat', 'km').n_unique().alias('unique_count')
@@ -123,6 +128,40 @@ def script_detect_extreme_duplication(
     # Here are the changes after deduplication:
     # 1. Documents processed twice are removed
     # 2. PMIDs where <1/7 of either kcat or km values are unique are removed
+
+def attach_repetitive_flag(
+    data: pl.DataFrame, 
+    threshold: float = 0.35,
+) -> pl.DataFrame:
+    """
+    Pre: 
+    - data: should contain 'pmid' and 'descriptor' columns.
+
+    Post:
+    - data: additional column named 'flag.repetitive' will be added. If the row is suspected to be
+    highly duplicated or repeated LLM-generated data, this `flag.repetitive` will report the
+    percentage of repetitive data. If the row is not suspected, this column will be null.
+
+
+    See also: the Repeat Curse, repetition penalty.
+    """
+    # those that are derived from XML are safe - remove from the analysis
+    stats = highly_duplicated(data)
+    # filter out those with high duplication
+
+    reported = stats.filter(pl.col('unique_percent') < threshold)
+
+    reported = reported.select(
+        'pmid',
+        (1 - pl.col('unique_percent')).alias('repetition_percent')
+    ).unique('pmid', keep='first')
+    data = data.join(
+        reported,
+        on='pmid',
+        how='left',
+        validate='m:1'
+    )
+    return data
 
 if __name__ == "__main__":
     script_detect_extreme_duplication()

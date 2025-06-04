@@ -1,3 +1,4 @@
+import os
 import typing
 from typing import Callable, List, Tuple, Union
 import polars as pl
@@ -5,55 +6,10 @@ import polars as pl
 from enzyextract.dependency.injection import REQUIRE, resolve
 from enzyextract.dependency.prereqs import export
 from enzyextract.post.finale.deduplication import deduplicate
+from enzyextract.post.metadata.doctype import _filter_out_xmls
 from enzyextract.post.pl_validation import expect_columns
 
 
-def _filter_out_xmls(data: pl.DataFrame, custom_id_src: pl.DataFrame) -> Tuple[pl.DataFrame, pl.DataFrame]:
-    """
-    Hallucination detection is only currently available for PDFs, so we need to filter out
-    which data was derived from XML versus PDF.
-
-    custom_id_src: should contain 'pmid', 'descriptor', 'custom_id' columns.
-
-    Uses magic strings stored in the custom_id.
-
-    Returns: (pdfdata, xmldata)
-    """
-    # those that are derived from XML are safe - remove from the analysis
-    xml_based_descriptors = custom_id_src.filter(
-        pl.col('custom_id').str.contains('openelse')
-        | pl.col('custom_id').str.contains('vier')
-    ).select(
-        pl.col('pmid'),
-        pl.col('descriptor'),
-        pl.col('custom_id')
-    )
-
-    xmldata = data.join(
-        xml_based_descriptors,
-        on=['pmid', 'descriptor'],
-        how='semi'
-    )
-    pdfdata = data.join(
-        xml_based_descriptors,
-        on=['pmid', 'descriptor'],
-        how='anti'
-    )
-
-    # examine pmids common to both thedata_safe and thedata_df, as they are a sign that
-    # descriptors are being modified
-    conflicting_pmids = xmldata.select('pmid').unique().join(
-        pdfdata.select('pmid').unique(),
-        on='pmid',
-        how='inner'
-    ) # height=0. Good. descriptors are left verbatim.
-
-    # NOTE: it is important to call deduplicate(thedata_df) before this, as deduplicate() helps
-    # remove documents processed twice. Otherwise the assertion below may fail.
-    assert conflicting_pmids.height == 0, "conflicting pmids found between xmldata and pdfdata"
-    assert pdfdata.height + xmldata.height == data.height, "pdfdata and xmldata do not cover all data"
-
-    return pdfdata, xmldata
 
 def _try_rejoin_custom_ids(data, custom_id_src):
     """
@@ -99,10 +55,14 @@ def recoalesce(
         )
         for col in cols
         if f"{col}{suffix}" in df.columns
-    ]).drop([f"{col}{suffix}" for col in cols if f"{col}{suffix}" in df.columns])
+    ]).drop([
+        f"{col}{suffix}" 
+        for col in cols 
+        if f"{col}{suffix}" in df.columns
+    ])
 
 
-def detect_hallucinations(pdfdata: pl.DataFrame, scan_df: pl.DataFrame, *, thedata_cols=["kcat", "km", "kcat_km"], thedata_pmid=["pmid"]):
+def detect_hallucinations(pdfdata: pl.LazyFrame, scan_df: pl.LazyFrame, *, thedata_cols=["kcat", "km", "kcat_km"], thedata_pmid=["pmid"]):
     """
     thedata_df: pl.DataFrame
         The DataFrame containing the data to be checked for hallucinations.
@@ -111,7 +71,12 @@ def detect_hallucinations(pdfdata: pl.DataFrame, scan_df: pl.DataFrame, *, theda
     scan_df: pl.DataFrame
         The scan DataFrame containing PDF text.
         Should have columns "pmid", "page_number", and "text".
+
+    Returns:
+        DataFrame with added columns "has_needle", "needles_found", "needles_total", "needles_missing"
     """
+    pdfdata = pdfdata.lazy()
+    scan_df = scan_df.lazy()
 
     # create analyte, a df with columns "analyte" and "pmid"
     analyte = []
@@ -186,7 +151,7 @@ def detect_hallucinations(pdfdata: pl.DataFrame, scan_df: pl.DataFrame, *, theda
         pl.col('has_needle').list.len().alias("needles_total")
     ).with_columns(
         (pl.col("needles_total") - pl.col("needles_found")).alias("needles_missing"),
-    )
+    ).collect()
 
     does_contain_explode = does_contain.explode("analyte", "original_col", "needle", "has_needle")
     # not_ok_df = does_contain_explode.filter(pl.col("needles_missing") > 0)
@@ -226,7 +191,7 @@ def detect_hallucinations(pdfdata: pl.DataFrame, scan_df: pl.DataFrame, *, theda
             validate='m:1'
         ), ["has_needle", "needles_missing", "needles_total"])
 
-    pdfdata_sus = _pick("kcat", does_contain_explode, pdfdata)
+    pdfdata_sus = _pick("kcat", does_contain_explode, pdfdata.collect())
     pdfdata_sus = _pick("km", does_contain_explode, pdfdata_sus)
     pdfdata_sus = _pick("kcat_km", does_contain_explode, pdfdata_sus)
     pdfdata_sus = pdfdata_sus.with_columns(
@@ -234,6 +199,20 @@ def detect_hallucinations(pdfdata: pl.DataFrame, scan_df: pl.DataFrame, *, theda
     )
     return pdfdata_sus
 
+
+@resolve
+def _preview_illegible(
+    pdfdata, 
+    manifest = REQUIRE('data/manifest.parquet'),
+):
+    # filter out those that are illegible
+    pdfdata_illegible = pdfdata.join(
+        manifest.filter(
+            ~pl.col('readable')
+        ),
+        on='pmid',
+        how='semi'
+    ) # height = 0 (good!)
 
 @resolve
 @export("data/export/2_dedup/TheData_kcat_hallucinations.parquet")
@@ -276,32 +255,17 @@ def script_detect_hallucinations(
     ) # 7890717
 
     scan_df = pl.concat([
-        pl.read_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/brenda.parquet'),
-        pl.read_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/scratch.parquet'),
-        pl.read_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/topoff.parquet'),
-        pl.read_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/wos.parquet'),
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/brenda.parquet'),
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/scratch.parquet'),
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/topoff.parquet'),
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/wos.parquet'),
     ])
-
 
     # filter out those that are illegible
     manifest = pl.read_parquet('data/manifest.parquet')
     scan_df = scan_df.join(
-        manifest.filter(
+        manifest.lazy().filter(
             pl.col('readable')
-        ),
-        on='pmid',
-        how='semi'
-    )
-    pdfdata_illegible = pdfdata.join(
-        manifest.filter(
-            ~pl.col('readable')
-        ),
-        on='pmid',
-        how='semi'
-    )
-    xmldata_illegible = xmldata.join(
-        manifest.filter(
-            ~pl.col('readable')
         ),
         on='pmid',
         how='semi'
@@ -346,11 +310,52 @@ def script_detect_hallucinations(
     ).sort('suspiciousness', descending=True, maintain_order=True)
     halluc_only.write_parquet('data/export/2_dedup/TheData_kcat_hallucinations.parquet')
 
+@export("data/export/2_dedup/pdf_hallucinations.parquet", autosave=True, cached=True)
+def pdf_hallucinations(pdfdata: pl.DataFrame):
 
+    pdf_scan_df = pl.concat([
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/brenda.parquet'),
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/scratch.parquet'),
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/topoff.parquet'),
+        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/wos.parquet'),
+    ])
 
+    halluc = detect_hallucinations(pdfdata, pdf_scan_df)
 
+    suspicious_pmids = halluc.filter(
+        ~pl.col('has_needle')
+    ).select(
+        'pmid',
+        'needles_missing',
+        'needles_total',
+        (pl.col('needles_missing') / (pl.col('needles_total'))).alias('flag.hallucination')
+    ).unique('pmid', keep='first')
 
+    return suspicious_pmids
 
+def attach_hallucination_flag(
+    data: pl.DataFrame,
+    threshold: float = 0.35,
+):
+    """
+    Pre:
+    - data: should contain 'pmid' and 'meta.doctype' columns. 
+    """
+    pdfdata = data.filter(
+        pl.col('meta.doctype') == 'pdf'
+    )
+    # xmldata = data.filter(
+    #     pl.col('meta.doctype') == 'xml'
+    # )
+
+    suspicious_pmids = pdf_hallucinations(pdfdata)
+
+    data = data.join(
+        suspicious_pmids.select('pmid', 'flag.hallucination'),
+        on='pmid',
+        how='left'
+    )
+    return data
 
 if __name__ == "__main__":
     script_detect_hallucinations()

@@ -46,7 +46,7 @@ def REQUIRE(fpath: str, *, eager=True):
     """
     if isinstance(fpath, str):
         # If the function is actually a string, return an InjectedData instance
-        return InjectedData(fpath)
+        return InjectedData(fpath, eager=eager)
 
 
 def resolve(func):
@@ -118,4 +118,4 @@ if __name__ == "__main__":
     ):
         pass
 
-    another_func("Hello, World!")  # This will raise DependencyNotFoundError for both dependencies
+    # another_func("Hello, World!")  # This will raise DependencyNotFoundError for both dependencies

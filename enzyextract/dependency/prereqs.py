@@ -1,4 +1,5 @@
 import functools
+import os
 from typing import Optional
 import polars as pl
 from typing import Union, overload
@@ -39,19 +40,32 @@ def require(dest: str, to: Optional[str] = None, eager=True, instructions=None):
         return wrapper
     return decorator
 
-def export(dest: str):
+def export(dest: str, autosave=False, cached=False):
     """
     Marks that a function should export data to a specific destination.
     Helps track dependencies.
+
+    - autosave: If True, the dataframe is automatically saved after the function is executed.
+    - cached: If True, and the destination already exists, then the dataframe is simply loaded.
     """
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-
+            if cached and os.path.exists(dest):
+                print(f"Loading cached asset from {dest}")
+                df = _load_asset(dest, eager=True)
+                return df
+            result = func(*args, **kwargs)
+            if autosave:
+                if isinstance(result, pl.DataFrame):
+                    print(f"Autosaving to {dest}")
+                    result.write_parquet(dest)
+                else:
+                    raise TypeError("Function decorated with @export must return a polars DataFrame")
+            return result
         if not hasattr(wrapper, "_exports"):
             wrapper._exports = []
-        wrapper._exports.append({"dest": dest})
+        wrapper._exports.append({"dest": dest, "autosave": autosave, "cached": cached})
         DATA_REGISTRY["exports"].append({"function": func.__name__, "dest": dest})
         return wrapper
     return decorator
