@@ -1,16 +1,17 @@
 import functools
-from typing import Literal, overload
+from typing import Literal, Optional, overload
 import polars as pl
 import inspect
 
 from enzyextract.dependency.base import DependencyNotFoundError, _load_asset
 
 class InjectedData:
-    def __init__(self, path: str, eager=True):
+    def __init__(self, path: str, eager=True, optional=False):
         self.path = path
         self.eager = eager
+        self.optional = optional
     def load(self):
-        return _load_asset(self.path, eager=self.eager)
+        return _load_asset(self.path, eager=self.eager, optional=self.optional)
 
 
 @overload
@@ -46,8 +47,15 @@ def REQUIRE(fpath: str, *, eager=True):
     """
     if isinstance(fpath, str):
         # If the function is actually a string, return an InjectedData instance
-        return InjectedData(fpath, eager=eager)
+        return InjectedData(fpath, eager=eager, optional=False)
 
+
+def OPTIONAL(fpath: str, *, eager=True) -> Optional[pl.DataFrame]:
+    """
+    See the REQUIRE macro, but this one is optional. Will inject None if the file does not exist.
+    """
+    if isinstance(fpath, str):
+        return InjectedData(fpath, eager=eager, optional=True)
 
 def resolve(func):
     """

@@ -47,11 +47,12 @@ def export(dest: str, autosave=False, cached=False):
 
     - autosave: If True, the dataframe is automatically saved after the function is executed.
     - cached: If True, and the destination already exists, then the dataframe is simply loaded.
+        cache may be skipped by passing `clear_cache=True` to the function.
     """
     def decorator(func):
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if cached and os.path.exists(dest):
+        def wrapper(*args, clear_cache=False, **kwargs, ):
+            if cached and not clear_cache and os.path.exists(dest):
                 print(f"Loading cached asset from {dest}")
                 df = _load_asset(dest, eager=True)
                 return df

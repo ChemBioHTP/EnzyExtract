@@ -68,6 +68,7 @@ def generate_valid_parquet(fpath,
             
             df, context = yaml_to_df(yaml, auto_context=True, debugpmid=None if silence else pmid) # pmid, silence debug
             df['pmid'] = pmid
+            df['custom_id'] = custom_id
             if df.empty:
                 continue
             valids.append(df)
@@ -79,10 +80,12 @@ def generate_valid_parquet(fpath,
     valid_df = clean_columns_for_valid(pd.concat(valids)) # bad units for km and kcat are rejected here
     valid_df = valid_df.astype({'pmid': 'str'})
     
+    # detect regurgitation here
+    
+
     if write_fpath: #  and not os.path.exists(write_fpath):
         print("Writing to", write_fpath)
         if write_fpath.endswith('.parquet'):
-            import polars as pl
             pl.from_pandas(valid_df).write_parquet(write_fpath)
         else:
             valid_df.to_csv(write_fpath, index=False)

@@ -12,8 +12,10 @@ def _load_asset(dest: str, eager: bool = True) -> pl.DataFrame: ...
 
 @overload
 def _load_asset(dest: str, eager: bool = False) -> pl.LazyFrame: ...
-def _load_asset(dest: str, eager=True):
+def _load_asset(dest: str, eager=True, optional=False):
     if not os.path.exists(dest):
+        if optional:
+            return None
         raise DependencyNotFoundError(
             f"EnzyExtract cannot find the specified dependency: {dest}. "
             "Please locate the script that produces it. \n"

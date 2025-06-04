@@ -422,16 +422,16 @@ pass
 #     how='left',
 # )
 
-enzyme_coalesced_by_data_id = coalesce_collect(
-    enzyme_coalesce_instructions,
-    additional_columns=['enzyme_id'],
-    common_column_name='data_id',
-    final_column_name='enzyme_name'
-) 
+# enzyme_coalesced_by_data_id = coalesce_collect(
+#     enzyme_coalesce_instructions,
+#     additional_columns=['enzyme_id'],
+#     common_column_name='data_id',
+#     final_column_name='enzyme_name'
+# ) 
 
 
 enzyme_coalesced.write_parquet('_debug/enzyme_coalesced.parquet')
-enzyme_coalesced_by_data_id.write_parquet('_debug/enzyme_coalesced_by_data_id.parquet')
+# enzyme_coalesced_by_data_id.write_parquet('_debug/enzyme_coalesced_by_data_id.parquet')
 # print(enzyme_coalesced.schema)
 # Schema([('fragment_id', UInt32), ('fullname', List(String)), ('fragment_id_right', UInt32), ('synonyms', List(String)), ('fullname_lower', List(String)), ('synonyms_lower', List(String)), ('inexact', List(String)), ('fuzzy_name', List(String)), ('fuzzy_name_2', List(String)), ('enzyme_name', List(String)), ('fragments', String), ('shrinkable', String)])
 # 'fragment_id', 'fullname', 'fragment_id_right', 'synonyms', 'fullname_lower', 'synonyms_lower', 'inexact', 'fuzzy_name', 'fuzzy_name_2', 'enzyme_name', 'fragments', 'shrinkable'

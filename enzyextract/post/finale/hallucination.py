@@ -4,7 +4,7 @@ from typing import Callable, List, Tuple, Union
 import polars as pl
 
 from enzyextract.dependency.injection import REQUIRE, resolve
-from enzyextract.dependency.prereqs import export
+from enzyextract.dependency.prereqs import export, require
 from enzyextract.post.finale.deduplication import deduplicate
 from enzyextract.post.metadata.doctype import _filter_out_xmls
 from enzyextract.post.pl_validation import expect_columns
@@ -62,27 +62,27 @@ def recoalesce(
     ])
 
 
-def detect_hallucinations(pdfdata: pl.LazyFrame, scan_df: pl.LazyFrame, *, thedata_cols=["kcat", "km", "kcat_km"], thedata_pmid=["pmid"]):
+def detect_hallucinations(data: pl.LazyFrame, scan_df: pl.LazyFrame, *, thedata_cols=["kcat", "km", "kcat_km"], thedata_pmid=["pmid"]):
     """
-    thedata_df: pl.DataFrame
+    data: pl.DataFrame
         The DataFrame containing the data to be checked for hallucinations.
         In particular, column "kcat" and "km" will be checked.
 
     scan_df: pl.DataFrame
         The scan DataFrame containing PDF text.
-        Should have columns "pmid", "page_number", and "text".
+        Should have columns "pmid", "text".
 
     Returns:
         DataFrame with added columns "has_needle", "needles_found", "needles_total", "needles_missing"
     """
-    pdfdata = pdfdata.lazy()
+    data = data.lazy()
     scan_df = scan_df.lazy()
 
     # create analyte, a df with columns "analyte" and "pmid"
     analyte = []
     for col in thedata_cols:
         analyte.append(
-            pdfdata.select(
+            data.select(
                 col,
                 *thedata_pmid,
                 pl.lit(col).alias('original_col')
@@ -191,7 +191,7 @@ def detect_hallucinations(pdfdata: pl.LazyFrame, scan_df: pl.LazyFrame, *, theda
             validate='m:1'
         ), ["has_needle", "needles_missing", "needles_total"])
 
-    pdfdata_sus = _pick("kcat", does_contain_explode, pdfdata.collect())
+    pdfdata_sus = _pick("kcat", does_contain_explode, data.collect())
     pdfdata_sus = _pick("km", does_contain_explode, pdfdata_sus)
     pdfdata_sus = _pick("kcat_km", does_contain_explode, pdfdata_sus)
     pdfdata_sus = pdfdata_sus.with_columns(
@@ -310,16 +310,7 @@ def script_detect_hallucinations(
     ).sort('suspiciousness', descending=True, maintain_order=True)
     halluc_only.write_parquet('data/export/2_dedup/TheData_kcat_hallucinations.parquet')
 
-@export("data/export/2_dedup/pdf_hallucinations.parquet", autosave=True, cached=True)
-def pdf_hallucinations(pdfdata: pl.DataFrame):
-
-    pdf_scan_df = pl.concat([
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/brenda.parquet'),
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/scratch.parquet'),
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/topoff.parquet'),
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/wos.parquet'),
-    ])
-
+def _to_hallucinated_pmids(pdfdata: pl.DataFrame, pdf_scan_df: pl.LazyFrame, threshold=0.35) -> pl.DataFrame:
     halluc = detect_hallucinations(pdfdata, pdf_scan_df)
 
     suspicious_pmids = halluc.filter(
@@ -331,30 +322,84 @@ def pdf_hallucinations(pdfdata: pl.DataFrame):
         (pl.col('needles_missing') / (pl.col('needles_total'))).alias('flag.hallucination')
     ).unique('pmid', keep='first')
 
+    suspicious_pmids = suspicious_pmids.filter(
+        pl.col('flag.hallucination') > threshold
+    )
+
     return suspicious_pmids
+
+@require("data/scans/{alias}.parquet")
+@export("data/export/2_dedup/pdf_hallucinations.parquet", autosave=True, cached=True)
+def _pdf_hallucinations(
+    pdfdata: pl.DataFrame,
+    threshold=0.35
+):
+    pdf_scan_df = pl.concat([
+        pl.scan_parquet('data/scans/brenda.parquet'),
+        pl.scan_parquet('data/scans/scratch.parquet'),
+        pl.scan_parquet('data/scans/topoff.parquet'),
+        pl.scan_parquet('data/scans/wos.parquet'),
+    ])
+    pdf_suspicious_pmids = _to_hallucinated_pmids(pdfdata, pdf_scan_df, threshold=threshold)
+    return pdf_suspicious_pmids
+
+@require("data/scans/xml_slim.parquet")
+@export("data/export/2_dedup/xml_hallucinations.parquet", autosave=True, cached=True)
+def _xml_hallucinations(
+    xmldata: pl.DataFrame,
+    threshold=0.35
+):
+    """
+    Detect hallucinations in XML data.
+    """
+    xml_scan_df = pl.scan_parquet('data/scans/xml_slim.parquet').select('pmid', 'text')
+    xml_suspicious_pmids = _to_hallucinated_pmids(xmldata, xml_scan_df, threshold=threshold)
+    return xml_suspicious_pmids
+
 
 def attach_hallucination_flag(
     data: pl.DataFrame,
     threshold: float = 0.35,
+    clear_cache=False
 ):
     """
     Pre:
     - data: should contain 'pmid' and 'meta.doctype' columns. 
+
+    'clear_cache': some data is cached. Set 'clear_cache' to True to recompute the cached data.
     """
-    pdfdata = data.filter(
-        pl.col('meta.doctype') == 'pdf'
-    )
-    # xmldata = data.filter(
-    #     pl.col('meta.doctype') == 'xml'
-    # )
 
-    suspicious_pmids = pdf_hallucinations(pdfdata)
+    if 'meta.doctype' in data.columns:
+        pdfdata = data.filter(
+            pl.col('meta.doctype') == 'pdf'
+        )
+        xmldata = data.filter(
+            pl.col('meta.doctype') == 'xml'
+        )
 
-    data = data.join(
-        suspicious_pmids.select('pmid', 'flag.hallucination'),
-        on='pmid',
-        how='left'
-    )
+        pdf_suspicious_pmids = _pdf_hallucinations(pdfdata, threshold=threshold, clear_cache=clear_cache)
+
+        data = data.join(
+            pdf_suspicious_pmids.select('pmid', 'flag.hallucination'),
+            on='pmid',
+            how='left'
+        )
+
+        xml_suspicious_pmids = _xml_hallucinations(xmldata, threshold=threshold, clear_cache=clear_cache)
+        data = data.join(
+            xml_suspicious_pmids.select('pmid', 'flag.hallucination'),
+            on='pmid',
+            how='left',
+            coalesce=True
+        )
+        pass
+    else:
+        print("Warning: column meta.doctype is unavailable. Using all documents.")
+        pdfdata = data
+        xmldata = data
+
+
+    
     return data
 
 if __name__ == "__main__":

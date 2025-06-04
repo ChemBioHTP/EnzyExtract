@@ -722,12 +722,6 @@ def step5_main(
 def gpt_locations():
     """Return the location of the gpt_df"""
     return {
-        'beluga': 'data/valid/_valid_beluga-t2neboth_1.csv',
-        'bucket': 'data/valid/_valid_bucket-rebuilt.parquet',
-        'apogee': 'data/valid/_valid_apogee-rebuilt.parquet',
-        'apatch': 'data/valid/_valid_apatch-rebuilt.parquet',
-        'sabiork': 'data/sabiork/valid_sabiork.parquet',
-        'everything': 'data/valid/_valid_everything.parquet',
         'thedata': 'data/export/TheData_kcat.parquet',
     }
 
