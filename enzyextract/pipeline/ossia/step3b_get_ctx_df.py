@@ -1,5 +1,6 @@
 
 import os
+import re
 from typing import Union
 import polars as pl
 from tqdm import tqdm
@@ -11,7 +12,7 @@ from enzyextract.post.yaml.thresh_yaml import threshed_str_completions_to_dfs
 
 
 
-def scan_completions(
+def scan_completions_produce_parquet(
     compl_folder: Union[str, list[str]],
     top_n: int = 400,
     exclude_partial: bool = True,
@@ -32,12 +33,25 @@ def scan_completions(
     cumul = []
     for fname, fpath in tqdm(_possible_files):
         if fname.endswith('.jsonl'):
-            if exclude_partial and fname.endswith('0.jsonl'):
+            if exclude_partial and (
+                re.search(r'\.\d+\.jsonl$', fname)
+            ):
                 continue
             compl = jsonl_to_decoded_df(fpath, "openai", None)
+            compl = compl.with_columns(
+                pl.lit(fname).alias('fname')
+            )
             cumul.append(compl)
     
     df = pl.concat(cumul, how='vertical')
+
+    # debug: see custom_ids which are used in multiple files
+    _repeated_custom_ids = df.filter(
+        df.select('custom_id').is_duplicated()
+    )
+    if _repeated_custom_ids.height > 0:
+        print("Warning: the following custom_ids are used in multiple files: (first 10 shown)")
+        print(_repeated_custom_ids['custom_id'].unique().to_list()[:10])
 
     fnames = []
     contents = []
@@ -70,10 +84,9 @@ def scan_completions(
 
 if __name__ == '__main__':
     raise RuntimeError("This script is not meant to be run directly.")
-    compl_folders = [
-    ]
+    compl_folders = []
 
-    result = scan_completions(
+    result = scan_completions_produce_parquet(
         compl_folder=compl_folders,
         top_n=None
         # top_n=100

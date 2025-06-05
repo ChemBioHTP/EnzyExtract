@@ -1,4 +1,5 @@
 manifest.parquet
+xml_manifest.parquet
 export
 external
 humaneval

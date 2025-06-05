@@ -10,6 +10,12 @@ from enzyextract.post.regexes import r_mutant_many_1to4_amino1_legacy, r_pH, r_r
 _strange_kcat_units = set()
 _strange_km_units = set()
 
+
+superscript_map = {
+    '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
+    '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
+    '⁺': '+', '⁻': '-'
+}
 def fix_scientific_notation(x: str) -> str:
     """
     Convert Unicode scientific notation to ASCII format.
@@ -21,11 +27,7 @@ def fix_scientific_notation(x: str) -> str:
         "2^2"
     """
     # Dictionary mapping Unicode superscript digits to regular digits
-    superscript_map = {
-        '⁰': '0', '¹': '1', '²': '2', '³': '3', '⁴': '4',
-        '⁵': '5', '⁶': '6', '⁷': '7', '⁸': '8', '⁹': '9',
-        '⁺': '+', '⁻': '-'
-    }
+    global superscript_map
     
     result = []
     in_superscript = False
@@ -61,6 +63,7 @@ def fix_km(x: str) -> str:
     x = re.sub(r'mol/L\b', 'M', x, flags=re.IGNORECASE) # also works if mol has a prefix
     
     units = ''.join(letter for letter in x if letter.isalpha() and not letter in ['x', 'X']) # allow the cross symbol
+    _units_pretty = (''.join(l for l in x if l.isalpha() or l in ' /')).strip()
     acceptable_units = ['M', 'mM', 'µM', 'nM', 'pM']
     if not units:
         pass
@@ -72,10 +75,98 @@ def fix_km(x: str) -> str:
             # print("Rejecting Km with mg unit", x)
             return None
         # print(f"Strange km unit: {x}")
-        _strange_km_units.add(units)
+        _strange_km_units.add(_units_pretty)
         return x
     
     return x
+
+
+def fix_kcat_km_pl(df: pl.DataFrame, *, reject_unsure_units=True, kcat='kcat', km='km') -> pl.DataFrame:
+    """
+    Fix kcat/km values in a polars DataFrame.
+    
+    This function applies the `fix_kcat` and `fix_km` functions to the 'kcat' and 'km' columns of the DataFrame.
+    It returns a new DataFrame with the fixed values.
+
+    Note: this is much faster (20x) than map_elements(fix_kcat) because of rust and vectorization.
+
+    Permutations of string replacements w.r.t fix_km and fix_kcat should have been kept to a minimum,
+    but the changes are:
+
+    - check for blacklisted units are now made before everything else
+    - fix_scientific_notation is moved to the beginning, and only targets strings with unicode
+        (should have no effect)
+    """
+
+    def fix_km_pl(orig: pl.Expr) -> pl.Expr:
+        x = orig
+        x = x.str.replace_many({
+            ',': '', # destroy commas, which interfere with matching
+            '\u03BC': '\u00B5', # greek mu \u03BC --> \u00B5
+        })
+        # x = x.map_elements(fix_scientific_notation, return_dtype=pl.Utf8)
+        x = x.str.replace(r'\bmm\b', 'mM')
+        x = x.str.replace(r'\bnm\b', 'nM')
+        x = x.str.replace(r'(?i)\b[puμµ]M\b', 'µM')
+        x = x.str.replace(r'(?i)mol/L\b', 'M') # also works if mol has a prefix
+        return x
+    
+    def fix_kcat_pl(orig: pl.Expr) -> pl.Expr:
+        # x = orig.map_elements(fix_scientific_notation, return_dtype=pl.Utf8)
+        x = orig
+        x = x.str.replace_many({
+            ',': '', # destroy commas, which interfere with matching
+            '\u03BC': '\u00B5', # greek mu \u03BC --> \u00B5
+            '−': '-',
+            '–': '-', # minus (\u2212), then en dash (\u2013)
+        })
+        x = x.str.replace("-'", "-1")
+        x = x.str.replace(r'\bsec\b', 's')
+        for unit in ['ms', 'millisecond', 's', 'sec', 'second', 'm', 'min', 'minute', 'h', 'hr', 'hour', 'day']:
+            x = x.str.replace(r'\b' + f'{unit}' + r'-1\b', unit + '^-1')
+        return x
+
+
+    # apply UDF only to those with unicode superscripts (make it faster)
+    unicode_superscripts = ''.join(superscript_map.keys())
+    df = df.with_columns(
+        (
+            pl.when(pl.col(km).str.contains(f'[{unicode_superscripts}]'))
+            .then(pl.col(km))
+            .otherwise(None)
+        ).map_elements(fix_scientific_notation, return_dtype=pl.Utf8, skip_nulls=True)
+        .alias('_km_sf'),
+        (
+            pl.when(pl.col(kcat).str.contains(f'[{unicode_superscripts}]'))
+            .then(pl.col(kcat))
+            .otherwise(None)
+        ).map_elements(fix_scientific_notation, return_dtype=pl.Utf8, skip_nulls=True)
+        .alias('_kcat_sf'),
+    ).with_columns(
+        pl.coalesce(km, '_km_sf').alias(km),
+        pl.coalesce(kcat, '_kcat_sf').alias(kcat)
+    )
+    
+    df = df.drop(['_km_sf', '_kcat_sf'])
+
+
+    if reject_unsure_units:
+        df = df.with_columns(
+            pl.when(
+                pl.col(km).str.contains_any(['g/', 'mg'])
+            ).then(None).otherwise(fix_km_pl(pl.col(km))).alias(km),
+            pl.when(
+                pl.col(kcat).str.contains_any(['mol', 'mg', 'U', '/g', 'l/', 'L'])
+                | pl.col(kcat).str.contains(r'\b[mpμµn]?M\b')
+                # | pl.col(kcat).str.contains(r'\b[mpμµn]?g\b')
+            ).then(None).otherwise(fix_kcat_pl(pl.col(kcat))).alias(kcat)
+        )
+    else:
+        df = df.with_columns(
+            fix_km_pl(pl.col(km)).alias(km),
+            fix_kcat_pl(pl.col(kcat)).alias(kcat)
+        )
+    return df
 
 def fix_kcat(x: str) -> str:
     
@@ -90,6 +181,7 @@ def fix_kcat(x: str) -> str:
     x = re.sub('μ', 'µ', x) # greek mu \u03BC --> \u00B5
     # detect and destroy units
     units = ''.join(letter for letter in x if letter.isalpha() and not letter == 'x') # allow the cross symbol
+    _units_pretty = (''.join(l for l in x if l.isalpha() or l in ' /')).strip()
     
     acceptable_units = ['ms', 'millisecond', 's', 'sec', 'second', 'm', 'min', 'minute', 'h', 'hr', 'hour', 'day']
     bad_units = ['mol', 'mg', 'U', '/g', 'l/', 'L']
@@ -111,7 +203,8 @@ def fix_kcat(x: str) -> str:
             return None
         # strange-looking unacceptable unit
         # print(f"Strange kcat unit: {x}")
-        _strange_kcat_units.add(units)
+
+        _strange_kcat_units.add(_units_pretty)
         # return ''
     
     # standardize hyphens

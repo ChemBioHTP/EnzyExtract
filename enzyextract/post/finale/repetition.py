@@ -138,8 +138,8 @@ def attach_repetitive_flag(
     - data: should contain 'pmid' and 'descriptor' columns.
 
     Post:
-    - data: additional column named 'flag.repetitive' will be added. If the row is suspected to be
-    highly duplicated or repeated LLM-generated data, this `flag.repetitive` will report the
+    - data: additional column named 'flag.repetition' will be added. If the row is suspected to be
+    highly duplicated or repeated LLM-generated data, this `flag.repetition` will report the
     percentage of repetitive data. If the row is not suspected, this column will be null.
 
 
@@ -153,7 +153,7 @@ def attach_repetitive_flag(
 
     reported = reported.select(
         'pmid',
-        (1 - pl.col('unique_percent')).alias('repetition_percent')
+        (1 - pl.col('unique_percent')).alias('flag.repetition')
     ).unique('pmid', keep='first')
     data = data.join(
         reported,

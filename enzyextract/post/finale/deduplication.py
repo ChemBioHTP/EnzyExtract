@@ -57,6 +57,62 @@ def count_kcat_conventionally(df: pl.DataFrame) -> pl.DataFrame:
 
     return conventional_kcat_df
 
+def deduplicate_with_context_df(
+    data: pl.DataFrame,
+    context_df: pl.DataFrame,
+    unique_column = 'pmid'
+) -> pl.DataFrame:
+    """
+    Deduplicate the data DataFrame, if context_df is available.
+
+    Pre:
+    - data: should have columns 'custom_id'
+    - context_df: should have columns 'custom_id', {unique_column}
+
+    Post:
+    {unique_column} will be unique. If there are duplicates, the first one will be kept.
+    """
+    # bad_custom_ids = context_df.filter(
+    #     context_df.select('custom_id').is_duplicated()
+    # ).sort('custom_id')
+    # print(bad_custom_ids) # 564
+    # REASON: GPT provides two yamls: one, normally; the second one, the "final answer" (the exact same one).
+
+    # doc_scanned_twice = context_df.unique([unique_column, 'custom_id'], keep='first')
+    # doc_scanned_twice = doc_scanned_twice.filter(
+    #     doc_scanned_twice.select(unique_column).is_duplicated()
+    # ).sort('pmid')
+    # print(doc_scanned_twice) # 5706
+
+    safe_df = context_df.unique(unique_column, keep='first', maintain_order=True)
+
+    return data.join(
+        safe_df.select(['custom_id', unique_column]),
+        on='custom_id',
+        how='semi'
+    )
+
+def deduplicate_with_custom_id(
+    data: pl.DataFrame,
+    unique_column = 'pmid'
+
+):
+    """
+    Deduplicate the data DataFrame, if custom_id is available.
+
+    Pre:
+    - data: should have columns {unique_column}, 'custom_id'
+    """
+    good_ids = data.select('custom_id', unique_column).unique(
+        unique_column, keep='first', maintain_order=True
+    )
+
+    return data.join(
+        good_ids.select(['custom_id', unique_column]),
+        on='custom_id',
+        how='semi'
+    )
+
 if __name__ == "__main__":
     df = pl.read_parquet('data/export/TheData_kcat.parquet')
     df = deduplicate(df)

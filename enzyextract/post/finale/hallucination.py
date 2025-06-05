@@ -359,17 +359,21 @@ def _xml_hallucinations(
 
 def attach_hallucination_flag(
     data: pl.DataFrame,
+    scan_df: pl.DataFrame,
     threshold: float = 0.35,
-    clear_cache=False
+    clear_cache=False,
 ):
     """
     Pre:
-    - data: should contain 'pmid' and 'meta.doctype' columns. 
+    - data: should contain 'pmid' columns. 
+    - scan_df: should contain 'pmid' and 'text' columns, with 'text' containing full texts of documents.
 
     'clear_cache': some data is cached. Set 'clear_cache' to True to recompute the cached data.
     """
 
-    if 'meta.doctype' in data.columns:
+    if 'meta.doctype' in data.columns and scan_df is None:
+        # Use scans stored in hardcoded locations
+
         pdfdata = data.filter(
             pl.col('meta.doctype') == 'pdf'
         )
@@ -392,11 +396,19 @@ def attach_hallucination_flag(
             how='left',
             coalesce=True
         )
+        data = recoalesce(data, ['flag.hallucination'], suffix='_right')
         pass
     else:
-        print("Warning: column meta.doctype is unavailable. Using all documents.")
-        pdfdata = data
-        xmldata = data
+        assert scan_df is not None, (
+            "scan_df must be provided"
+            "(needs columns 'pmid' and 'text', with' 'text' containing full texts of documents)."
+        )
+        suspicious_pmids = _to_hallucinated_pmids(xmldata, scan_df, threshold=threshold)
+        data = data.join(
+            suspicious_pmids.select('pmid', 'flag.hallucination'),
+            on='pmid',
+            how='left'
+        )
 
 
     

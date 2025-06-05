@@ -8,6 +8,7 @@ from tqdm import tqdm
 import yaml
 import ryaml
 
+from enzyextract.post.metadata.regurgitation import is_content_regurgitated
 from enzyextract.post.yaml.collect_rulebreakers import records_wide_to_long_df
 from enzyextract.post.yaml.pl_parse_yaml import clean_yaml_str_convert_to_dict, data_to_df
 from enzyextract.post.yaml.schemas import _complete_ctx_schema, _data_schema, _enzyme_ctx_schema, _substrate_ctx_schema, _general_ctx_schema, _errors_schema, rulebreakers_schema
@@ -155,15 +156,11 @@ def threshed_str_completions_to_dfs(
 
     yaml_idx = 0
     for c, pmid, custom_id in tqdm(zip(contents, pmids, custom_ids), total=len(contents)):
-        # pmid = str(pmid_from_usual_cid(custom_id))
-        # pmid = custom_id.rsplit('_', 1)[-1]
-        
+        is_regurgitation = is_content_regurgitated(c) or None
+
         c = c.replace('\nextras:\n', '\ndata:\n') # blunder
         _generator = fix_multiple_yamls(yaml_blocks=extract_yaml_code_blocks(c, current_pmid=pmid))
-        for _, yaml in _generator: # 
-            # new_stuff = str_completion_to_dfs(yaml, pmid)
-            # for k, vlist in new_stuff.items():
-            #     extraction_per_yaml[k].append(vlist)
+        for _, yaml in _generator: 
 
             new_stuff = str_completion_to_records(yaml)
             for k, vlist in new_stuff.items():
@@ -181,7 +178,12 @@ def threshed_str_completions_to_dfs(
                         # in general
                         for i, v in enumerate(vlist):
                             if isinstance(v, dict):
-                                vlist[i] = {'pmid': pmid, 'custom_id': custom_id, **v}
+                                vlist[i] = {
+                                    'pmid': pmid, 
+                                    'custom_id': custom_id, 
+                                    **v, 
+                                    'flag.regurgitation': is_regurgitation
+                                }
                         extraction_per_yaml[k].extend(vlist)
                 elif isinstance(vlist, pl.DataFrame):
                     extraction_per_yaml[k].append(
@@ -191,25 +193,21 @@ def threshed_str_completions_to_dfs(
                         ).insert_column(
                             1,
                             pl.lit(custom_id).alias('custom_id')
-                        )
+                        ).with_columns([
+                            pl.lit(is_regurgitation, dtype=pl.Boolean).alias('flag.regurgitation'),
+                        ])
                     )
                 elif vlist is None:
                     pass
                 else:
                     raise TypeError(f"Expected list, got {type(vlist)}")
             yaml_idx += 1   
-    
+        pass
     # concat all the dataframes
-    # generals = [x['general_ctx'] for x in extraction_per_yaml]
-    # general_agg = generals[0]
-    # for g in generals[1:]:
-    #     general_agg = pl.concat([general_agg, g], how='diagonal_relaxed')
-    #     pass
 
     data_df = pl.concat(
         extraction_per_yaml['data'],
-        how='vertical'
-        # schema=_data_schema
+        how='vertical',
     )
     del extraction_per_yaml['data']
     context_df = pl.DataFrame(
@@ -222,12 +220,6 @@ def threshed_str_completions_to_dfs(
     )
     del extraction_per_yaml['context_grain']
 
-    # for df in extraction_per_yaml['rulebreakers']:
-    #     for col in df.columns:
-    #         if col not in _validate_schema:
-    #             _validate_schema[col] = set()
-    #         dtype = df.schema[col]
-    #         _validate_schema[col].add(dtype)
     rulebreakers_df = pl.concat(
         extraction_per_yaml['rulebreakers'],
         how='vertical'

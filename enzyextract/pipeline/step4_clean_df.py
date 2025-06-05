@@ -28,7 +28,11 @@ def script_finalize_df(
     df = attach_doctype_meta(df, pdf_mask)
 
     df = attach_repetitive_flag(df, threshold=0.35)
-    df = attach_hallucination_flag(df, threshold=0.35)
+
+    # This uses hardcoded PDF/XML scans. You would probably want to explicitly pass
+    # the scans (dataframe with document full text) to `scan_df`.
+    df = attach_hallucination_flag(df, scan_df=None, threshold=0.35)
+
     # conventional_kcat_df = count_kcat_conventionally(deduplicated_df)
     # print(conventional_kcat_df.height)
     pass

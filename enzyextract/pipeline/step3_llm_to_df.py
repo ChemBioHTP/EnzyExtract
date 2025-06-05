@@ -4,11 +4,12 @@ Formerly generate_valid.py
 
 import json
 import os
-from typing import Optional
+from typing import Literal, Optional
 import pandas as pd
 import polars as pl
 from enzyextract.pipeline.llm_log import llm_log_schema, read_log
 from enzyextract.post.decode import jsonl_to_decoded_df
+from enzyextract.post.metadata.regurgitation import is_content_regurgitated
 from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid
@@ -67,8 +68,16 @@ def generate_valid_parquet(fpath,
         for _, yaml in _generator: # 
             
             df, context = yaml_to_df(yaml, auto_context=True, debugpmid=None if silence else pmid) # pmid, silence debug
-            df['pmid'] = pmid
+            df.insert(0, 'pmid', pmid)
             df['custom_id'] = custom_id
+
+            if is_content_regurgitated(content):
+                df['flag.regurgitation'] = True
+            else:
+                df['flag.regurgitation'] = None
+            
+
+
             if df.empty:
                 continue
             valids.append(df)
