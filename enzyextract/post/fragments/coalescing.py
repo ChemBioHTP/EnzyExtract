@@ -225,14 +225,14 @@ def coalesce_collect(
                 renames[col_name] = column_renames[j]
                 j += 1
         selection = selection.rename(renames)
-        selection = selection.with_row_index('coalesce_id', offset=all_selections.height)
+        selection = selection.with_row_index('coalesce_id', offset=all_selections.height).collect()
         all_selections = pl.concat([
             all_selections,
-            selection.collect()
+            selection
         ], how='vertical_relaxed')
         # all_selections = all_selections.vstack(selection.collect())
 
-        ids_only = selection.select(join_key, 'coalesce_id').rename({
+        ids_only = selection.lazy().select(join_key, 'coalesce_id').rename({
             'coalesce_id': f'{df_name}.coalesce_id'
         })
 

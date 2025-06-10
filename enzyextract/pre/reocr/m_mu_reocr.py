@@ -239,9 +239,6 @@ def classify_image(model, image_path, device='cpu') -> tuple[str, float]:
     with torch.no_grad():
         output = model(img)
         probabilities = torch.nn.functional.softmax(output, dim=1)
-        # mu_prob = probabilities[0][1].item()
-        # adjust for 3 classes
-        # mu_prob = probabilities[0][1].item()
         best_label = torch.argmax(probabilities, dim=1).item()
         mu_score = probabilities[0][1].item()
         if best_label == 0:
@@ -589,22 +586,15 @@ def script_scan_mM(pdf_root=None, write_dir=None, save_imgs=False, model_path=No
 
     
     initial_chars = 'm\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f'
-    # initial_chars = None
     terminating_condition = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum() #  or ch in terminating_chars
-    # terminating_condition=None
     
     save_imgs=False
-    # terminating_condition=lambda ch: ch == '2'
 
-    # working='unicode'
-    # filepath = f'zpreprocessing/reocr/reocr_examples/{working}'
     os.makedirs(write_dir, exist_ok=True)
-    # df = special_dump(root, all_pdfs, None, target='mM', initial_chars=initial_chars,
-    #             allow_lowercase=True, save_imgs=False, terminating_condition=terminating_condition)
     df = dump_images_too(root, all_pdfs, write_dir, target='mM', initial_chars=initial_chars,
                          allow_lowercase=True, save_imgs=save_imgs, terminating_condition=terminating_condition,
                          model_path=model_path) # ch == '2'
-    
+
     # additional terminating conditions: [\u0001]m[\b2o]
     
     # concat if something already exists
@@ -618,7 +608,6 @@ def script_scan_mM(pdf_root=None, write_dir=None, save_imgs=False, model_path=No
         # remove the seen ones
         df = pl.concat([old, df], how='diagonal_relaxed')
 
-    
     df.write_parquet(rf'{write_dir}/mM.parquet')
 
     seen = pl.concat([
@@ -627,62 +616,37 @@ def script_scan_mM(pdf_root=None, write_dir=None, save_imgs=False, model_path=No
     ])
     seen.write_csv(seen_fpath, include_header=False)
 
-def script_federated_inference():
+def script_federated_inference(
+    pdf_root: str,
+    destination: str = "C:/conjunct/tmp/eval/cherry_prod/mM",
+):
     """
-    
+    Script for federated inference - pdfs are in a nested, 2-level directory structure
     """
-    former = [
-        # ('brenda', 'asm'),
-        # ('brenda', 'hindawi'),
-        # ('brenda', 'jbc'),
-        # ('brenda', 'open'),
-        # ('brenda', 'pnas'),
-        # ('brenda', 'scihub'),
-        # ('brenda', 'wiley'),
+    # collect all folders that are 2 levels deep in pdf_root
+    former = []
+    for dir1 in os.listdir(pdf_root):
+        path1 = os.path.join(pdf_root, dir1)
+        if not os.path.isdir(path1):
+            continue  # Skip non-directories
+        for dir2 in os.listdir(path1):
+            path2 = os.path.join(path1, dir2)
+            if not os.path.isdir(path2):
+                continue  # Skip non-directories
+            former.append((dir1, dir2))
+    print(former)
 
-        # ('scratch', 'asm'),
-        # ('scratch', 'hindawi'),
-        # ('scratch', 'open'),
-        # ('scratch', 'wiley'),
-
-        # ('topoff', 'hindawi'),
-        # ('topoff', 'open'),
-        # ('topoff', 'open-part1'),
-        # ('topoff', 'open-part2'),
-        # ('topoff', 'open-part3'),
-        # ('topoff', 'wiley'),
-
-        # ('wos', 'asm'),
-        # ('wos', 'hindawi'),
-        # ('wos', 'jbc'),
-        # ('wos', 'local_shim'),
-        ('wos', 'open'),
-        ('wos', 'wiley'),
-    ]
-
-    # only missing: wos/remote_all
     manifest = pl.read_parquet('data/manifest.parquet')
     manifest = manifest.filter(
         pl.col('readable')
     ).unique('canonical') # only need readable and canonical
 
-
     # stage 1: we only need to fix what was done before
     initial_chars = 'm\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\u0008\u0011\u0012\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f'
-    # initial_chars = None
-    # inclusive_end = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum() #  or ch in terminating_chars
-    inclusive_end = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum()#  or ch in terminating_chars
-
-    destination = "C:/conjunct/tmp/eval/cherry_prod/mM"
-
-    # the singular one which needs to be processed uninterrupted
-    uninterrupted = [
-        # ('wos', 'remote_all'),
-    ]
-
+    inclusive_end = lambda ch: not ch or ch == '2' or ch == 'o' or not ch.isalnum()
 
     # these ones are curated
-    for group, is_special in [(uninterrupted, False), (former, True)]:
+    for group, is_special in [(former, True)]:
         for toplevel, secondlevel in group:
             
             subset = manifest.filter(
@@ -693,7 +657,7 @@ def script_federated_inference():
             write_dir = f'{destination}/{toplevel}_{secondlevel}'
             os.makedirs(write_dir, exist_ok=True)
 
-            root = f"D:/papers/{toplevel}/{secondlevel}"
+            root = f"{pdf_root}/{toplevel}/{secondlevel}"
             if is_special:
                 print(f"Special: {toplevel}-{secondlevel}")
                 df = special_dump(root, all_pdfs, None, target='mM', initial_chars=initial_chars,

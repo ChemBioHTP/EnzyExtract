@@ -24,14 +24,14 @@ datadf = datadf.filter(
 )
 contextdf = pl.read_parquet('data/recontext/1_fromyaml/context.parquet').with_row_index('context_id')
 # keep exactly one custom_id (keep the last: keep the final answer)
-contextdf = contextdf.unique('custom_id', keep='last')
+contextdf = contextdf.unique('custom_id', keep='last', maintain_order=True)
 # standardize all context
 # contextdf = contextdf.with_columns(
 #     unicode_fix_list('temperatures'),
 #     unicode_fix_list('pHs'),
 # )
 
-descriptors = datadf.select('custom_id', 'descriptor', 'fragments').unique().with_row_index('data_id')
+descriptors = datadf.select('custom_id', 'descriptor', 'fragments').unique(maintain_order=True).with_row_index('data_id')
 
 descriptors = descriptors.join(
     contextdf.select('context_id', 'custom_id'), # each custom_id gets exactly one context_id
@@ -67,6 +67,10 @@ cofactors, remf = filter_out(r'^\(?[Ww]ith[o ]', remf)
 
 ### STEP 1.4: enzyme names
 enzymedf = contextdf.select('context_id', 'enzymes').explode('enzymes').unnest('enzymes').sort('context_id').with_row_index('enzyme_id')
+"""
+columns: context_id, enzyme_id, fullname, synonyms, mutants, organisms
+"""
+
 # enzymedf = enzymedf.with_columns(
 #     unicode_fix(pl.col('fullname')),
 #     unicode_fix_list('synonyms'),
@@ -383,6 +387,15 @@ organs, remf = subfilter_out(r'(?i)\b(heart|lung|brain|kidney|liver|stomach|(sma
 # ) # 1_000_000 -> 1_000_000 -> 1_000_000 -> 1_000_000
 
 
+# only keep contexts that have exactly 1 enzyme
+enzyme_singleton = enzymedf.unique('context_id', keep='none', maintain_order=True).select(
+    'context_id', 'enzyme_id', 'fullname'
+).join(
+    descriptors.select('data_id', 'context_id'),
+    on='context_id',
+    validate='m:m'
+)
+
 
 enzyme_coalesce_instructions = [
     (enzyme_exact_full, 'fullname', ['fragments', 'enzyme_id']),
@@ -393,6 +406,7 @@ enzyme_coalesce_instructions = [
     (enzymes_inexact, 'inexact', ['extract', 'enzyme_id']),
     # (enzymes_fuzzy, 'fragments', 'fuzzy_name'),
     # (enzymes_fuzzy_2, 'shrinkable', 'fuzzy_name_2'),
+    (enzyme_singleton, 'singleton', ['fullname', 'enzyme_id'])
 ]
 
 
@@ -402,8 +416,16 @@ enzyme_coalesced, coalesced_values = coalesce_collect(
     # additional_columns=['enzyme_id'],
     # common_column_name='fragment_id',
     # final_column_name='enzyme_name'
-    column_renames=['match', 'enzyme_id']
+    column_renames=['match', 'enzyme_id'],
+    join_key='data_id'
 ) # 178471 - 177738 = 733
+
+enzyme_coalesced = enzyme_coalesced.sort('data_id')
+
+enzyme_coalesced = enzyme_coalesced.join(
+    descriptors.select('data_id', 'descriptor'),
+    on='data_id',
+)
 
 pass
 # enzyme_coalesced = coalesce_collect(
