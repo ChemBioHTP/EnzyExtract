@@ -12,6 +12,12 @@ from enzyextract.dependency.prereqs import export
 from enzyextract.utils.xml_pipeline import xml_abstract_processing, xml_get_soup, xml_raw_text_processing
 
 def scan_papers(pdfs_folder, recursive=False):
+    """
+    Convert PDFs into a dataframe with full text content.
+
+    We recommend this df be stored as parquet, which compresses the text and permits
+    fast access and indexing.
+    """
     # round up all the PDFs
     pdfs = []
     if not recursive:

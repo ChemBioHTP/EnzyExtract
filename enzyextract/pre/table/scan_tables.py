@@ -4,26 +4,12 @@ import re
 import importlib
 from tqdm import tqdm
 
-import gmft
-import gmft.table_detection
-import gmft.table_visualization
-import gmft.table_function
-import gmft.table_function_algorithm
-import gmft.pdf_bindings
-import gmft.common
 
-from gmft_pymupdf import PyMuPDFDocument
-from gmft.table_detection import CroppedTable, TableDetector, TableDetectorConfig
-from gmft.pdf_bindings import PyPDFium2Document
+from gmft.detectors.tatr import TATRDetector
 from gmft.auto import AutoFormatConfig, AutoTableFormatter
 from enzyextract.pre.table.reocr_for_gmft import load_correction_df, PyMuPDFDocument_REOCR
-from gmft.table_function import TATRFormattedTable
+from gmft.formatters.tatr import TATRFormattedTable
 from pypdfium2 import PdfiumError
-
-# Reload modules
-for module in [gmft, gmft.common, gmft.table_detection, gmft.table_visualization,
-               gmft.table_function_algorithm, gmft.table_function, gmft.pdf_bindings]:
-    importlib.reload(module)
 
 # Regular expressions for kinetic term detection
 kinetics_re_s = kcat_re_s = [re.compile(x, re.IGNORECASE) for x in \
@@ -75,13 +61,13 @@ def create_md(table: TATRFormattedTable, config):
     captions = table.captions()
     return f"""{captions[0]}\n\n{tbl_content}\n\n{captions[1]}"""
 
-def process_pdfs(pdf_root, write_dir, micros_path):
+def process_pdfs(pdf_root, write_dir, micros_path, _check_nonzero_tables=True):
     setup_directories(write_dir)
     
     all_pdfs = sorted([f for f in os.listdir(pdf_root) if f.endswith(".pdf")])
     correction_df = load_correction_df(micros_path, all_pdfs)
     
-    detector = TableDetector()
+    detector = TATRDetector()
     formatter = AutoTableFormatter(config=AutoFormatConfig())
     
     md_path = f"{write_dir}/markdown"
@@ -94,7 +80,8 @@ def process_pdfs(pdf_root, write_dir, micros_path):
             seen = set(f.read().splitlines())
         all_pdfs = [f for f in all_pdfs if f not in seen]
 
-    assert len(all_pdfs) > 0, "No PDFs to process. Check the directory."
+    if _check_nonzero_tables:
+        assert len(all_pdfs) > 0, "No PDFs to process. Check the directory."
     for filename in tqdm(all_pdfs):
         
         pdfname = filename[:-4]

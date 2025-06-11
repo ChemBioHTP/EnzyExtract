@@ -30,24 +30,29 @@ VERTEXAI_PROJECT=...
 See `experiments/example/pipeline/ex_step*.py` for example scripts. The scripts should be run sequentially, though file paths may need to be adjusted.
 
 Steps:
-1. step0_run_preprocessing.py:
+1. ex_step0_run_preprocessing.py:
     - Handles the preprocessing steps (ResNet, Table Extraction)
     - create a `.enzy` folder for simplified file management
-2. step1_run_tableboth.py
+2. ex_step1_run_tableboth.py
     - Given PDFs and preprocessed data, feed to LLMs using Batch API.
     - File locations should be automatically saved to `.enzy/llm_log.tsv`.
-3. step1b_run_pdf_binaries.py
+3. ex_step1b_run_pdf_binaries.py
     - **Alternative** to `step0` and `step1`: feed PDF binaries directly to Claude.
-4. step2_download.py
+4. ex_step2_download.py
     - Small script to retrieve batches from Batch APIs.
-5. step3_llm_to_df.py
+5. ex_step3_llm_to_df.py
     - Convert the LLM output to parquet files.
-6. step4_generate_identifiers.py
+6. ex_step5_generate_identifiers.py
     - **Optional**: Attach sequence identifiers (EC number, UniProt ID, PDB ID, SMILES, PubChem ID) to the data from `step3`.
-7. step5_compare_dfs.py
+
+## Evaluation
+
+See `experiments/example/evaluation/ex_step*.py`.
+
+1. ex_eval1_compare_dfs.py
     - Evaluate and benchmark LLM data against a trusted dataset.
-8. step6_plot_dfs.py
-    - Plot the data from `step5`.
+2. ex_eval2_plot_dfs.py
+    - Plot the data from `ex_eval1`.
 
 ## Enzyme Accessions
 

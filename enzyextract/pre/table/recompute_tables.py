@@ -12,10 +12,7 @@ import shutil
 import polars as pl
 from pypdfium2 import PdfiumError
 import json
-import pymupdf
-from gmft_pymupdf import PyMuPDFDocument
-from gmft.pdf_bindings.bindings_pdfium import PyPDFium2Document
-from gmft.table_function import TATRFormattedTable
+from gmft.formatters.tatr import TATRFormattedTable
 
 from enzyextract.pre.table.reocr_for_gmft import PyMuPDFDocument_REOCR
 
