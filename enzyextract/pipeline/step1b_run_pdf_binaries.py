@@ -166,7 +166,7 @@ def step1b_main(
             
 
     print("Time to submit!")
-    for chunk in need_to_submit:
+    for i, chunk in enumerate(need_to_submit):
         
         # special case with 1 shard
         if len(need_to_submit) == 1:
