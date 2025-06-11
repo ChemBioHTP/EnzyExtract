@@ -275,6 +275,9 @@ def step1_main(
     version=None,
     _check_nonzero_reocr=True,
     _check_nonzero_tables=True,
+    
+    chunk_size = 1000,
+    save_as_jsonl=True,
 ):
     
     process_env('.env')
@@ -362,7 +365,6 @@ def step1_main(
       
         # write in chunks
 
-        chunk_size = 1000
         have_multiple = len(batch) > chunk_size # need to enforce chunk size, since OpenAI has data size limit
         need_to_submit = []
         for i in range(0, len(batch), chunk_size):
@@ -371,10 +373,16 @@ def step1_main(
 
             if have_multiple:
                 will_write_to = f'{dest_folder}/{namespace}_{version}.{i}.jsonl'
-            if reuse_pref == ReusePreference.OVERWRITE or not os.path.exists(will_write_to):
-                write_to_jsonl(chunk, will_write_to)
+            
+            if save_as_jsonl:
+                # refer to it as filepath
+                if reuse_pref == ReusePreference.OVERWRITE or not os.path.exists(will_write_to):
+                    write_to_jsonl(chunk, will_write_to)
 
-            need_to_submit.append(will_write_to)
+                need_to_submit.append(will_write_to)
+            else:
+                # refer to it directly
+                need_to_submit.append(chunk)
         
         corresp_fpath = f'{corresp_folder}/{namespace}_{version}.parquet'
         corr_df = pl.DataFrame(correspondences)
@@ -397,41 +405,56 @@ def step1_main(
     _wrote_corr = False
     for i, will_write_to in enumerate(need_to_submit):
 
+        if isinstance(will_write_to, str):
+            batch_fpath = will_write_to
+            count = None
+        elif isinstance(will_write_to, list):
+            batch_fpath = None
+            count = len(will_write_to)
+        else:
+            raise ValueError("Invalid write-to")
+            
         # special case with 1 shard
         if len(need_to_submit) == 1:
             i = None
         
         # read to make sure
         inp = do_presubmit(
-            filepath=will_write_to,
+            filepath=batch_fpath,
+            count=count,
             submit_suffix=f"Submit to {llm_provider}?",
         )
         
         if inp == SubmitPreference.REMOVE:
             print("Removing.")
-            os.remove(will_write_to)
+            if batch_fpath:
+                os.remove(batch_fpath)
             # do NOT try_write_corr_df
             continue
         elif inp == SubmitPreference.UNTRACK:
-            print("Saved untracked copy at", will_write_to)
+            print("Saved untracked copy at", batch_fpath)
             _wrote_corr |= try_write_corr_df(corr_df, corresp_fpath, reuse_pref, _wrote_corr)
             continue
             
         elif inp == SubmitPreference.YES:
             _wrote_corr |= try_write_corr_df(corr_df, corresp_fpath, reuse_pref, _wrote_corr)
             try:
-            
-                # batchname = submit_openai_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
-                file_uuid, batchname = asyncio.run(submit_litellm_batch_file(will_write_to, custom_llm_provider=llm_provider))
+                if llm_provider == 'anthropic':
+                    from enzyextract.submit.anthropic_management import submit_anthropic_batch_file
+                    file_uuid = None
+                    batchname = submit_anthropic_batch_file(will_write_to)
+                else:
+                    # batchname = submit_openai_batch_file(will_write_to, pending_file='batches/pending.jsonl') # will ask for confirmation
+                    file_uuid, batchname = asyncio.run(submit_litellm_batch_file(will_write_to, custom_llm_provider=llm_provider))
                 status = 'submitted'
             except Exception as e:
-                print("Error submitting batch", will_write_to)
+                print("Error submitting batch", batch_fpath)
                 print(e)
                 file_uuid = None
                 batchname = None
                 status = 'local'
         elif inp == SubmitPreference.LOCAL:
-            print("Tracked local copy at", will_write_to)
+            print("Tracked local copy at", batch_fpath)
             _wrote_corr |= try_write_corr_df(corr_df, corresp_fpath, reuse_pref, _wrote_corr)
             file_uuid = None
             batchname = None
@@ -455,7 +478,7 @@ def step1_main(
 
             file_uuid=file_uuid,
             batch_uuid=batchname,
-            batch_fpath=will_write_to,
+            batch_fpath=batch_fpath,
             corresp_fpath=corresp_fpath,
             # try to update (and replace) existing record if it had already existed
             replace_existing_record=_should_exist

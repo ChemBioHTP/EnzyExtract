@@ -1,5 +1,6 @@
 import base64
 import json
+from typing import List, Union, Optional
 import PIL
 import requests
 import anthropic
@@ -84,9 +85,35 @@ def to_anthropic_batch_request(
         )
     )
 
-def submit_anthropic_batch_file(reqs: list[Request]):
-    """Anthropic's batch API works slightly differently."""
+def submit_anthropic_batch_file(
+    reqs: Union[str, bytes, List[Request]]
+) -> Optional[str]:
+    """Anthropic's batch API works slightly differently.
+    
+    Args:
+        reqs: Can be any of these:
+            - str: path to jsonl file
+            - bytes: bytes-like object containing jsonl content
+            - list[Request]: list of Request objects
 
+    Returns:
+        Optional[str]: The batch ID if successful, None if aborted
+    """
+    if isinstance(reqs, (str, bytes)):
+        if isinstance(reqs, str):
+            # If it's a filepath, read the file
+            with open(reqs, 'r') as f:
+                content = f.read()
+        else:
+            # If it's bytes-like, decode to string
+            content = reqs.decode('utf-8')
+        
+        # Parse the JSONL content
+        requests = []
+        for line in content.strip().split('\n'):
+            if line:  # Skip empty lines
+                requests.append(json.loads(line))
+        reqs = requests
 
     inp = do_presubmit(
         count=len(reqs),
