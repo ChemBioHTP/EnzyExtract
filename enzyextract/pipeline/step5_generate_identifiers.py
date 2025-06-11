@@ -4,7 +4,7 @@ import polars as pl
 import polars.selectors as cs
 import re
 
-from enzyextract.dependency.injection import REQUIRE, resolve
+from enzyextract.dependency.injection import OPTIONAL, REQUIRE, resolve
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit
 from enzyextract.thesaurus.mutant_patterns import with_clean_mutants
 from enzyextract.thesaurus.ascii_patterns import pl_to_ascii
@@ -229,6 +229,34 @@ def add_identifiers(gpt_df, subs_df):
     )
     return gpt_df
 
+@resolve
+def add_ncbi_organism(
+    gpt_df,
+    *,
+    ncbi_organisms = OPTIONAL('data/thesaurus/organism/ncbi_binomial_taxonomy.parquet'),
+):
+    """
+
+    Pre: gpt_df has column 'descriptor'
+
+    Post: gpt_df receives new column 'organism.ncbi'
+
+    If NCBI taxonomy is not available, then this function is a no-op.
+    """
+
+    if ncbi_organisms is None:
+        print("No NCBI taxonomy available (skipped)")
+        return gpt_df
+
+    hits = set(ncbi_organisms['name_txt'].to_list() + ncbi_organisms['short_genus'].to_list())
+
+    res = gpt_df.with_columns([
+        pl.col('descriptor').str.extract_many(
+            list(hits)
+        ).list.get(0, null_on_oob=True).alias('organism.ncbi') # get first
+    ])
+    return res
+    
 
 @resolve
 def add_enzyme_sequences(
@@ -658,8 +686,14 @@ def step5_main(
     # exit(0)
 
     ### Step 2: Add identifiers
+    df = gpt_df
     
-    df = add_identifiers(gpt_df, subs_df=subs_df)
+    # df = add_ncbi_organism(df)
+    # 20_583 more organisms found (487244 -> 507827, 4% more)
+    # but is significantly laggy (>10 seconds)
+
+    df = add_identifiers(df, subs_df=subs_df)
+
 
     if include_enzyme_sequences:
         # add enzyme equences to the df
