@@ -23,11 +23,11 @@ from enzyextract.pre.reocr.micro_fix import true_widest_mM_re
 
 
 
-def build_manifest(pdf_root):
+def build_manifest(pdf_root, file_ext='pdf'):
     """
     Build a manifest view of the pdfs in the pdf_root directory.
     """
-    pdfs = glob.glob(f"{pdf_root}/**/*.pdf", recursive=True)
+    pdfs = glob.glob(f"{pdf_root}/**/*.{file_ext}", recursive=True)
     pmids = [os.path.basename(x).rsplit('.', 1)[0] for x in pdfs]
     # create a dataframe with the pmids and their corresponding pdfs
     manifest = pl.DataFrame({

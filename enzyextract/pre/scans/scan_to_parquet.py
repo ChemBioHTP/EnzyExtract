@@ -9,7 +9,7 @@ import polars as pl
 
 from enzyextract.dependency.injection import REQUIRE, resolve
 from enzyextract.dependency.prereqs import export
-from enzyextract.utils.xml_pipeline import xml_abstract_processing, xml_get_soup, xml_raw_text_processing
+from enzyextract.pre.xml.xml_pipeline import xml_abstract_processing, xml_get_soup, xml_raw_text_processing
 
 def scan_papers(pdfs_folder, recursive=False):
     """

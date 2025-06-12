@@ -1,18 +1,24 @@
 # working_enzy_table_md, but tableless
 
+import io
 from typing import Optional
+import pandas as pd
 import polars as pl
 import pymupdf
 from tqdm import tqdm
 
 from enzyextract.pipeline.step1_run_tableboth import build_manifest, step1_main
+from enzyextract.pre.xml.xml_format import get_pure_tables, process_xml
 from enzyextract.submit.anthropic_management import to_anthropic_batch_request
+from enzyextract.submit.batch_utils import to_openai_batch_request
+from enzyextract.submit.openai_schema import to_openai_batch_request_with_schema
 from enzyextract.utils.pmid_management import pmids_from_directory
+from enzyextract.pre.xml.xml_cals import parse_cals_table
 
 
-def step1b_create_binary_batch(
+def step1c_create_xml_batch(
     *, 
-    pdf_root: str, # read pdfs from
+    pdf_root: str, # read XMLs from (REPURPOSE)
     tables_from: Optional[str], # read tables from (IGNORE)
     micro_path: str, # read micro corrections from (IGNORE)
     manifest_view: Optional[pl.DataFrame], # use specific pmids
@@ -26,58 +32,63 @@ def step1b_create_binary_batch(
     _check_nonzero_tables=False, # validate that tables exist (IGNORE)
     _check_nonzero_reocr=False, # validate that micro corrections exist (IGNORE)
 ): 
-    target_pmids = acceptable_pmids = pmids_from_directory(pdf_root)
+    xml_root = pdf_root  # repurpose pdf_root to read XMLs
+    
+    target_pmids = acceptable_pmids = pmids_from_directory(xml_root)
 
     # Option 1: build manifest from PDFs
     if manifest_view is None:
-        manifest_view = build_manifest(pdf_root)
-    
-    # Option 2: use given manifest
-    # manifest = pl.read_parquet('data/manifest.parquet')
-    # # only readable
-    # manifest = manifest.with_columns([
-    #     pl.col('filename').str.replace('\.pdf$', '').alias('pmid')
-    # ])
-    # manifest_view = manifest.filter(
-    #     pl.col('readable')
-    #     & ~pl.col('bad_ocr')
-    #     & pl.col('pmid').is_in(target_pmids)
-    # ).unique('filename').select(['fileroot', 'filename', 'pmid'])
+        manifest_view = build_manifest(xml_root, file_ext='xml')
 
     batch = []
     correspondences = []
     for fileroot, filename, pmid in tqdm(manifest_view.iter_rows(), total=manifest_view.height):
         assert pmid in target_pmids
         
-        fpath = fileroot + '/' + filename
+        filepath = fileroot + '/' + filename
         try:
-            doc = pymupdf.open(fpath)
+            docs = process_xml(filepath, original_tables=None)
+            if not docs:
+                continue
         except Exception as e:
-            print("Error opening", fileroot)
+            print("Error opening", filepath)
             print(e)
             continue
         
-        if len(doc) > 100:
-            # 100 pages is excessive
-            continue
+        tables = get_pure_tables(filepath)
+        table_docs = []
+        for table in tables:
+            html, text = parse_cals_table(table)
+            content = ''
+            if text:
+                content = text + '\n\n'
+                
 
-        # obtain original annotation from part A
-        # use the table_md_root
-
+            if html is not None:
+                try:
+                    df = pd.read_html(io.StringIO(html))
+                    if df:
+                        df = df[0]
+                        content += df.fillna('').to_markdown() + '\n\n'
+                except Exception as e:
+                    print(e)
+            table_docs.append(content)
+        docs = table_docs + docs
+        
+        
+        # now make a batch
         custom_id = f'{namespace}_{version}_{pmid}'
         if structured:
-            raise NotImplementedError("Structured mode is not implemented yet.")
+            req = to_openai_batch_request_with_schema(custom_id, prompt, docs,
+                                                        model_name=model_name)
         else:
-            req = to_anthropic_batch_request(
-                custom_id, 
-                prompt, 
-                pdf_fpath=fpath, 
-                model_name=model_name)
+            req = to_openai_batch_request(custom_id, prompt, docs, 
+                                    model_name=model_name)
         batch.append(req)
         correspondences.append({"custom_id": custom_id, "pmid": pmid})
     return batch, correspondences
 
-def step1b_main(
+def step1c_xml_main(
     *, 
     namespace: str, # ids
     pdf_root: str, # read from
@@ -110,8 +121,6 @@ def step1b_main(
 
         _check_nonzero_tables=False,  # validate that tables exist (IGNORE)
         _check_nonzero_reocr=False,  # validate that micro corrections exist (IGNORE)
-        chunk_size=100,
-        create_batch=step1b_create_binary_batch,
-
-        save_as_jsonl=False, # Do not save as JSONL, since binaries can be huge
+        chunk_size=1000,
+        create_batch=step1c_create_xml_batch,
     )
