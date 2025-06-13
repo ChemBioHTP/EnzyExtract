@@ -94,7 +94,7 @@ def deduplicate_with_context_df(
 
 def deduplicate_with_custom_id(
     data: pl.DataFrame,
-    unique_column = 'pmid'
+    unique_column = 'canonical'
 
 ):
     """

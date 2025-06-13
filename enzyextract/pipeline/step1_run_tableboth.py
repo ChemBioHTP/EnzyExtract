@@ -20,6 +20,7 @@ from enzyextract.utils.pmid_management import pmids_from_directory
 from enzyextract.utils.working import pmid_to_tables_from
 from enzyextract.submit.openai_schema import to_openai_batch_request_with_schema
 from enzyextract.pre.reocr.micro_fix import true_widest_mM_re
+from enzyextract.utils.namespace_management import glean_model_name # noqa: F401
 
 
 

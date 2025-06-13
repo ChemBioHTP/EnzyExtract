@@ -62,11 +62,11 @@ Enzyme accession pipeline is a WIP. Please refer to the following files:
     - Scans PDFs, conveniently storing them in text form.
 2. `enzyextract.pre.scans.scan_accessions`
     - Scans those text files for enzyme accessions.
-3. `enzyextract.thesaurus.enzyme.step1_regroup_accessions`
+3. `enzyextract.pipeline.accessions.acc1_regroup_accessions`
     - Determines which accessions have yet to be processed.
-4. `enzyextract.thesaurus.enzyme.step2_run_accessions`
+4. `enzyextract.pipeline.accessions.acc2_run_accessions`
     - Queries UniProt/PDB/NCBI databases for enzyme accessions.
-5. `enzyextract.thesaurus.enzyme.step3_run_uniprot_from_pmid`
+5. `enzyextract.pipeline.accessions.acc3_run_uniprot_from_pmid`
     - **Optional**: Queries UniProt database for enzyme accessions, querying based on PMID.
-5. `enzyextract.thesaurus.enzyme.step4_run_uniprot_searched`
+5. `enzyextract.pipeline.accessions.acc4_run_uniprot_searched`
     - **Optional**: Queries UniProt database for enzyme accessions, querying based on enzyme and organism names.

@@ -50,7 +50,8 @@ def get_user_submit_consent() -> SubmitPreference:
         return persist_state[persist_key]
     
     user_advice = f"{Fore.GREEN}Proceed?{Style.RESET_ALL} ([y]es, [l]ocal, [u]ntrack, [r]emove, [h]elp): "
-    inp = input(user_advice).lower()
+    print(user_advice, end='')
+    inp = input().lower()
     match inp:
         case 'Y':
             persist_state[persist_key] = SubmitPreference.SUBMIT

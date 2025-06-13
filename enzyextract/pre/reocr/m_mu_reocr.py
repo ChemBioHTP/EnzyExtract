@@ -2,7 +2,6 @@ import polars as pl
 import pymupdf
 import os
 from tqdm import tqdm
-from enzyextract.utils.pmid_management import pmids_from_cache
 from enzyextract.pre.reocr.reocr_schema import reocr_df_schema, reocr_df_schema_overrides
 
 

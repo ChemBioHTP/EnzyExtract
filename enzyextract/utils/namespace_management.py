@@ -55,7 +55,10 @@ def glean_model_name(namespace, task='ingestion'):
         model_name = 'gpt-4o-2024-08-06' 
         structured = True
     
-        
+    elif namespace.endswith('-standard'):
+        model_name = 'gpt-4o-2024-08-06' 
+        prompt = prompt_collections.table_oneshot_v3
+
     else:
         raise ValueError("Unrecognized namespace", namespace)
     

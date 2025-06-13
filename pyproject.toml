@@ -25,6 +25,7 @@ dependencies = [
   "gmft>=0.4.1",
   "ryaml",
   "tenacity",
+  "colorama",
 ]
 
 

@@ -65,6 +65,9 @@ def process_pdfs(pdf_root, write_dir, micros_path, _check_nonzero_tables=True):
     setup_directories(write_dir)
     
     all_pdfs = sorted([f for f in os.listdir(pdf_root) if f.endswith(".pdf")])
+
+    assert len(all_pdfs) > 0, "No PDFs to process. Check the directory."
+
     correction_df = load_correction_df(micros_path, all_pdfs)
     
     detector = TATRDetector()
@@ -80,8 +83,7 @@ def process_pdfs(pdf_root, write_dir, micros_path, _check_nonzero_tables=True):
             seen = set(f.read().splitlines())
         all_pdfs = [f for f in all_pdfs if f not in seen]
 
-    if _check_nonzero_tables:
-        assert len(all_pdfs) > 0, "No PDFs to process. Check the directory."
+
     for filename in tqdm(all_pdfs):
         
         pdfname = filename[:-4]
