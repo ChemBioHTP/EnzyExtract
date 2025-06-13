@@ -101,29 +101,36 @@ def process_batch_synchronously(batch_fpath: str, enzy_root: str) -> str:
     with open(completion_fpath, 'w') as f:
         for response in responses:
             f.write(json.dumps(response) + '\n')
+    print("Wrote to", completion_fpath)
     
     # Update llm_log.tsv
     log_path = os.path.join(enzy_root, "llm_log.tsv")
     df = read_log(log_path)
     
-    # Extract namespace and version from batch filename
-    # Assuming format: namespace_version.jsonl
-    filename = os.path.basename(batch_fpath)
-    namespace, version = filename.split('_')[:2]
-    version = int(version)  # Convert version to integer
-    
-    # Create update DataFrame
-    updates_df = pl.DataFrame({
-        'namespace': [namespace],
-        'version': [version],
-        'shard': [None],
-        'completion_fpath': [completion_fpath],
-        'status': ['downloaded']
-    }, schema_overrides=llm_log_schema)
-    
-    # Update the log file
-    df = df.update(updates_df, on=['namespace', 'version'], how='left')
-    write_log(df, log_path)
+    # Find the namespace and version from the batch_fpath
+    correct_row = df.filter(
+        pl.col('batch_fpath') == batch_fpath
+    )
+    if correct_row.height == 0:
+        print("No matching row found in the log for the given batch_fpath.")
+    else:
+        namespace = correct_row.item(0, 'namespace')
+        version = correct_row.item(0, 'version')
+        shard = correct_row.item(0, 'shard')
+        
+        # Create update DataFrame
+        updates_df = pl.DataFrame({
+            'namespace': [namespace],
+            'version': [version],
+            'shard': [shard],
+            'completion_fpath': [completion_fpath],
+            'status': ['downloaded']
+        }, schema_overrides=llm_log_schema)
+        
+        # Update the log file
+        df = df.update(updates_df, on=['namespace', 'version'], how='left')
+        write_log(df, log_path)
+        print("Updated", log_path)
     
     return completion_fpath
 

@@ -25,6 +25,10 @@ VERTEXAI_LOCATION=...
 VERTEXAI_PROJECT=...
 ```
 
+# Quickstart
+
+A preliminary tutorial is available on [Google Colab](https://colab.research.google.com/drive/1MwKSEZzLPNOseksRshbzkkFoO_cgJhva).
+
 # Usage
 
 See `experiments/example/pipeline/ex_step*.py` for example scripts. The scripts should be run sequentially, though file paths may need to be adjusted.
