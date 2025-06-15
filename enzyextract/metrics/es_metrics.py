@@ -1,7 +1,7 @@
 from rapidfuzz import fuzz
 import polars as pl
 
-from enzyextract.equivalence.convert_ec import add_ecs
+from enzyextract.thesaurus.convert_ec import add_ecs
 
 def compute_string_similarities(df: pl.DataFrame, to_ec_df=None, brenda_mode=None):
     

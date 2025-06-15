@@ -477,22 +477,21 @@ def finalize_df(matched_df):
         # parse_col('kcat_1').alias('kcat_value_1'),
         # parse_col('kcat_2').alias('kcat_value_2'),
     ]).with_columns([
-        ((pl.col('clean_mutant_1').list.len() > 0) 
-         & (pl.col('clean_mutant_2').list.len() > 0) 
-         & ~pl.col('same_mutant')).alias('different_mutant'),
-    ]).with_columns([
-        # same_mutant is True -> different_mutant is False
+        (pl.col('clean_mutant_1') != pl.col('clean_mutant_2')) 
+        .alias('different_mutant'),
+    # ]).with_columns([
+    #     # same_mutant is True -> different_mutant is False
 
-        # same_mutant is True -> True
-        # same_mutant is False and different_mutant if False -> None
-        # same_mutant is False and different_mutant is False -> False
-        # different_mutant is None -> None
-        pl.when(
-            (~pl.col("same_mutant") & ~pl.col("different_mutant"))
-            | pl.col("different_mutant").is_null()
-        ).then(None).otherwise(
-            pl.col("same_mutant")
-        ).alias("same_mutant"),
+    #     # same_mutant is True -> True
+    #     # same_mutant is False and different_mutant if False -> None
+    #     # same_mutant is False and different_mutant is False -> False
+    #     # different_mutant is None -> None
+    #     pl.when(
+    #         (~pl.col("same_mutant") & ~pl.col("different_mutant"))
+    #         | pl.col("different_mutant").is_null()
+    #     ).then(None).otherwise(
+    #         pl.col("same_mutant")
+    #     ).alias("same_mutant"),
     ])
 
     
@@ -501,7 +500,10 @@ def finalize_df(matched_df):
     # 
         
     selectors = [
-        'pmid', 'organism_1', 'organism_2', 
+        'pmid', 
+        'descriptor_1',
+        'comments_2',
+        'organism_1', 'organism_2', 
         'mutant_1', 'clean_mutant_1',
         'mutant_2', 'clean_mutant_2',
         'enzyme_1', 'enzyme_2', 'enzyme_full_1', 'enzyme_full_2',
@@ -511,7 +513,7 @@ def finalize_df(matched_df):
         'src_2', 'objective',
         'enzyme_ecs_1', 'enzyme_ecs_2',
         'cid_1', 'cid_2', 'brenda_id_1', 'brenda_id_2',
-        # 'different_mutant', 
+        'different_mutant', 
         'same_mutant', # 'same_mutant_dev', 
         'same_enzyme', 'same_substrate',
         'km_diff', 'kcat_diff',
@@ -536,28 +538,29 @@ def finalize_df(matched_df):
 
 def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     """
-    match gpt aagainst brenda
+    match gpt against brenda
     """
 
-    so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
-    # _base_df = pl.read_csv('data/humaneval/rumble/rumble_20241205_ec.csv', schema_overrides=so)
-    # del _base_df
 
-    # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
-    those_pmids = set(gpt_df['pmid'].unique())
-
-    # brenda_df = pl.read_parquet('data/brenda/brenda_kcat_v3slim.parquet')
     brenda_df = pl.read_parquet('data/brenda/brenda_kcat_cleanest.parquet')
-    brenda_df = brenda_df.filter(pl.col('pmid').is_in(those_pmids))
+    brenda_df = brenda_df.join(
+        gpt_df,
+        on='pmid',
+        how='semi'
+    ) # only common pmids
     brenda_df = brenda_df.rename({'organism_name': 'organism', 'turnover_number': 'kcat', 'km_value': 'km'})
 
     # if brenda reports kcat or km as a range ( -- ), then we don't need it
     pmids_with_brenda_range = brenda_df.filter(
         pl.col('kcat').str.contains(' -- ')
         | pl.col('km').str.contains(' -- ')
-    ).select('pmid').unique()
-    
-    brenda_df = brenda_df.filter(~pl.col('pmid').is_in(pmids_with_brenda_range))
+    )
+
+    brenda_df = brenda_df.join(
+        pmids_with_brenda_range,
+        on='pmid',
+        how='anti' # remove those with ranges
+    )
     brenda_df = brenda_df.with_columns([
         # brenda can direct convert
         (pl.col("km").cast(pl.Float64, strict=False) / 1000).alias("km_value"),
@@ -635,7 +638,7 @@ def load_rumble_df(exclude_train=False):
     return base_df
 
 
-def step5_main(
+def eval1_main(
     working: str,
     against_known: str,
     scino_only: str,
@@ -644,25 +647,9 @@ def step5_main(
     known_df: pl.DataFrame, # the known df
     is_brenda: bool = False,
 ):
-    so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
 
     # step 1: thesaurus
-    if not os.path.exists((want_dest := 'data/thesaurus/substrate/apogee_substrate_thesaurus.parquet')): #  or True:
-        
-        # base_df = pl.read_csv('data/humaneval/rumble/rumble_20241205_ec.csv', schema_overrides=so)
-        known_df = load_rumble_df()
-        abbr_df = pl.read_parquet('data/thesaurus/abbr/beluga-abbrs-4ostruct_20241213.parquet')
-        # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
-        # gpt_df = pl.read_parquet('data/_compiled/apogee_all.parquet')
-        gpt_df = pl.read_parquet('data/valid/_valid_apogee-rebuilt.parquet')
-
-        want_df = script_substrate_idents(gpt_df, abbr_df, gpt_df) # thesaurus
-        want_df.write_parquet(want_dest)
-        return
-    else: want_df = pl.read_parquet(want_dest)
-
-
-    
+    want_df = pl.read_parquet("data/thesaurus/substrate/latest_substrate_thesaurus.parquet")
 
     # exclude scientific notation: exclude "10^" to see if it improves acc like I think
     
@@ -683,20 +670,10 @@ def step5_main(
             )
         )
         working += '_no_scientific_notation'
-    elif scino_only == 'false_revised':
-
-        bad_pmids = pl.read_parquet('data/revision/apogee-revision.parquet').filter(
-            pl.col('kcat_scientific_notation')
-        )
-        gpt_df = gpt_df.filter(~pl.col('pmid').is_in(bad_pmids['pmid']))
-        gpt_df = gpt_df.filter(
-            ~pl.col('kcat').str.contains('10\^')
-            & ~pl.col('km').str.contains('10\^')
-        )
-        working += '_no_scientific_revised'
 
     
     if whitelist is not None:
+        # These were some whitelists used for testing.
         if whitelist == 'hallucinated_micro':
             pmids_df = pl.read_parquet('data/pmids/apogee_hallucinated_micro.parquet')
         elif whitelist == 'wide_tables_only':
@@ -714,21 +691,22 @@ def step5_main(
         matched_view = script_match_base_gpt(want_df, known_df, gpt_df)
 
     return matched_view
-    # step 2b: match with brenda
-    # _no_scientific_notation
-    # if not os.path.exists(match_dest):
-    # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
 
 def gpt_locations():
     """Return the location of the gpt_df"""
     return {
         'thedata': 'data/export/TheData_kcat.parquet',
+        'pruned': 'data/export/TheData_pruned.parquet',
+        'unpruned': 'data/export/TheData_unpruned.parquet',
     }
 
 def gpt_dataframe(working: str):
     """
     Return the gpt_df for the given working
     """
+    if working == 'rumble':
+        return load_rumble_df(exclude_train=False)
+
     fpath = gpt_locations()[working]
     if fpath.endswith('.csv'):
         gpt_df = pl.read_csv(fpath) # , schema_overrides=so)

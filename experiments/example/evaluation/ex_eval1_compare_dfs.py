@@ -1,29 +1,23 @@
 import polars as pl
 import os
 
-from enzyextract.pipeline.evaluation.eval1_compare_dfs import gpt_dataframe, load_rumble_df, step5_main
+from enzyextract.pipeline.evaluation.eval1_compare_dfs import gpt_dataframe, load_rumble_df, eval1_main
 
 
 if __name__ == '__main__':
     # raise NotImplementedError("This script is only an example.")
     
-    # exit(0)
-    # working = 'apogee'
-    # working = 'beluga'
-    # working = 'cherry-dev'
-    # working = 'sabiork'
-    # working = 'bucket'
-    # working = 'apatch'
-    # working = 'everything'
-    working = 'thedata'
+    working = 'pruned'
+    # working = 'unpruned'
+    # working = 'rumble'
 
     # against = 'rumble'
     against = 'brenda'
     # against = 'sabiork'
 
-    # scino_only = None
+    scino_only = None # include all
     # scino_only = True
-    scino_only = False
+    # scino_only = False
     # scino_only = 'false_revised'
 
     whitelist = None
@@ -51,7 +45,7 @@ if __name__ == '__main__':
         is_brenda = True
 
 
-    matched_view = step5_main(
+    matched_view = eval1_main(
         working=working,
         against_known=against,
         scino_only=scino_only,
@@ -63,4 +57,5 @@ if __name__ == '__main__':
     fdir = f'data/metrics/{against}'
     os.makedirs(fdir, exist_ok=True)
     matched_view.write_parquet(f'{fdir}/{against}_{working}.parquet')
+    print("Results saved to:", f'{fdir}/{against}_{working}.parquet')
     pass
