@@ -27,7 +27,7 @@ VERTEXAI_PROJECT=...
 
 # Quickstart
 
-A preliminary tutorial is available on [Google Colab](https://colab.research.google.com/drive/1MwKSEZzLPNOseksRshbzkkFoO_cgJhva).
+A preliminary tutorial is available on [Google Colab](https://colab.research.google.com/drive/1MwKSEZzLPNOseksRshbzkkFoO_cgJhva) or downloadable [here](experiments/example/EnzyExtract_Tutorial.ipynb).
 
 # Usage
 
