@@ -1,6 +1,9 @@
 from enzyextract.metrics.polaric import precision_recall, mean_log_relative_ratio, string_similarity, get_accuracy_score
 
 def report_precision_recall(df):
+    """
+    Pre: columns km, kcat, km_2, kcat_2, km_feedback, kcat_feedback exist.
+    """
     TP, FP, FN, wrong = precision_recall(df)
     print("TP:", TP.height)
     print("FP:", FP.height)

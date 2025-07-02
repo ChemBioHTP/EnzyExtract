@@ -628,13 +628,15 @@ def add_diff(df):
         )
     )
 
-def load_rumble_df(exclude_train=False):
+def load_rumble_df(exclude_train=False, exclude_rekcat=False):
     so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
     base_df = pl.read_csv('data/humaneval/rumble/rumble_20241219.csv', schema_overrides=so)
 
     if exclude_train:
         train_pmids = pl.read_parquet('data/pmids/t2neboth_train.parquet')
         base_df = base_df.filter(~pl.col('pmid').is_in(train_pmids['pmid']))
+    if exclude_rekcat:
+        base_df = base_df.filter(pl.col('src') != 'rekcat') 
     return base_df
 
 

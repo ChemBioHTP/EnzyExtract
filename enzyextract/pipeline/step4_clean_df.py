@@ -16,6 +16,7 @@ def script_finalize_df(
     thedata_df: pl.DataFrame = REQUIRE('data/export/TheData.parquet'),
     pdf_mask=None,
     _custom_id_source: pl.DataFrame = None,
+    dry_run = False,
 ):
     """
 
@@ -50,7 +51,8 @@ def script_finalize_df(
 
     # conventional_kcat_df = count_kcat_conventionally(deduplicated_df)
     # print(conventional_kcat_df.height)
-    df.write_parquet('data/export/TheData_unpruned.parquet')
+    if not dry_run:
+        df.write_parquet('data/export/TheData_unpruned.parquet')
 
 
     pruned = df.filter(
@@ -58,8 +60,16 @@ def script_finalize_df(
         pl.col('flag.repetitive').is_null() &
         pl.col('flag.scientific').is_null()
     )
-    pruned.write_parquet('data/export/TheData_pruned.parquet')
+    if not dry_run:
+        pruned.write_parquet('data/export/TheData_pruned.parquet')
+
+    kcat_only = pruned.filter(
+        pl.col('kcat').is_not_null()
+    )
+    print(kcat_only)
+    if not dry_run:
+        kcat_only.write_parquet('data/export/EnzyExtractDB_176463.parquet')
     pass
 
 if __name__ == "__main__":
-    script_finalize_df(_custom_id_source=pl.read_parquet('data/recontext/1_fromyaml/data.parquet'))
+    script_finalize_df(_custom_id_source=pl.read_parquet('data/recontext/1_fromyaml/data.parquet'), dry_run=True)

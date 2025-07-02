@@ -23,9 +23,10 @@ def analyze_correlations(matched_view: pl.DataFrame, title, visualize=True):
     print("able to find same substrate:", matched_view.filter(pl.col('same_substrate')).height / matched_view.height)
     # compute the R^2 and spearman correlation based on the value of km1, km2, kcat1, kcat2
     corr_view = matched_view.filter(
-        pl.col('same_substrate') 
+        pl.col('same_substrate')
         & pl.col('same_enzyme')
-        & (pl.col('same_mutant').is_null() | pl.col('same_mutant'))
+        # & (pl.col('same_mutant').is_null() | pl.col('same_mutant'))
+        # & (~pl.col('different_mutant') | pl.col('different_mutant').is_null())
     ).select([
         'pmid', 'km_value_1', 'km_value_2', 'kcat_value_1', 'kcat_value_2', 'km_diff', 'kcat_diff'
     ])
@@ -69,7 +70,7 @@ def analyze_correlations(matched_view: pl.DataFrame, title, visualize=True):
             'spearman': stats.spearmanr(arr1, arr2)[0],
             'mae': mean_absolute_error(log1, log2),  # log10 units
             'rmse': np.sqrt(mean_squared_error(log1, log2)),  # log10 units
-            'accuracy': np.mean(np.abs(log1 - log2) < 0.0211892991) # count those within 5% error
+            '% within 5%': np.mean(np.abs(log1 - log2) < 0.0211892991) # count those within 5% error
         }
 
     results = {

@@ -544,3 +544,137 @@ def _exact_precision_recall_by_norm(
     
     return joined_df, TP, FP, FN
 
+
+def split_supersets(df):
+    """
+    Get these: 
+    df1 only (set1 nonnull, set2 null)
+    df2 only (set1 null, set2 nonnull)
+    then, calculate the ratio max(set1, set2) / min(set1, set2)
+    """
+
+    df1_only = df.filter(pl.col('set1').is_not_null() & pl.col('set2').is_null())
+    df2_only = df.filter(pl.col('set1').is_null() & pl.col('set2').is_not_null())
+    both = df.filter(pl.col('set1').is_not_null() & pl.col('set2').is_not_null())
+    
+    # set 'ratio' column into both
+
+    both = both.with_columns([
+        (pl.max_horizontal(['set1', 'set2']) / 
+        pl.min_horizontal(['set1', 'set2'])).alias('ratio')
+    ])
+    return df1_only, df2_only, both
+
+def to_df_dual(data, use_1=True):
+    """
+    Convert a data df to df_dual
+    
+    Pre: columns 'kcat', 'kcat_2', 'km', 'km_2'
+
+    Post: columns 'set1', 'set2', 'col_name'
+    """
+    kcat = 'kcat_value_1' if use_1 else 'kcat_value'
+    km = 'km_value_1' if use_1 else 'km_value'
+    kcat2 = 'kcat_value_2'
+    km2 = 'km_value_2'
+    # First handle kcat values
+    kcat_df = data.select(
+        pl.col(kcat).alias('set1'),
+        pl.col(kcat2).alias('set2')
+    ).with_columns(
+        pl.lit('kcat').alias('col_name')
+    )
+
+    # Then handle km values
+    km_df = data.select(
+        pl.col(km).alias('set1'),
+        pl.col(km2).alias('set2')
+    ).with_columns(
+        pl.lit('km').alias('col_name')
+    )
+
+    # Combine both dataframes
+    df = pl.concat([kcat_df, km_df])
+
+    # drop nulls
+    df = df.filter(pl.col('set1').is_not_null() | pl.col('set2').is_not_null())
+    return df
+
+def paired_precision_recall(df_dual, more_wrong=0):
+    """
+    Compute the metrics for a df_paired, which is produced by match_by_unique_kcat_km. 
+
+    Requires columns: 
+    'set1', 'set2', 'col_name'
+    'ratio' (optional, but recommended)
+    set1 / set2: the kinetic value goes here
+    col_name: 'kcat' or 'km'
+
+    Hence, 
+    TP: true positives (common to both sets, and the value is close)
+    FP: false positives (unique to set1)
+    FN: false negatives (unique to set2)
+    wrong: common to both sets, but the value is not close
+    off: common to both sets, and the value is off by a known factor
+
+    Note: In this context, set2 is considered the ground truth.
+    """
+    
+    df1_only, df2_only, both = split_supersets(df_dual)
+
+    for dtype in ['kcat', 'km']:
+        df1 = df1_only.filter(pl.col('col_name') == dtype)
+        df2 = df2_only.filter(pl.col('col_name') == dtype)
+        b = both.filter(pl.col('col_name') == dtype).with_row_index('index')
+        FPraw = df1.height
+        FN = df2.height
+
+        TP = b.filter(pl.col('ratio') < 1.05).height
+        # off1000: ratio is very close to 1000 (within 0.5)
+
+        # TP: only if the ratio < 1.05
+        print(f"Type: {dtype}")
+
+
+
+        offs = []
+        if dtype == 'kcat':
+            off60 = b.filter((59 < pl.col('ratio')) & (pl.col('ratio') < 61))
+            off3600 = b.filter((3599 < pl.col('ratio')) & (pl.col('ratio') < 3601))
+            print("  off by 60:", off60.height)
+            print("  off by 3600:", off3600.height)
+            offs.append(off60)
+            offs.append(off3600)
+            for i in range(1, 7):
+                off = b.filter((10**i-.5 < pl.col('ratio')) & (pl.col('ratio') < 10**i+.5))
+                print(f"  off by 10^{i}:", off.height)
+                offs.append(off)
+        elif dtype == 'km':
+            # check off by 10, 100, 1000, 10000
+            for i in range(1, 7):
+                off = b.filter((10**i-.5 < pl.col('ratio')) & (pl.col('ratio') < 10**i+.5))
+                print(f"  off by 10^{i}:", off.height)
+                offs.append(off)
+        # get the remainder, and call it "wrong"
+        all_offs = pl.concat(offs)
+
+        all_wrong = b.filter(pl.col('ratio') > 1.05)
+
+        # remove the offs from wrong
+        wrong = all_wrong.filter(~pl.col('index').is_in(all_offs['index']))
+        
+        print("  wrong:", wrong.height)
+
+        FP = FPraw + all_wrong.height
+
+        # print("  FP (unmatched):", FPraw)
+        print("  FP:", FP)
+        print("  FN:", FN)
+        print("  TP:", TP)
+        print("  Precision (assume no FP):", TP / (TP + all_wrong.height))
+        print("  Precision:", TP / (TP + FP))
+        print("  Recall:", TP / (TP + FN))
+        print("  Accuracy:", TP / (TP + FP + FN))
+        
+
+        print()
