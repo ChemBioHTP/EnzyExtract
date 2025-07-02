@@ -74,3 +74,13 @@ Enzyme accession pipeline is a WIP. Please refer to the following files:
     - **Optional**: Queries UniProt database for enzyme accessions, querying based on PMID.
 5. `enzyextract.pipeline.accessions.acc4_run_uniprot_searched`
     - **Optional**: Queries UniProt database for enzyme accessions, querying based on enzyme and organism names.
+
+# Database
+
+## Initial Release
+
+| Filename | kcat count | Location | Description |
+| --- | --- | --- | --- |
+| Original, crude | 242,115 | [data/export/TheData_kcat.parquet](data/export/TheData_kcat.parquet) | As originally described |
+| Deduplicated, crude | 218,095 | [data/export/TheData_unpruned.parquet](data/export/TheData_unpruned.parquet) | With deduplication |
+| EnzyExtractDB_176463 | 176,463 | [EnzyExtractDB/EnzyExtractDB_176463.parquet](EnzyExtractDB/EnzyExtractDB_176463.parquet) | Deduplicated and filtered |

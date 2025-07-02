@@ -1,6 +1,8 @@
 manifest.parquet
 xml_manifest.parquet
-export
+export/*
+!export/TheData_kcat.parquet
+!export/TheData_unpruned.parquet
 external
 humaneval
 enzymes/accessions

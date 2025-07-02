@@ -1,3 +1,6 @@
 data/thesaurus/organism/ncbi_binomial_taxonomy.parquet filter=lfs diff=lfs merge=lfs -text
 data/brenda/brenda_kcat_cleanest.parquet filter=lfs diff=lfs merge=lfs -text
 data/brenda/brenda_kcat_v3.parquet filter=lfs diff=lfs merge=lfs -text
+data/export/EnzyExtractDB_176463.parquet filter=lfs diff=lfs merge=lfs -text
+data/export/TheData_unpruned.parquet filter=lfs diff=lfs merge=lfs -text
+data/export/TheData_kcat.parquet filter=lfs diff=lfs merge=lfs -text
