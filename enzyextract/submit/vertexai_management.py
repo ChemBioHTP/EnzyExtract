@@ -47,8 +47,3 @@ def generate_corresp(batch_fpath):
 
 if __name__ == "__main__":
     pass
-    # Example usage
-    # batch_fpath = 'C:/conjunct/EnzyExtract/data/rumble/.enzy/batches/rumble_gemini_dev1_2.jsonl'
-    # corresp = generate_corresp(batch_fpath)
-    # corresp_df = pl.DataFrame(corresp)
-    # corresp_df.write_parquet('C:/conjunct/EnzyExtract/data/rumble/.enzy/corresp/rumble_gemini_dev1_2.parquet')

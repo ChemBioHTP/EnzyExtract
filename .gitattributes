@@ -4,3 +4,4 @@ data/brenda/brenda_kcat_v3.parquet filter=lfs diff=lfs merge=lfs -text
 data/export/EnzyExtractDB_176463.parquet filter=lfs diff=lfs merge=lfs -text
 data/export/TheData_unpruned.parquet filter=lfs diff=lfs merge=lfs -text
 data/export/TheData_kcat.parquet filter=lfs diff=lfs merge=lfs -text
+data/export/TheData_pruned.parquet filter=lfs diff=lfs merge=lfs -text

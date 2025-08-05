@@ -255,10 +255,10 @@ def script_detect_hallucinations(
     ) # 7890717
 
     scan_df = pl.concat([
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/brenda.parquet'),
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/scratch.parquet'),
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/topoff.parquet'),
-        pl.scan_parquet('C:/conjunct/EnzyExtract/enzy_runner/data/scans/wos.parquet'),
+        pl.scan_parquet('C:/conjunct/enzy/enzy_runner/data/scans/brenda.parquet'),
+        pl.scan_parquet('C:/conjunct/enzy/enzy_runner/data/scans/scratch.parquet'),
+        pl.scan_parquet('C:/conjunct/enzy/enzy_runner/data/scans/topoff.parquet'),
+        pl.scan_parquet('C:/conjunct/enzy/enzy_runner/data/scans/wos.parquet'),
     ])
 
     # filter out those that are illegible

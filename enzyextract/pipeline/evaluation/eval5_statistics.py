@@ -361,10 +361,10 @@ def _paired_statistics():
 
     print(f"{Fore.BLUE}### BRENDA+EnzyExtractDB Paired{Style.RESET_ALL}")
     printred("#kcat", goodall.filter(
-        pl.col('kcat_2').is_not_null() & pl.col('kcat_1').is_not_null()
+        pl.col('kcat_value_2').is_not_null() & pl.col('kcat_value_1').is_not_null()
     ).height)
     printred("#km", goodall.filter(
-        pl.col('km_2').is_not_null() & pl.col('km_1').is_not_null()
+        pl.col('km_value_2').is_not_null() & pl.col('km_value_1').is_not_null()
     ).height)
 
 
