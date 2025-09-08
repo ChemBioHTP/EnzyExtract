@@ -84,3 +84,20 @@ Enzyme accession pipeline is a WIP. Please refer to the following files:
 | Original, crude | 242,115 | [data/export/TheData_kcat.parquet](data/export/TheData_kcat.parquet) | As originally described |
 | Deduplicated, crude | 218,095 | [data/export/TheData_unpruned.parquet](data/export/TheData_unpruned.parquet) | With deduplication |
 | EnzyExtractDB_176463 | 176,463 | [EnzyExtractDB/EnzyExtractDB_176463.parquet](EnzyExtractDB/EnzyExtractDB_176463.parquet) | Deduplicated and filtered |
+
+# Citation
+
+If you find EnzyExtract useful, please cite it as below:
+
+```bibtex
+@article{wei2025finding,
+  title={Finding the dark matter: Large language model-based enzyme kinetic data extractor and its validation},
+  author={Wei, Galen and Ran, Xinchun and AI-Abssi, Runeem and Yang, Zhongyue},
+  journal={Protein Science},
+  volume={34},
+  number={9},
+  pages={e70251},
+  year={2025},
+  publisher={Wiley Online Library}
+}
+```

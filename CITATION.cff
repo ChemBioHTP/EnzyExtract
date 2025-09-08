@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "EnzyExtract"
+abstract: "Extract kinetics data from PDFs using LLMs"
+type: software
+authors:
+  - family-names: "Wei"
+    given-names: "Galen"
+  - family-names: "Ran"
+    given-names: "Xinchun"
+  - family-names: "AI-Abssi"
+    given-names: "Runeem"
+  - family-names: "Yang"
+    given-names: "Zhongyue"
+preferred-citation:
+  type: article
+  title: "Finding the dark matter: Large language model-based enzyme kinetic data extractor and its validation"
+  authors:
+    - family-names: "Wei"
+      given-names: "Galen"
+    - family-names: "Ran"
+      given-names: "Xinchun"
+    - family-names: "AI-Abssi"
+      given-names: "Runeem"
+    - family-names: "Yang"
+      given-names: "Zhongyue"
+  journal: "Protein Science"
+  volume: "34"
+  issue: "9"
+  year: 2025
+  pages: "e70251"
+  publisher:
+    name: "Wiley Online Library"
+repository-code: "https://github.com/ChemBioHTP/EnzyExtract"
+date-released: "2025-08-15"
