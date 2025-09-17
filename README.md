@@ -93,6 +93,10 @@ Example data for the enzyme accession pipeline has been released:
 | Deduplicated, crude | 218,095 | [data/export/TheData_unpruned.parquet](data/export/TheData_unpruned.parquet) | With deduplication |
 | EnzyExtractDB_176463 | 176,463 | [EnzyExtractDB/EnzyExtractDB_176463.parquet](EnzyExtractDB/EnzyExtractDB_176463.parquet) | Deduplicated and filtered |
 
+The data is released as **CC BY-NC 4.0**. (NC is due to Elsevier and Wiley TDM APIs.)
+
+The code is released as MIT.
+
 # Citation
 
 If you find EnzyExtract useful, please cite it as below:
