@@ -5,6 +5,7 @@ __pycache__
 *.csv
 *.tsv
 *.md
+*.svg
 !README.md
 !docs/**/*
 *.fasta
@@ -16,5 +17,3 @@ _debug
 
 .hidden
 settings.json
-
-*.svg
