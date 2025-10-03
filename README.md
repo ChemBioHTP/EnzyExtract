@@ -38,10 +38,6 @@ The data is released as **CC BY-NC 4.0**. (NC is due to Elsevier and Wiley TDM A
 
 The code is released as MIT.
 
-# Architecture
-
-![EnzyExtract architecture](docs/EnzyExtract.drawio.svg)
-
 # Usage
 
 See `experiments/example/pipeline/ex_step*.py` for example scripts. The scripts should be run sequentially, though file paths may need to be adjusted.
@@ -77,6 +73,10 @@ Enzyme accession pipeline is a WIP. Please see [docs/pipeline/enzyme_accessions.
 
 For docs on getting substrate IDs, please see [docs/pipeline/substrate_accessions.md](docs/pipeline/substrate_accessions.md)
 
+
+# Architecture
+
+![EnzyExtract architecture](docs/EnzyExtract.drawio.svg)
 
 # Citation
 
