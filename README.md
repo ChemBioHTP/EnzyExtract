@@ -29,6 +29,28 @@ VERTEXAI_PROJECT=...
 
 A preliminary tutorial is available on [Google Colab](https://colab.research.google.com/drive/1MwKSEZzLPNOseksRshbzkkFoO_cgJhva) or downloadable [here](experiments/example/EnzyExtract_Tutorial.ipynb).
 
+# Database
+
+For explanations of each header, see [docs/enzyextract_headers.md](docs/enzyextract_headers.md). 
+**Reading it is recommended** due to possible surprises.
+
+## Initial Release
+
+| Filename | kcat count | Location | Description |
+| --- | --- | --- | --- |
+| Original, crude | 242,115 | [data/export/TheData_kcat.parquet](data/export/TheData_kcat.parquet) | As originally described |
+| Deduplicated, crude | 218,095 | [data/export/TheData_unpruned.parquet](data/export/TheData_unpruned.parquet) | With deduplication |
+| EnzyExtractDB_176463 | 176,463 | [EnzyExtractDB/EnzyExtractDB_176463.parquet](EnzyExtractDB/EnzyExtractDB_176463.parquet) | Deduplicated and filtered |
+
+
+The data is released as **CC BY-NC 4.0**. (NC is due to Elsevier and Wiley TDM APIs.)
+
+The code is released as MIT.
+
+# Architecture
+
+![EnzyExtract architecture](docs/EnzyExtract.drawio.svg)
+
 # Usage
 
 See `experiments/example/pipeline/ex_step*.py` for example scripts. The scripts should be run sequentially, though file paths may need to be adjusted.
@@ -58,44 +80,12 @@ See `experiments/example/evaluation/ex_step*.py`.
 2. ex_eval2_plot_dfs.py
     - Plot the data from `ex_eval1`.
 
-## Enzyme Accessions
+## Accessions
 
-Enzyme accession pipeline is a WIP. Please refer to the following scripts:
+Enzyme accession pipeline is a WIP. Please see [docs/pipeline/enzyme_accessions.md](docs/pipeline/enzyme_accessions.md).
 
-1. `enzyextract.pre.scans.scan_to_parquet` 
-    - Scans PDFs, conveniently storing them in text form.
-2. `enzyextract.pre.scans.scan_accessions`
-    - Scans those text files for enzyme accessions.
-3. `enzyextract.pipeline.accessions.acc1_regroup_accessions`
-    - Determines which accessions have yet to be processed.
-4. `enzyextract.pipeline.accessions.acc2_run_accessions`
-    - Queries UniProt/PDB/NCBI databases for enzyme accessions.
-5. `enzyextract.pipeline.accessions.acc3_run_uniprot_from_pmid`
-    - **Optional**: Queries UniProt database for enzyme accessions, querying based on PMID.
-5. `enzyextract.pipeline.accessions.acc4_run_uniprot_searched`
-    - **Optional**: Queries UniProt database for enzyme accessions, querying based on enzyme and organism names.
+For docs on getting substrate IDs, please see [docs/pipeline/substrate_accessions.md](docs/pipeline/substrate_accessions.md)
 
-Example data for the enzyme accession pipeline has been released:
-1. `data/enzymes/sequence_scans/latest_sequence_scans.parquet`
-    - Regex search through documents for any possible PDB/UniProt/NCBI id
-2. `data/enzymes/accessions/final/{ncbi,pdb,uniprot}.parquet`
-    - Downloaded sequences
-3. `data/thesaurus/confident/{ncbi,pdb,uniprot}.parquet`
-    - Sequences, matched by enzyme name, plus string similarity
-
-# Database
-
-## Initial Release
-
-| Filename | kcat count | Location | Description |
-| --- | --- | --- | --- |
-| Original, crude | 242,115 | [data/export/TheData_kcat.parquet](data/export/TheData_kcat.parquet) | As originally described |
-| Deduplicated, crude | 218,095 | [data/export/TheData_unpruned.parquet](data/export/TheData_unpruned.parquet) | With deduplication |
-| EnzyExtractDB_176463 | 176,463 | [EnzyExtractDB/EnzyExtractDB_176463.parquet](EnzyExtractDB/EnzyExtractDB_176463.parquet) | Deduplicated and filtered |
-
-The data is released as **CC BY-NC 4.0**. (NC is due to Elsevier and Wiley TDM APIs.)
-
-The code is released as MIT.
 
 # Citation
 
