@@ -179,6 +179,8 @@ def coalesce_collect(
 
     They will be coalesced into `best_coalesce_id`.
     """
+    if final_join_strategy == "all":
+        assert len(column_renames) == 1, "When final_join_strategy is 'all', only one column can be renamed (the coalesce_id)."
 
     coalesce_column_names = []
 
@@ -205,6 +207,9 @@ def coalesce_collect(
             *fixed_col_names
         # remove rows that are all None
         ).filter(~pl.all_horizontal(pl.exclude(join_key).is_null())
+                 
+        # if join_key is not unique w.r.t. df, need to group by it.
+        # example: descriptor (join_key: data_id) can contain multiple enzymes
         ).group_by(
             join_key
         ).agg(pl.all().unique())
@@ -214,7 +219,7 @@ def coalesce_collect(
         #     selection = selection.with_row_index('coalesce_id')
         #     all_selections = selection
         # else:
-
+        # w = selection.collect()
         # rename columns
         renames = {}
         j = 0
@@ -247,10 +252,6 @@ def coalesce_collect(
                 coalesce=True, # important: fragment_id should be combined into one
             )
         coalesce_column_names.append(f'{df_name}.coalesce_id')
-    
-    relational_df = relational_df.with_columns(
-        pl.coalesce(coalesce_column_names).alias('best_coalesce_id')
-    ).collect()
 
     # relational_df = relational_df.select(pl.selectors.all())
 
@@ -260,15 +261,71 @@ def coalesce_collect(
     # seems to be a result of repeatedly calling join() coalesce=False
 
     if final_join_strategy == 'best':
+        relational_df = relational_df.with_columns(
+            pl.coalesce(coalesce_column_names).alias('best_coalesce_id')
+        ).collect()
         # join the best row with the columns in df_columns
         # this will be a single row per coalesce_id
         relational_df = relational_df.join(
-            all_selections,
+            all_selections.drop(join_key, strict=False),
             left_on='best_coalesce_id',
             right_on='coalesce_id',
             how='left',
             validate='m:1',
             coalesce=True,
-        ).drop('fragment_id_right', strict=False)
+        )
+    else:
+        # keep all intermediate_steps
+        relational_df = relational_df.with_columns(
+            pl.concat_list(coalesce_column_names).list.drop_nulls().alias('all_coalesce_ids')
+        )
+        relational_df = relational_df.collect()
+
+        # wow! join() works for values within lists
+        # https://stackoverflow.com/questions/74017229/polars-join-on-list-items-without-explode-groupby
+        # https://github.com/pola-rs/polars/pull/21687
+        # relational_df = relational_df.join(
+        #     all_selections.drop(join_key, strict=False),
+        #     left_on='all_coalesce_ids',
+        #     right_on='coalesce_id',
+        #     how='left',
+        #     # validate='m:1',
+        #     coalesce=True,
+        # )
+
+        # pseudo-code:
+        # relational_df = relational_df.with_columns(
+        #     pl.col("all_coalesce_ids").list.eval(
+        #         pl.element().join(
+        #             # ...
+        #         )
+        #     )
+        # )
+
+        relational_df = relational_df.explode('all_coalesce_ids').join(
+            all_selections.drop(join_key, strict=False),
+            left_on='all_coalesce_ids',
+            right_on='coalesce_id',
+            how='left',
+            # validate='m:1',
+            coalesce=True,
+        ).drop("all_coalesce_ids")
+        relational_df = relational_df.group_by(join_key)
+
+
+        value_column = column_renames[0]
+        relational_df = relational_df.agg(
+            pl.selectors.exclude(value_column).first(),  # restore the old
+            pl.col(value_column).unique(),  # the new column
+        )
+        # value_column: list[list[Any]] -> list[Any]
+        relational_df = relational_df.with_columns(
+            pl.col(value_column).list.eval(
+                pl.element().explode().drop_nulls()
+            )
+        )
+        pass
+
+
 
     return relational_df, all_selections

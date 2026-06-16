@@ -444,7 +444,20 @@ def finalize_df(matched_df):
 
 def script_match_brenda_gpt(want_df: pl.DataFrame, gpt_df: pl.DataFrame):
     """
-    match gpt against brenda
+    Match gpt against brenda.
+
+    Brenda should have these columns:
+    - pmid: str, ec: str, enzyme: str, substrate: str, comments: str, 
+    kcat_km: str, km_value: str, turnover_number: str, organism_name: str, pH: str, temperature: str, mutant: str
+
+    These columns are also nice to have but not necessary:
+    ref,organism_comments,protein_id,reference_ids,accessions,good_reference_ids,suspect_stranded,suspect_mutant
+
+    Schema([('pmid', String), ('ec', String), ('ref', Int64), ('enzyme', String), ('substrate', String),
+    ('comments', String), ('kcat_km', String), ('km_value', String), ('turnover_number', String),
+    ('protein_id', String), ('reference_ids', List(String)), ('organism_name', String), ('organism_comments', String),
+    ('accessions', List(String)), ('good_reference_ids', List(String)), ('suspect_stranded', Boolean),
+    ('pH', String), ('temperature', String), ('mutant', String), ('suspect_mutant', Boolean)])
     """
 
 
@@ -555,6 +568,17 @@ def eval1_main(
     known_df: pl.DataFrame, # the known df
     is_brenda: bool = False,
 ):
+    """
+
+    Brenda should have these columns:
+    
+    pmid: **str**, ec: str, enzyme: str, substrate: str, comments: str, 
+    kcat_km: **str**, km_value: **str**, turnover_number: **str**, organism_name: str, pH: str, temperature: str, mutant: str
+    
+    In addition, you need the following ontologies:
+    - data/thesaurus/substrate/latest_substrate_thesaurus.parquet
+    - data/brenda/brenda_to_ec.parquet
+    """
 
     # step 1: thesaurus
     want_df = pl.read_parquet("data/thesaurus/substrate/latest_substrate_thesaurus.parquet")
