@@ -2,7 +2,7 @@
 
 import asyncio
 import re
-from typing import Optional
+from typing import Literal, Optional
 import polars as pl
 import pymupdf
 import glob
@@ -272,7 +272,7 @@ def step1_main(
     corresp_folder: str, # write any data matching custom_id to 
     # *, 
     structured = False,
-    llm_provider: str = 'openai',
+    llm_provider: Literal["openai"] = 'openai',
     version=None,
     _check_nonzero_reocr=True,
     _check_nonzero_tables=True,
@@ -280,7 +280,11 @@ def step1_main(
     chunk_size = 1000,
     save_as_jsonl=True,
 ):
-    
+    """
+    Runs the main pipeline for PDFs, sending a batch to OpenAI.
+
+    See experiments/example/pipeline/ex_step1_run_tableboth.py for an example of how to call this function.
+    """
     process_env('.env')
 
     _should_exist = False # expect that the namespace has not been used before

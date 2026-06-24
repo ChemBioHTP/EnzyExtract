@@ -1,4 +1,5 @@
-from enzyextract.pipeline.step2_download import process_env, download
+from enzyextract.pipeline.step2_download import download
+from enzyextract.submit.openai_management import process_env
 
 if __name__ == "__main__":
     # raise NotImplementedError("This script is only an example.")

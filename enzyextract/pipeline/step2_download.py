@@ -7,9 +7,7 @@ from google.cloud import storage
 
 from enzyextract.submit.anthropic_management import retrieve_anthropic_batch, retrieve_anthropic_results
 from enzyextract.submit.base import LLMCommonBatch
-from enzyextract.submit.litellm_management import process_env
 from enzyextract.pipeline.llm_log import llm_log_schema, read_log
-import requests
 
 
 def download_gcs_file(gcs_url, destination_file_name):

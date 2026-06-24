@@ -1,5 +1,5 @@
-
-from enzyextract.pipeline.step1_run_tableboth import process_env, glean_model_name, step1_main
+from enzyextract.pipeline.step1_run_tableboth import glean_model_name, step1_main
+from enzyextract.submit.openai_management import process_env
 
 if __name__ == '__main__':
     raise NotImplementedError("This script is only an example.")
