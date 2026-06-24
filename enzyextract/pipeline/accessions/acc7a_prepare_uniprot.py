@@ -10,7 +10,6 @@ from enzyextract.thesaurus.fuzz_utils import compute_fuzz_with_progress
 @resolve
 def script_prepare_possible_uniprot(
     df = REQUIRE("data/export/TheData_kcat.parquet"),
-    manifest = REQUIRE("data/manifest.parquet"),
     sequence_scans_df = REQUIRE("data/enzymes/sequence_scans/latest_sequence_scans.parquet"),
     backcited = REQUIRE("data/thesaurus/enzymes/backcited.parquet"),
 
@@ -20,7 +19,9 @@ def script_prepare_possible_uniprot(
     Prepare a dataframe of UniProt IDs, with their associated enzyme names and organisms.
     The most relevant ID is selected based on heuristics and LLM-based fuzzy matching.
     """
-    pmid2canonical = manifest.select("pmid", "canonical").unique(keep="first", maintain_order=True)
+    kinetic_papers = df.filter(
+        pl.col("kcat").is_not_null()
+    ).select("pmid", "canonical").unique("canonical", keep="first", maintain_order=True)
 
     infos = df.select([
         "pmid",
@@ -40,25 +41,20 @@ def script_prepare_possible_uniprot(
             pl.coalesce(pl.col("enzyme_full"), pl.col("enzyme"))
         ).alias("enzyme_preferred"),
         pl_fix_organism(pl.col("organism")).alias("organism_fixed"),
-        # pl_fix_organism(pl.col("organism_right")).alias("organism_right"), # just in case
     ])
 
 
     ### Get forward cited Accessions per each PMID
-    cited_unscreened = sequence_scans_df
-    cited_unscreened = cited_unscreened.select("pmid", "uniprot") # , "refseq", "genbank")
-    cited_unscreened = cited_unscreened.group_by("pmid").agg(
-        # pl.col("pdb").drop_nulls().flatten().unique(),
+    sequence_scans_df = sequence_scans_df.select("pmid", "uniprot")
+    sequence_scans_df = sequence_scans_df.group_by("pmid").agg(
         pl.col("uniprot").drop_nulls().flatten().unique(),
-        # pl.col("refseq").drop_nulls().flatten().unique(),
-        # pl.col("genbank").drop_nulls().flatten().unique(),
     ).select([
-        "pmid", "uniprot", # "refseq", "genbank"
+        "pmid", "uniprot",
     ]) # should be only 1 pmid
 
     # NOTE: some PMIDs are lost here, but that's okay
     # (we only want kinetic PMIDs)
-    cited_unscreened = cited_unscreened.join(pmid2canonical, left_on="pmid", right_on="pmid", how="inner")
+    sequence_scans_df = sequence_scans_df.join(kinetic_papers, left_on="pmid", right_on="pmid", how="inner")
 
     # Get backward cited accessions per each PMID
     # (only available for uniprot)
@@ -68,7 +64,7 @@ def script_prepare_possible_uniprot(
     # policy = "delete_backcited"
 
     if policy == "concat_backcited":
-        doc2uniprot = cited_unscreened.select("pmid", "canonical", "uniprot").join(
+        doc2uniprot = sequence_scans_df.select("pmid", "canonical", "uniprot").join(
             backcited.select("canonical", "uniprot"), left_on="canonical", right_on="canonical", how="full", suffix="_back", coalesce=True)
         doc2uniprot = doc2uniprot.with_columns([
             pl.col("uniprot").fill_null([]).list.concat(pl.col("uniprot_back").fill_null([])).alias("uniprot"),
@@ -80,16 +76,13 @@ def script_prepare_possible_uniprot(
             pl.col("pmid")
         ])
     elif policy == "delete_backcited":
-        doc2uniprot = cited_unscreened.select("pmid", "canonical", "uniprot").join(
+        doc2uniprot = sequence_scans_df.select("pmid", "canonical", "uniprot").join(
             backcited.select("canonical", "uniprot"), left_on="canonical", right_on="canonical", how="anti")
         doc2uniprot = doc2uniprot.select([
             pl.col("uniprot"),
             pl.col("canonical"),
             pl.col("pmid")
         ])
-
-    # filter by those still in pmid2canonical
-    # doc2accessions = doc2accessions.join(pmid2canonical, left_on="canonical", right_on="canonical", how="semi")
 
     # TODO strategy: split up into doc2uniprot, doc2refseq, doc2genbank. explode each ones individually.
     # join doc2uniprot, doc2refseq, doc2genbank with their respective sequences. then concat them all together 
@@ -173,27 +166,25 @@ def script_prepare_possible_uniprot(
             pl.col("similarity_alternative_names"),
         ).alias("max_enzyme_similarity"),
     )
-    # .rename({
-    #     "similarity_enzyme_name": "max_enzyme_similarity",
-    # })
 
 
     # (organism, enzyme) (95, 90) --> (90, 85): 5430 --> 6292
-    perfect_uniprot = infos_plus_uniprot.filter(
-        (pl.col("max_organism_similarity") >= 90) & (pl.col("max_enzyme_similarity") >= 85)
-    )
+    if False:
+        perfect_uniprot = infos_plus_uniprot.filter(
+            (pl.col("max_organism_similarity") >= 90) & (pl.col("max_enzyme_similarity") >= 85)
+        )
 
-    perfect_uniprot = perfect_uniprot.with_columns(
-        (pl.col("max_organism_similarity") + pl.col("max_enzyme_similarity")).alias("total_similarity")
-    ) # .sort("total_similarity", descending=True).unique("index", keep="first")
-    # perfect_uniprot.write_parquet("data/thesaurus/enzymes/uniprot_similar.parquet")
+        perfect_uniprot = perfect_uniprot.with_columns(
+            (pl.col("max_organism_similarity") + pl.col("max_enzyme_similarity")).alias("total_similarity")
+        ) # .sort("total_similarity", descending=True).unique("index", keep="first")
+        # perfect_uniprot.write_parquet("data/thesaurus/enzymes/uniprot_similar.parquet")
 
-    # uniprot_no_organism = infos_plus_uniprot.filter(
-    #     (pl.col("max_organism_similarity") > 99) 
-    #     & (pl.col("similarity_organism").is_null())
-    #     & ~pl.col("index").is_in(perfect_uniprot["index"])
-    # )
-    # uniprot_no_organism.write_parquet(f"data/thesaurus/enzymes/uniprot_similar_no_organism.parquet")
+        uniprot_no_organism = infos_plus_uniprot.filter(
+            (pl.col("max_organism_similarity") > 99) 
+            & (pl.col("similarity_organism").is_null())
+            & ~pl.col("index").is_in(perfect_uniprot["index"])
+        )
+        # uniprot_no_organism.write_parquet(f"data/thesaurus/enzymes/uniprot_similar_no_organism.parquet")
 
     # data/ingest/pick/pick-uniprot-dev3
     write_to = Path("data/enzymes/pick/pick-uniprot-v1.parquet")
