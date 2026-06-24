@@ -23,7 +23,7 @@ A preliminary tutorial is available on [Google Colab](https://colab.research.goo
 # Database
 
 For explanations of each header, see [docs/enzyextract_headers.md](docs/enzyextract_headers.md). 
-**Reading it is recommended** due to possible surprises.
+**We recommend reading it** due to possible surprises.
 
 ## Initial Release
 

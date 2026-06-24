@@ -1,4 +1,5 @@
 manifest.parquet
+manifest-preview.parquet
 xml_manifest.parquet
 export/*
 !export/TheData_kcat.parquet
