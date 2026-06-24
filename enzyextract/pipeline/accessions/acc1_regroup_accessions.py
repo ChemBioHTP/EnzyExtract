@@ -1,7 +1,6 @@
 import os
 import polars as pl
 import polars.selectors as cs
-from enzyextract.dependency.injection import resolve, REQUIRE
 from enzyextract.dependency.prereqs import require, export
 from enzyextract.fetch_sequences.accession_schemas import pdb_df_schema
 from enzyextract.thesaurus.enzyme_io import read_all_dfs

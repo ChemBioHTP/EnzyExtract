@@ -1,11 +1,8 @@
 # Credit: much of this was successfully created by Claude
 
 
-import json
-import time
 import pandas as pd
 import requests
-from collections import defaultdict
 
 from Bio import Entrez
 
@@ -74,7 +71,7 @@ def fetch_uniprots(uniprot_ids: list, do_redirects=True) -> pd.DataFrame:
 
 def fetch_pdb_response(pdb_ids: list[str]) -> dict:
     # Use PDB API to fetch information in bulk
-    url = f"https://data.rcsb.org/graphql"
+    url = "https://data.rcsb.org/graphql"
     query = """
     query($ids: [String!]!) {
       entries(entry_ids: $ids) {

@@ -1,9 +1,7 @@
 import os
-import re
 from enzyextract.dependency.injection import resolve, REQUIRE
 from enzyextract.dependency.prereqs import export, require
-from enzyextract.thesaurus.protein_patterns import uniprot_pattern, refseq_pattern, genbank_pattern, uniprot_blacklist, pdb_pattern_stricter_i, protein_data_bank_pattern
-import pymupdf
+from enzyextract.thesaurus.protein_patterns import uniprot_pattern, refseq_pattern, genbank_pattern, pdb_pattern_stricter_i, protein_data_bank_pattern
 from tqdm import tqdm
 import polars as pl
 import polars.selectors as cs
@@ -133,7 +131,7 @@ def script_look_for_protein_identifiers_xml_abstract(
 ):
     # df = pl.scan_parquet('data/scans/xml_slim.parquet')
     df2 = extract_enzyme_accessions(df, col=(pl.col('abstract')), keep=['pmid'])
-    df2.sink_parquet(f'data/enzymes/sequence_scans/xml_abstract_sequences.parquet')
+    df2.sink_parquet('data/enzymes/sequence_scans/xml_abstract_sequences.parquet')
 
     
     # print(df.head(10).collect())

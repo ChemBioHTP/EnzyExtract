@@ -2,7 +2,6 @@ import functools
 import os
 from typing import Optional
 import polars as pl
-from typing import Union, overload
 
 from enzyextract.dependency.base import _load_asset
 

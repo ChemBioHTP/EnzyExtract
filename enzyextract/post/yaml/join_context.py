@@ -1,6 +1,6 @@
 import polars as pl
 
-from enzyextract.post.pl_validation import expect_columns, expect_not_columns, expect_schema
+from enzyextract.post.pl_validation import expect_columns, expect_schema
 
 def create_generic_pkey(
     orig_df: pl.DataFrame,

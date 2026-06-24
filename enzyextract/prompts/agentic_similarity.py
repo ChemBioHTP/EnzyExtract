@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 from pydantic import BaseModel
 
 def enzyme_substrate_v0_0_0(es="enzyme"):

@@ -7,7 +7,6 @@ compare the input described in the output.
 import base64
 import hashlib
 import json
-import polars as pl
 
 
 def generate_corresp(batch_fpath):

@@ -1,12 +1,12 @@
 import polars as pl
 
-from enzyextract.dependency.injection import OPTIONAL, REQUIRE, resolve
+from enzyextract.dependency.injection import REQUIRE, resolve
 from enzyextract.dependency.prereqs import export
-from enzyextract.post.finale.deduplication import deduplicate, deduplicate_with_custom_id
+from enzyextract.post.finale.deduplication import deduplicate_with_custom_id
 from enzyextract.post.finale.hallucination import attach_hallucination_flag
-from enzyextract.post.finale.repetition import attach_repetitive_flag, highly_duplicated
+from enzyextract.post.finale.repetition import attach_repetitive_flag
 from enzyextract.post.finale.scientific import attach_scientific_flag
-from enzyextract.post.metadata.doctype import attach_doctype_meta, attach_doctype_meta_by_custom_id, reattach_custom_id
+from enzyextract.post.metadata.doctype import attach_doctype_meta, reattach_custom_id
 
 
 @resolve

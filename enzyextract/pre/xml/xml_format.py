@@ -60,7 +60,6 @@ def get_pure_tables(filepath, original_tables=True):
     only extract the xml tables from the filepath
     """
     from lxml import etree
-    import io
 
 
     with open(filepath, "r", encoding='utf-8') as f:

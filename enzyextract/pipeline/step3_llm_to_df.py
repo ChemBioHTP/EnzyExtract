@@ -2,15 +2,13 @@
 Formerly generate_valid.py
 """
 
-import json
 import os
-from typing import Literal, Optional
+from typing import Optional
 import pandas as pd
 import polars as pl
-from enzyextract.pipeline.llm_log import llm_log_schema, read_log
+from enzyextract.pipeline.llm_log import read_log
 from enzyextract.post.decode import jsonl_to_decoded_df
 from enzyextract.post.metadata.regurgitation import is_content_regurgitated
-from enzyextract.submit.batch_utils import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, yaml_to_df, equivalent_from_json_schema
 from enzyextract.hungarian.csv_fix import clean_columns_for_valid
 
@@ -121,7 +119,7 @@ def namespace_to_parquet(
     row = llm_log.filter(pl.col('namespace') == namespace)
 
     if row.select('version').n_unique() > 1:
-        print(f"Warning: namespace has multiple versions. Using the latest version only.")
+        print("Warning: namespace has multiple versions. Using the latest version only.")
         row = row.sort('version', descending=True)
 
     version = row.item(row=0, column='version')

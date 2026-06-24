@@ -2,7 +2,6 @@
 
 import polars as pl
 import polars.selectors as cs
-import re
 
 from enzyextract.dependency.injection import OPTIONAL, REQUIRE, resolve
 from enzyextract.hungarian.hungarian_matching import convert_to_true_value, parse_value_and_unit

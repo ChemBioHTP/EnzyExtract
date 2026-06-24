@@ -11,7 +11,6 @@ import json
 
 from tqdm import tqdm
 
-from enzyextract.submit.base import do_presubmit
 
 _openai_client = None
 def process_env(filepath, raise_if_openai_not_found=True):
@@ -348,7 +347,7 @@ def iter_all_error_files():
         if batch.error_file_id:
             try:
                 error_jsonl = openai_client.files.retrieve(batch.error_file_id)
-            except Exception as e:
+            except Exception:
                 print(f"Error on batch {batch.id}")
                 # print(e)
                 # wait 0.1s

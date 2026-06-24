@@ -9,16 +9,13 @@ import PIL
 from PIL import Image as PILImage
 
 
-import os
 import random
 import torch
-import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 from torchvision.models import resnet18, ResNet18_Weights
 
 from PIL import Image
-import polars as pl
 
 ### START use_resnet.py
 
@@ -383,7 +380,7 @@ def obtain_true_mu_dataset(root, all_pdfs, write_dest):
     for pdfname in tqdm(all_pdfs):
         try:
             doc = pymupdf.open(f'{root}/{pdfname}.pdf')
-        except Exception as e:
+        except Exception:
             continue
         for pageno, ctr, builder, m_rect, rect, angle, after in _iter_concat(
                     yield_all_millimolar(doc, target="µM"), # \u00B5, micro sign
@@ -434,7 +431,7 @@ def dump_images_too(root, all_pdfs, path_to_dest, target="mM", allow_lowercase=T
             if not pdfname.endswith(".pdf"):
                 pdfname = pdfname + ".pdf"
             doc = pymupdf.open(f'{root}/{pdfname}')
-        except Exception as e:
+        except Exception:
             # print(f"Error opening {pdfname}: {e}")
             continue
         for pageno, ctr, builder, m_rect, rect, angle, after in yield_all_millimolar(doc, target=target, allow_lowercase=allow_lowercase, **kwargs): # mean, more, much
@@ -500,7 +497,7 @@ def special_dump(root, all_pdfs, path_to_dest, target="mM", allow_lowercase=True
             pdfname = pdfname + ".pdf"
         try:
             doc = pymupdf.open(f'{root}/{pdfname}')
-        except Exception as e:
+        except Exception:
             # print(f"Error opening {pdfname}: {e}")
             continue
         for pageno, ctr, builder, m_rect, rect, angle, after in yield_all_millimolar(doc, target=target, allow_lowercase=allow_lowercase, **kwargs): # mean, more, much

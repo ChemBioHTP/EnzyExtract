@@ -4,15 +4,12 @@ enzyextract.hungarian.csv_fix.pl_widen_df
 """
 
 
-from typing import List, Tuple, Union
 import polars as pl
 
 # from enzyextract.post.regexes import r_hyphens, r_mutant_2to4, r_pH_range, r_recombinant, r_temp_kelvin, r_temp_range, r_unclassified, r_wt_exact, r_wt_inexact, unicode_fix
 from enzyextract.post.fragments.coalescing import coalesce_collect
 from enzyextract.post.fragments.exfiltrate import filter_list_out, filter_out, join_out, join_out_lower, subfilter_out, subjoin_out
 from enzyextract.post.regexes import *
-from enzyextract.thesaurus.fuzz_utils import compute_fuzz_with_progress
-from enzyextract.thesaurus.organism_patterns import organism_patterns
 from enzyextract.thesaurus.uniprot_organisms import load_uniprot_names
 
 def extract_fragments(

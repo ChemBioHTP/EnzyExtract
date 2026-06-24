@@ -1,9 +1,7 @@
 from colorama import Fore, Style
 import polars as pl
-import os
 from enzyextract.metrics.precision_recall import paired_precision_recall, to_df_dual
 from enzyextract.pipeline.evaluation.eval1_compare_dfs import load_rumble_df
-from enzyextract.pipeline.evaluation.eval2_plot_dfs import analyze_correlations
 
 def analyze_PR(matched_view: pl.DataFrame):
 

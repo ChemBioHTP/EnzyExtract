@@ -1,7 +1,6 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, Any, List
 import time
 import polars as pl
 from enzyextract.submit.openai_management import get_openai_client, process_env

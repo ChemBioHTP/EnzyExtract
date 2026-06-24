@@ -10,8 +10,7 @@ import copy
 from typing import Tuple
 import polars as pl
 
-from enzyextract.post.yaml.normalize import homogenize_list
-from enzyextract.post.yaml.schemas import _complete_ctx_schema, _enzyme_ctx_schema, _substrate_ctx_schema
+from enzyextract.post.yaml.schemas import _complete_ctx_schema
 from enzyextract.utils.yaml_process import explode_field
 
 

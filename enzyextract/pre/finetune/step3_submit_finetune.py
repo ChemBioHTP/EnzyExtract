@@ -7,11 +7,8 @@ Original location: working/working_backform.py
 
 import json
 import re
-import pandas as pd
 
-from enzyextract.backform.backform_utils import openai_batch_to_finetune, openai_crafted_batch_to_finetune
-from enzyextract.backform.quality_assure import quality_assure_finetune, quality_assure_for_enzyme_matching
-from enzyextract.metrics.get_perfects import get_perfects_only
+from enzyextract.backform.backform_utils import openai_crafted_batch_to_finetune
 from enzyextract.utils import prompt_collections
 from enzyextract.submit.batch_utils import pmid_from_usual_cid
 from enzyextract.utils.md_management import read_md_by_pmid

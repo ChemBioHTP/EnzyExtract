@@ -131,7 +131,7 @@ def quality_assure_ai_message(ai_msg: str):
                 if line.startswith(f'      kcat: "{bad}"'):
                     nonlocal problematic_kcat
                     problematic_kcat = bad
-                    builder += f'      kcat: null\n'
+                    builder += '      kcat: null\n'
                     break
             else: # if none
                 builder += line + '\n'
@@ -303,7 +303,7 @@ def quality_assure_finetune(req: dict):
     if 'No yaml available. Construct from scratch!\n```yaml\ncontext:\n    null\ndata:\n    null\n' in doc_msg:
         # print("Fixed old [no doc] message")
         tableless = True
-        req['messages'][1]['content'] = f"""\
+        req['messages'][1]['content'] = """\
 No yaml available. Construct the output yaml directly.
 ```yaml
 context:

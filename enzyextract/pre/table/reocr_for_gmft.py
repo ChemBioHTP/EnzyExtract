@@ -9,11 +9,9 @@ from gmft_pymupdf import PyMuPDFPage, PyMuPDFDocument
 from gmft.pdf_bindings.common import BasePage
 from gmft.algorithm.structure import _iob
 
-import pandas as pd
 import polars as pl
 import re
 
-import pymupdf
 
 # correction_df = pd.read_csv("C:/conjunct/vandy/yang/reocr/results/micros_resnet_v1.csv")
 def load_correction_df(micros_path: str, all_pdfs_for_sanity: list[str], check_mM: bool = False):

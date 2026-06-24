@@ -1,5 +1,5 @@
 import os
-from Bio import Entrez, SeqIO
+from Bio import Entrez
 import time
 
 import pandas as pd
@@ -83,7 +83,6 @@ def download_fasta_for_pdbs(pdb_ids, output_dir=".", wait=0.3):
 def main_script_for_pdb():
     # Example usage
     # pdb_ids = ["1P5D"]  # Replace with your list of PDB IDs
-    from tqdm import tqdm
     pmid2seq = pd.read_csv('fetch_sequences/results/rekcat_enzymes.tsv', sep="\t")
     pdb_ids = set()
     for i, row in pmid2seq.iterrows():

@@ -1,7 +1,7 @@
 import bs4
 
 
-junk = [f'xmlns="http://www.elsevier.com/xml/common/dtd"']
+junk = ['xmlns="http://www.elsevier.com/xml/common/dtd"']
 def xml_get_soup(raw_text) -> bs4.BeautifulSoup | None:
     """
     Accepts raw text from an xml file.
@@ -13,7 +13,7 @@ def xml_get_soup(raw_text) -> bs4.BeautifulSoup | None:
     tables: a list of strings of LLM-readable tables
     """
 
-    if not '<body' in raw_text and not '<xocs:rawtext' in raw_text:
+    if '<body' not in raw_text and '<xocs:rawtext' not in raw_text:
         return None
         # raise ValueError("No <body> or <xocs:rawtext> found in xml ")
     # remove junk

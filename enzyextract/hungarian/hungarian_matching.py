@@ -451,7 +451,7 @@ def feedback_for_match(a, b, col_name):
     elif a_unit != b_unit and misunit_similarity > value_similarity:
         if feedback:
             feedback += ", "
-        feedback.append(f"wrong unit")
+        feedback.append("wrong unit")
     
     if not feedback and value_similarity < 0.98:
         feedback.append(f"value deviation {a_value:.5g} vs {b_value:.5g}")
@@ -553,8 +553,8 @@ if __name__ == "__main__":
     joined_df = match_dfs_by_pmid(df1, df2)
         # display(df)
     joined_df['pmid'] = joined_df['pmid'].replace('', np.nan)
-    joined_df['pmid'] = joined_df['pmid'].combine_first(joined_df[f"pmid_2"])
-    joined_df.drop(columns=[f"pmid_2"], inplace=True)
+    joined_df['pmid'] = joined_df['pmid'].combine_first(joined_df["pmid_2"])
+    joined_df.drop(columns=["pmid_2"], inplace=True)
     # replace commas with semicolons everywhere, for purposes of csv
     joined_df = joined_df.map(lambda x: x.replace(",", ";") if isinstance(x, str) else x)
     joined_df.to_csv("brenda_50_hungarian_matched.tsv", sep="\t", index=False)

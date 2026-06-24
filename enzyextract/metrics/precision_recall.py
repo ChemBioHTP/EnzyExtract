@@ -1,5 +1,4 @@
-import math
-from typing import Callable, Optional
+from typing import Optional
 import polars as pl
 import polars.selectors as cs
 

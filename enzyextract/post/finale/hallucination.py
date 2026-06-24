@@ -1,6 +1,4 @@
-import os
-import typing
-from typing import Callable, List, Tuple, Union
+from typing import Callable, List, Union
 import polars as pl
 
 from enzyextract.dependency.injection import REQUIRE, resolve

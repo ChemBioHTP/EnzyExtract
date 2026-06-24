@@ -1,11 +1,8 @@
-import os
 import re
 
 from Bio.Data.IUPACData import protein_letters_3to1_extended
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from enzyextract.thesaurus.mutant_patterns import amino3
-from datetime import datetime
 import polars as pl
 import polars.selectors as cs
 import rapidfuzz

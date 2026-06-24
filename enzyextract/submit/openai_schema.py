@@ -3,7 +3,6 @@ Formerly located in enzyextract.utils.openai_schema
 """
 
 from pydantic import BaseModel
-from openai import OpenAI
 
 from openai.lib._pydantic import to_strict_json_schema
 
@@ -44,7 +43,6 @@ from enzyextract.submit.batch_utils import to_openai_dict_message
 #     other: NADPH
 # ```
 from typing import List, Optional
-from pydantic import BaseModel
 
 
 class DataItem(BaseModel):

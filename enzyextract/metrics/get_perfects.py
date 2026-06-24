@@ -154,7 +154,7 @@ def get_agreement_score(checkpoint_df: pd.DataFrame, allow_brenda_missing=True):
 
 def script1():
     # latest_ver = latest_version('completions/enzy_improve', 'rekcat-tableless', '.csv')
-    df = pd.read_csv(f'completions/enzy_improve/rekcat-tableless_2.csv')
+    df = pd.read_csv('completions/enzy_improve/rekcat-tableless_2.csv')
     
     perfect_df = get_perfects_only(df)
     print(len(perfect_df['pmid'].unique())) # 134
@@ -164,7 +164,7 @@ def script1():
 
 # condition: 
 def script2():
-    df = pd.read_csv(f'completions/enzy_improve/rekcat-tableless_2.csv')
+    df = pd.read_csv('completions/enzy_improve/rekcat-tableless_2.csv')
     
     perfect_df = get_perfects_only(df, conditions={'off by 1000': True})
     print(len(perfect_df['pmid'].unique())) # 149

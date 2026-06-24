@@ -1,4 +1,4 @@
-from gmft.auto import AutoFormatConfig, AutoTableFormatter
+from gmft.auto import AutoFormatConfig
 from tqdm import tqdm
 
 import os
@@ -121,7 +121,7 @@ def main():
     # micros_path = f"C:/conjunct/tmp/eval/cherry_dev/mMall.parquet"
 
     # micros_path = f"zpreprocessing/data/pdf_mM.parquet"
-    micros_path = f"C:/conjunct/tmp/eval/cherry_prod/mM/wos_remote_all/mMall.parquet"
+    micros_path = "C:/conjunct/tmp/eval/cherry_prod/mM/wos_remote_all/mMall.parquet"
 
     # src_folder = f"C:/conjunct/vandy/yang/corpora/tabular/topoff/open"
     # save_dir = f"C:/conjunct/tmp/eval/cherry_prod/tables/topoff/open"
@@ -129,8 +129,8 @@ def main():
     # src_folder = f"C:/conjunct/vandy/yang/corpora/tabular/wos/local_shim"
     # save_dir = f"C:/conjunct/tmp/eval/cherry_prod/tables/wos/local_shim"
 
-    src_folder = f"C:/conjunct/vandy/yang/corpora/tabular/wos/remote_all"
-    save_dir = f"C:/conjunct/tmp/eval/cherry_prod/tables/wos/remote_all"
+    src_folder = "C:/conjunct/vandy/yang/corpora/tabular/wos/remote_all"
+    save_dir = "C:/conjunct/tmp/eval/cherry_prod/tables/wos/remote_all"
     
     # src_folder = f"C:/conjunct/tmp/eval/manifold_tune/tables_src"
     # save_dir = f"C:/conjunct/tmp/eval/manifold_tune/tables"

@@ -1,8 +1,5 @@
-from enum import Enum
-from typing import List, Tuple, Union
+from typing import List, Union
 import polars as pl
-import re
-import copy
 
 from tqdm import tqdm
 import yaml
@@ -11,10 +8,10 @@ import ryaml
 from enzyextract.post.metadata.regurgitation import is_content_regurgitated
 from enzyextract.post.yaml.collect_rulebreakers import records_wide_to_long_df
 from enzyextract.post.yaml.pl_parse_yaml import clean_yaml_str_convert_to_dict, data_to_df
-from enzyextract.post.yaml.schemas import _complete_ctx_schema, _data_schema, _enzyme_ctx_schema, _substrate_ctx_schema, _general_ctx_schema, _errors_schema, rulebreakers_schema
-from enzyextract.post.yaml.normalize import Severity, normalize_context, normalize_data, explode_strings_into_lists
+from enzyextract.post.yaml.schemas import _complete_ctx_schema, _data_schema, _errors_schema
+from enzyextract.post.yaml.normalize import Severity
 from enzyextract.post.yaml.thresh_context import thresh_context
-from enzyextract.utils.yaml_process import explode_field, extract_yaml_code_blocks, fix_multiple_yamls, force_escape_str
+from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
 
 
@@ -40,7 +37,7 @@ def str_completion_to_records(content: str) -> dict[str, pl.DataFrame]:
         try:
             obj = clean_yaml_str_convert_to_dict(content)
         except (yaml.YAMLError, ryaml.InvalidYamlError) as e:
-            errors.append({'msg': f"Invalid YAML", 'stacktrace': str(e), 'status': Severity.FATAL})
+            errors.append({'msg': "Invalid YAML", 'stacktrace': str(e), 'status': Severity.FATAL})
             return {
                 'data': [],
                 'context_grain': [],

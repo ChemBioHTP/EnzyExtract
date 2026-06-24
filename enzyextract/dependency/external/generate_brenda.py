@@ -1,10 +1,8 @@
 import json
-import os
 import pandas as pd
 import polars as pl
 import re
 
-from enzyextract.utils.pmid_management import cache_pmids_to_disk
 
 brenda = None
 

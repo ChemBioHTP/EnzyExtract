@@ -1,6 +1,5 @@
 from typing import Callable, Optional
 import polars as pl
-import polars.selectors as cs
 
 from enzyextract.post.yaml.schemas import rulebreakers_schema
 

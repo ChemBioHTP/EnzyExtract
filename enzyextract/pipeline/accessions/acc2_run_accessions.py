@@ -1,13 +1,10 @@
 import os
-from typing import Callable, Literal
-from Bio import Entrez, SeqIO
+from typing import Literal
+from Bio import Entrez
 import time
 
 # import pandas as pd
 import polars as pl
-import polars.selectors as cs
-import requests
-from tenacity import retry, wait_exponential
 from tqdm import tqdm
 
 from enzyextract.dependency.injection import REQUIRE, resolve
@@ -229,7 +226,7 @@ def script_download_accessions(
 
     if processed is None:
         if working == 'uniprot' or working == 'uniprot_slow':
-            processed = read_all_dfs(f'data/enzymes/accessions/uniprot')
+            processed = read_all_dfs('data/enzymes/accessions/uniprot')
             # bdr = []
             # for filename in os.listdir('data/enzymes/accessions/uniprot'):
             #     if filename.endswith('.parquet'):
@@ -253,11 +250,11 @@ def script_download_accessions(
             # pass
 
         elif working == 'pdb':
-            processed = read_all_dfs(f'data/enzymes/accessions/pdb')
+            processed = read_all_dfs('data/enzymes/accessions/pdb')
         elif working == 'refseq':
-            processed = read_all_dfs(f'data/enzymes/accessions/refseq')
+            processed = read_all_dfs('data/enzymes/accessions/refseq')
         elif working == 'genbank':
-            processed = read_all_dfs(f'data/enzymes/accessions/ncbi')
+            processed = read_all_dfs('data/enzymes/accessions/ncbi')
 
     
     if write_dest is None:

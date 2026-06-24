@@ -1,6 +1,5 @@
 
 import math
-import polars as pl
 
 
 def mantissa_exponent_similarity(a, b, alpha=0.9, beta=0.2, base=10):

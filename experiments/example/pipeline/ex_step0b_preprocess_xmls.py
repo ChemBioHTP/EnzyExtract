@@ -1,7 +1,4 @@
 import os
-from enzyextract.pre.reocr.m_mu_reocr import script_scan_mM
-from enzyextract.pre.scans.scan_to_parquet import scan_papers
-from enzyextract.pre.table.scan_tables import process_pdfs
 if __name__ == '__main__':
     raise NotImplementedError("This script is only an example.")
 

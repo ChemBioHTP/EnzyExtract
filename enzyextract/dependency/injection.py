@@ -76,7 +76,7 @@ def resolve(func):
             if name not in bound.arguments:
                 try:
                     kwargs[name] = dep.load()
-                except DependencyNotFoundError as e:
+                except DependencyNotFoundError:
                     not_found.append(dep.path)
         if not_found:
             raise DependencyNotFoundError(

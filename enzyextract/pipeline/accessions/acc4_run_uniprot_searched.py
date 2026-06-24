@@ -1,6 +1,5 @@
 import os
 import polars as pl
-import requests
 import time
 
 from tqdm import tqdm
@@ -175,7 +174,7 @@ def main(
     data_view = thedata
     
     # in batches of 50
-    write_to_folder = f'data/enzymes/accessions/uniprot_searched'
+    write_to_folder = 'data/enzymes/accessions/uniprot_searched'
     print("Writing to", write_to_folder)
     submit_names2uniprot(data_view, write_to_folder)
 

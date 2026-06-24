@@ -15,7 +15,6 @@ import polars as pl
 import PIL
 
 
-from pydantic import BaseModel
 
 
 def allocate_new_version(previous_log: pl.DataFrame) -> int:

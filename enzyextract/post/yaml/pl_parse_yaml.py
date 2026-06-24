@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import List, Tuple, Union
 import polars as pl
 import re
@@ -10,7 +9,7 @@ import ryaml
 
 from enzyextract.post.yaml.schemas import _data_schema, _enzyme_ctx_schema, _substrate_ctx_schema, _general_ctx_schema, _errors_schema
 from enzyextract.post.yaml.normalize import Severity, normalize_context, normalize_data, explode_strings_into_lists
-from enzyextract.utils.yaml_process import explode_field, extract_yaml_code_blocks, fix_multiple_yamls, force_escape_str
+from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls, force_escape_str
 
 def clean_yaml_str_convert_to_dict(content: str) -> dict:
     content = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]', '', content)
@@ -83,7 +82,7 @@ def data_to_df(
         df = pl.concat([empty_df, df], how='diagonal_relaxed')
     except Exception as e:
         errors.append({
-            'msg': f"Unable to create dataframe",
+            'msg': "Unable to create dataframe",
             'stacktrace': str(e)
         })
         return None, errors
@@ -197,7 +196,7 @@ def yaml_to_pl_dfs(content: str, pmid) -> dict[str, pl.DataFrame]:
 
             obj = clean_yaml_str_convert_to_dict(content)
         except (yaml.YAMLError, ryaml.InvalidYamlError) as e:
-            errors.append({'pmid': pmid, 'msg': f"Invalid YAML", 'stacktrace': str(e), 'status': Severity.FATAL})
+            errors.append({'pmid': pmid, 'msg': "Invalid YAML", 'stacktrace': str(e), 'status': Severity.FATAL})
             return {
                 'data': pl.DataFrame(schema=_data_schema),
                 'enzyme_ctx': pl.DataFrame(schema=_enzyme_ctx_schema),

@@ -1,5 +1,4 @@
 import zipfile
-import os
 import polars as pl
 from enzyextract.dependency.injection import REQUIRE, resolve
 from enzyextract.dependency.prereqs import export, require

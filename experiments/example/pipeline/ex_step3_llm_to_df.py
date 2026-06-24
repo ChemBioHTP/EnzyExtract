@@ -1,9 +1,6 @@
-import polars as pl
-import os
 
 from enzyextract.dependency.prereqs import export
-from enzyextract.pipeline.llm_log import llm_log_schema, read_log
-from enzyextract.pipeline.step3_llm_to_df import generate_valid_parquet, namespace_to_parquet
+from enzyextract.pipeline.step3_llm_to_df import namespace_to_parquet
 
 
 def main_example3():

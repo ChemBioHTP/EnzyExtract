@@ -4,12 +4,10 @@ import io
 from typing import Optional
 import pandas as pd
 import polars as pl
-import pymupdf
 from tqdm import tqdm
 
 from enzyextract.pipeline.step1_run_tableboth import build_manifest, step1_main
 from enzyextract.pre.xml.xml_format import get_pure_tables, process_xml
-from enzyextract.submit.anthropic_management import to_anthropic_batch_request
 from enzyextract.submit.batch_utils import to_openai_batch_request
 from enzyextract.submit.openai_schema import to_openai_batch_request_with_schema
 from enzyextract.utils.pmid_management import pmids_from_directory

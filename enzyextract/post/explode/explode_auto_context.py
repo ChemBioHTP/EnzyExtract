@@ -5,7 +5,6 @@ import yaml
 from enzyextract.backform.backform_utils import fix_the_yaml, get_the_yamls
 from enzyextract.utils import prompt_collections
 from enzyextract.utils.construct_batch import get_batch_output, pmid_from_usual_cid, to_openai_batch_request
-from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
 
 
 def pmids_needing_exploding(matched_df: pd.DataFrame):

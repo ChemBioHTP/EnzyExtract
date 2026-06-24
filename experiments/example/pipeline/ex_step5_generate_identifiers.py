@@ -1,5 +1,4 @@
 import polars as pl
-from enzyextract.dependency.base import DependencyNotFoundError
 from enzyextract.dependency.injection import REQUIRE, resolve
 from enzyextract.dependency.prereqs import export
 from enzyextract.pipeline.step5_generate_identifiers import step5_main

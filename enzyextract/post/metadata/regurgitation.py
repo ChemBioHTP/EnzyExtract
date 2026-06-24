@@ -1,4 +1,3 @@
-import polars as pl
 
 
 _prompt_fragment = """

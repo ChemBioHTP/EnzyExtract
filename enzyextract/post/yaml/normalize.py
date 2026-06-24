@@ -252,7 +252,7 @@ def normalize_context(obj: dict):
             elif isinstance(v, dict):
                 # convert to list of dicts and hope for the best
                 errors.append({
-                    'msg': f"In enzymes, should be list but got dict",
+                    'msg': "In enzymes, should be list but got dict",
                     'stacktrace': str(v),
                     'status': Severity.MINOR
                 })
@@ -273,7 +273,7 @@ def normalize_context(obj: dict):
             elif isinstance(v, dict):
                 # convert to list of dicts and hope for the best
                 errors.append({
-                    'msg': f"In substrates, should be list but got dict",
+                    'msg': "In substrates, should be list but got dict",
                     'stacktrace': str(v),
                     'status': Severity.MINOR
                 })

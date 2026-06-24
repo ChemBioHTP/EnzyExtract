@@ -62,7 +62,7 @@ def fix_km(x: str) -> str:
 
     x = re.sub(r'mol/L\b', 'M', x, flags=re.IGNORECASE) # also works if mol has a prefix
     
-    units = ''.join(letter for letter in x if letter.isalpha() and not letter in ['x', 'X']) # allow the cross symbol
+    units = ''.join(letter for letter in x if letter.isalpha() and letter not in ['x', 'X']) # allow the cross symbol
     _units_pretty = (''.join(l for l in x if l.isalpha() or l in ' /')).strip()
     acceptable_units = ['M', 'mM', 'µM', 'nM', 'pM']
     if not units:

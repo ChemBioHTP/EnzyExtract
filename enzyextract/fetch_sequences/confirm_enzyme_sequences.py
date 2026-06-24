@@ -1,7 +1,6 @@
 # Use LLM to confirm that the enzyme matches the sequence
 
 import difflib
-import os
 import re
 import time
 from typing import Optional, Union
@@ -10,7 +9,6 @@ import Bio
 import pandas as pd
 import yaml
 
-from Bio.Seq import Seq
 
 from enzyextract.utils.construct_batch import get_batch_output, locate_correct_batch, pmid_from_usual_cid
 from enzyextract.utils.yaml_process import extract_yaml_code_blocks, fix_multiple_yamls
@@ -61,7 +59,7 @@ def load_yaml_enzymes(filepath, yaml_parse=True):
             if yaml_parse:
                 try:
                     pmid2yaml[pmid] = yaml.safe_load(builder)
-                except yaml.YAMLError as e:
+                except yaml.YAMLError:
                     print("Error parsing YAML for", pmid)
                     # FIXME: escape yaml
             else:

@@ -1,7 +1,7 @@
 from colorama import Fore, Style
 import polars as pl
 
-from enzyextract.pipeline.evaluation.utilities import printb, printred
+from enzyextract.pipeline.evaluation.utilities import printred
 
 def _unique_x_stats(df: pl.DataFrame, prefix='  ', print=print):
     # unique enzyme names
