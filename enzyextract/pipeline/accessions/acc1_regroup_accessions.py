@@ -1,23 +1,13 @@
 import os
 import polars as pl
 import polars.selectors as cs
+from enzyextract.dependency.injection import REQUIRE, resolve
 from enzyextract.dependency.prereqs import require, export
 from enzyextract.fetch_sequences.accession_schemas import pdb_df_schema
 from enzyextract.thesaurus.enzyme_io import read_all_dfs
 
-
-
 @require("data/enzymes/sequence_scans/{alias}_sequences.parquet")
-def get_total_accessions():
-    """
-    Step 1: Read all needed accessions
-
-    pdb: ['pdb', 'pdb_unversioned']
-    uniprot: ['uniprot']
-    refseq: ['refseq']
-    genbank: ['genbank']
-    """
-    ### Step 1: Read all needed accessions
+def _get_from_individual_sequence_scans():
     dfs = []
     filenames = [
         x.removesuffix('_sequences.parquet')
@@ -27,6 +17,23 @@ def get_total_accessions():
     for filename in filenames:
         dfs.append(pl.read_parquet(f'data/enzymes/sequence_scans/{filename}_sequences.parquet'))
     df = pl.concat(dfs, how='diagonal') # type: pl.DataFrame
+    return df
+
+@resolve
+def get_total_accessions(
+    df = REQUIRE("data/enzymes/sequence_scans/latest_sequence_scans.parquet")
+):
+    """
+    Step 1: Read all needed accessions
+
+    pdb: ['pdb', 'pdb_unversioned']
+    uniprot: ['uniprot']
+    refseq: ['refseq']
+    genbank: ['genbank']
+    """
+    ### Step 1: Read all needed accessions
+    # df = _get_from_individual_sequence_scans()
+    
 
     pdb = df.select(['pdb']).explode('pdb').unique().drop_nulls()
     # pdb: convert to uppercase

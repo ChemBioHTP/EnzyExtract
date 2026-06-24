@@ -24,3 +24,9 @@ Example data for the enzyme accession pipeline has been released:
     - Downloaded sequences
 3. `data/thesaurus/confident/{ncbi,pdb,uniprot}.parquet`
     - Sequences, matched by enzyme name, plus string similarity
+
+## Data directories
+
+- Uses these directories:
+    - `data/enzymes/{accessions,sequence_scans,pick}`
+    - `data/thesaurus/enzymes`

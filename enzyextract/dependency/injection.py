@@ -82,7 +82,7 @@ def resolve(func):
             raise DependencyNotFoundError(
                 f"EnzyExtract cannot find the specified dependencies: {{{', '.join(not_found)}}}. "
                 "Please locate the script(s) that produces them. "
-                "(Hint: Ctrl+Shift+F @export. Future versions will offer automatic dependency resolution.)"
+                "(Hint: Ctrl+Shift+F to search throughout the codebase.)"
             )
         return func(*args, **kwargs)
     
@@ -124,6 +124,11 @@ if __name__ == "__main__":
         input_df=REQUIRE("data/non_existent.parquet"),
         another_df=REQUIRE("data/another_non_existent.parquet", eager=False)
     ):
-        pass
+        print("Inside another_func")
 
     # another_func("Hello, World!")  # This will raise DependencyNotFoundError for both dependencies
+    another_func(
+        "Hello, World!",
+        input_df=pl.DataFrame({"a": [1, 2, 3]}),  # Manually providing input_df
+        another_df=pl.DataFrame({"b": [4, 5, 6]})  # Manually providing another_df
+    )  # This will work without raising an error
