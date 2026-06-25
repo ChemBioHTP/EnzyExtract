@@ -4,6 +4,7 @@ Formerly located in enzyextract.utils.openai_management
 """
 
 import glob
+from typing import Optional
 from dotenv import load_dotenv
 import openai
 import os
@@ -143,10 +144,10 @@ def load_id2name(path_to_pending:str = 'batches/pending.jsonl'):
     return _all_batch2name
 
 _glob_batch2name = {}
-def get_id2name():
+def get_id2name(path_to_pending: str = "batches/pending.jsonl"):
     global _glob_batch2name
     if not _glob_batch2name:
-        _glob_batch2name = load_id2name()
+        _glob_batch2name = load_id2name(path_to_pending)
     return _glob_batch2name
 
 def preferred_name(batch_id, translator=None):
@@ -159,26 +160,37 @@ def preferred_dirname(batch_id, translator=None):
         translator = get_id2name()
     return translator.get(batch_id, batch_id + '_output')[0]
         
-def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl', 
-                    #    all_download_folders=['completions/enzy', 'completions/_cache/explode', 'completions/_cache/gptclose', 'completions/_cache', 'C:/conjunct/table_eval/completions/enzy',
-                    #                          'completions/enzy/apogee', 'completions/enzy/bucket', 'completions/enzy/cobble',
-                    #                          'completions/similarity'], 
-                       all_download_folders=['C:/conjunct/table_eval/completions/enzy'],
-                       _walkable_download_folder='completions',
-                       _default_download_folder='completions/enzy', # 'completions/enzy',
-                       errors_folder='completions/errors/length',
-                       printme=True, autodownload=True, y_for_autodownload=False,
-                       _all_batch2name: dict[str, tuple[str, str]] | None = None):
+def check_undownloaded(
+    path_to_pending: str = "batches/pending.jsonl", 
+    download_folder="completions/enzy", # formerly _default_download_folder
+    *,
+    # ["C:/conjunct/table_eval/completions/enzy"], # formerly all_download_folders
+    _other_download_folders=[], 
+    _walkable_download_folder: Optional[str] = None, # "completions",
+    errors_folder="completions/errors/length",
+    printme=True,
+    autodownload=True,
+    y_for_autodownload=False,
+    _all_batch2name: Optional[dict[str, tuple[str, str]]] = None
+) -> list[tuple]:
     """
     
+    :param path_to_pending: path to the pending.jsonl file
+    :param download_folder: the folder where the downloaded files are stored
+    :param _other_download_folders: if provided, will check these folders for downloaded files,
+        so that files are not downloaded again.
+    :param _walkable_download_folder: if provided, will walk this folder to find downloaded files,
+        so that files are not downloaded again.
+    :param errors_folder: the folder where the error files are stored
+    :param autodownload: if True, will download the undownloaded files.
+        And only the freshly downloaded batches are returned.
     :return: list of tuples (batch, name)
-    If autodownload is True, then only the freshly downloaded batches are returned.
     """
     
     
     # downloaded files
     downloaded_files = set()
-    for fdr in all_download_folders:
+    for fdr in _other_download_folders:
         downloaded_files.update(os.listdir(fdr))
     
     if _walkable_download_folder is not None:
@@ -190,7 +202,7 @@ def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl',
         
     # determine the batch names in question
     batches = []
-    translator = _all_batch2name if _all_batch2name is not None else get_id2name()
+    translator = _all_batch2name if _all_batch2name is not None else get_id2name(path_to_pending)
     
     # we are only interested in batches not yet downloaded
     batch2name = {}
@@ -250,7 +262,7 @@ def check_undownloaded(*, path_to_pending:str = 'batches/pending.jsonl',
                         if y:
                             os.makedirs(download_folder)
                         else:
-                            download_folder = _default_download_folder
+                            download_folder = download_folder
                     if os.path.exists(f'{download_folder}/{correct_name}.jsonl'):
                         print(f"File {correct_name}.jsonl already exists. Skipping.")
                         continue
