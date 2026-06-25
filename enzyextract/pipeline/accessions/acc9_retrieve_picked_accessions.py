@@ -191,11 +191,42 @@ def retrieve_ncbi(
 
 # print(gpt_df)
 
+@export("data/thesaurus/enzymes/uniprots_cited.parquet")
+def _generate_cited_chapter(
+    gpt_df,
+):
+    """
+    Deprecated; no longer necessary. Equivalent to uniprot_picked.
+    """
+    ingest_df = load_ingest("uniprot")
+
+    gpt_df = load_gpt("uniprot")
+    df = ingest_df.join(gpt_df, on=['idx', 'pmid'], how='inner')
+
+    # 'data/gpt/uniprot_prod1.parquet'
+
+    uniprot_dict = df.select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'best']).rename({'best': 'uniprot'})
+
+    uniprot_seq = pl.read_parquet("data/enzymes/accessions/final/uniprot.parquet")
+    uniprot_seq = uniprot_seq.select(['uniprot', 'sequence'])
+    uniprot_seq = uniprot_seq.unique('uniprot')
+    uniprot_dict = uniprot_dict.join(uniprot_seq, on='uniprot', how='left').drop_nulls(['sequence', 'uniprot'])
+    uniprot_dict = uniprot_dict.with_columns([
+        pl.lit('cited').alias('enzyme_source')
+    ])
+    uniprot_dict = uniprot_dict.with_columns([
+        pl.when(pl.col('enzyme') == pl.col('enzyme_full')).then(None).otherwise(pl.col('enzyme_full')).alias('enzyme_full')
+    ])
+    return uniprot_dict
+
+
+
 if __name__ == "__main__":
     process_env(".env")
     # preview_batches_uploaded()
     
     # check undownloaded
+
     Path("experiments/completions/pick").mkdir(parents=True, exist_ok=True)
     Path("experiments/completions/errors").mkdir(parents=True, exist_ok=True)
     redownloaded = check_undownloaded(

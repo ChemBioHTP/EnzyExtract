@@ -1,4 +1,6 @@
 import os
+
+from enzyextract.pre.scans.scan_to_parquet import scan_xmls_by_folder
 if __name__ == '__main__':
     raise NotImplementedError("This script is only an example.")
 
@@ -7,7 +9,7 @@ if __name__ == '__main__':
 
     print(f"Compressing XMLs to {enzy_root}/scans/xml/xml.parquet")
     df = scan_xmls_by_folder(
-        pdfs_folder=pdf_root,
+        xmls_folder=xml_root,
         recursive=False,
     )
     os.makedirs(f'{enzy_root}/scans/xml', exist_ok=True)

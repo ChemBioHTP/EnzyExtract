@@ -264,15 +264,23 @@ def add_enzyme_sequences(
     uniprot_conf = REQUIRE('data/thesaurus/confident/uniprot.parquet'),
     pdb_conf = REQUIRE('data/thesaurus/confident/pdb.parquet'),
     ncbi_conf = REQUIRE('data/thesaurus/confident/ncbi.parquet'),
+
     uniprot2seq = REQUIRE('data/enzymes/accessions/final/uniprot.parquet'),
-    uniprot_picked = REQUIRE('data/thesaurus/enzymes/uniprot_picked.parquet'),
-    uniprot_cited = REQUIRE('data/thesaurus/enzymes/uniprot_cited.parquet'),
-    pdb_picked = REQUIRE('data/thesaurus/enzymes/pdb_picked.parquet'),
     pdb2seq = REQUIRE('data/enzymes/accessions/final/pdb.parquet'),
     ncbi2seq = REQUIRE('data/enzymes/accessions/final/ncbi.parquet'),
+
+    uniprot_picked = REQUIRE('data/thesaurus/enzymes/uniprot_picked.parquet'),
+    pdb_picked = REQUIRE('data/thesaurus/enzymes/pdb_picked.parquet'),
     ncbi_picked = REQUIRE('data/thesaurus/enzymes/ncbi_picked.parquet'),
+
+    uniprot_cited = OPTIONAL('data/thesaurus/enzymes/uniprots_cited.parquet'),
     uniprot_searched = REQUIRE('data/thesaurus/enzymes/uniprots_searched.parquet')
 ):
+    """
+    
+    :param uniprot_cited: Legacy cited uniprot data.
+        No longer necessary; equivalent to uniprot_picked.
+    """
     ##### Add enzyme sequences
 
     gpt_df = gpt_df.with_columns([
@@ -344,38 +352,29 @@ def add_enzyme_sequences(
     )
 
     ### add uniprot (old cited, pick-uniprot-prod1)
-    uniprot_cited = (
-        uniprot_cited # pl.read_parquet
-        .filter(pl.col('uniprot').is_not_null() & pl.col('sequence').is_not_null())
-        .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot', 'sequence'])
-        .rename({
-            'uniprot': 'uniprot_cited',
-            'sequence': 'sequence_cited',
-        })
-        .with_columns([
-            # TODO: distinguish cited vs backcited vs doublecited
-            pl.lit('uniprot cited').alias('sequence_source_cited')
-        ])
-    )
-
-    
-
-    # fix dumb thing
-    # enzyme_thesaurus = enzyme_thesaurus.with_columns([
-    #     pl.when(pl.col('enzyme') == pl.col('enzyme_full'))
-    #     .then(None)
-    #     .otherwise(pl.col('enzyme_full')).alias('enzyme_full')
-    # ])
-    # join cited stuff, then immediately drop
-    gpt_df = (
-        gpt_df.join(uniprot_cited, on=['pmid', 'enzyme', 'enzyme_full', 'organism'], 
-                    join_nulls=True, how='left', validate='m:1')
-        .with_columns([
-            pl.coalesce(['uniprot', 'uniprot_cited']).alias('uniprot'),
-            pl.coalesce(['sequence', 'sequence_cited']).alias('sequence'),
-            pl.coalesce(['sequence_source', 'sequence_source_cited']).alias('sequence_source'),
-        ]).drop('uniprot_cited', 'sequence_cited', 'sequence_source_cited')
-    )
+    if uniprot_cited is not None:
+        uniprot_cited = (
+            uniprot_cited # pl.read_parquet
+            .filter(pl.col('uniprot').is_not_null() & pl.col('sequence').is_not_null())
+            .select(['pmid', 'enzyme', 'enzyme_full', 'organism', 'uniprot', 'sequence'])
+            .rename({
+                'uniprot': 'uniprot_cited',
+                'sequence': 'sequence_cited',
+            })
+            .with_columns([
+                # TODO: distinguish cited vs backcited vs doublecited
+                pl.lit('uniprot cited').alias('sequence_source_cited')
+            ])
+        )
+        gpt_df = (
+            gpt_df.join(uniprot_cited, on=['pmid', 'enzyme', 'enzyme_full', 'organism'], 
+                        join_nulls=True, how='left', validate='m:1')
+            .with_columns([
+                pl.coalesce(['uniprot', 'uniprot_cited']).alias('uniprot'),
+                pl.coalesce(['sequence', 'sequence_cited']).alias('sequence'),
+                pl.coalesce(['sequence_source', 'sequence_source_cited']).alias('sequence_source'),
+            ]).drop('uniprot_cited', 'sequence_cited', 'sequence_source_cited')
+        )
 
     ### add uniprot (similar)
     # uniprot_similar = (
