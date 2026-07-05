@@ -4,7 +4,7 @@ import re
 import pandas as pd
 import polars as pl
 
-from enzyextract.fetch_sequences.read_pdfs_for_idents import amino3
+from enzyextract.thesaurus.mutant_patterns import amino3
 from enzyextract.post.regexes import r_mutant_many_1to4_amino1_legacy, r_pH, r_recombinant, r_temp, r_wildtype, r_wt
 
 _strange_kcat_units = set()

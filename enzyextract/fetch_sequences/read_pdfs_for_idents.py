@@ -1,6 +1,7 @@
 
 import re
 
+from enzyextract.thesaurus.mutant_patterns import mutant_pattern
 
 
 # Define the regex patterns for each ID type
@@ -52,7 +53,6 @@ def search_ids(all_txt: str):
 
 # mutant_v4_pattern = re.compile(rf'\b((?:{amino3})-?[1-9]\d{{1,3}})\b', re.IGNORECASE)
 
-from enzyextract.thesaurus.mutant_patterns import mutant_pattern
 def search_mutants(all_txt: str):
     # search text for mutant codes
     mutant_matches = mutant_pattern.findall(all_txt) + mutant_v2_pattern.findall(all_txt)

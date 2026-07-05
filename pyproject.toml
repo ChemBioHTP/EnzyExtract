@@ -20,12 +20,16 @@ dependencies = [
   "litellm",
   "biopython",
   "seaborn",
-  "google-cloud-storage",
   "anthropic",
   "gmft>=0.4.1",
   "ryaml",
   "tenacity",
   "colorama",
+  "gmft_pymupdf @ git+https://github.com/conjuncts/gmft_pymupdf",
+  "torchvision",
+  "bs4",
+  "transformers<5.4.0",
+  "pyarrow",
 ]
 
 

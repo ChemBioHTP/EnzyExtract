@@ -3,7 +3,6 @@ from typing import Optional, Union
 from enzyextract.pipeline.llm_log import write_log
 import litellm
 import polars as pl
-from google.cloud import storage
 
 from enzyextract.submit.anthropic_management import retrieve_anthropic_batch, retrieve_anthropic_results
 from enzyextract.submit.base import LLMCommonBatch
@@ -11,6 +10,8 @@ from enzyextract.pipeline.llm_log import llm_log_schema, read_log
 
 
 def download_gcs_file(gcs_url, destination_file_name):
+    from google.cloud import storage
+
     """
     Funny enough, litellm does not support GCS.
     Download a file from GCS to local storage."""

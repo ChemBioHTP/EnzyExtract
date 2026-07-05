@@ -99,6 +99,30 @@ def generate_valid_parquet(fpath,
     
     return valid_df, stats
 
+def namespace_with_version(
+    namespace: str,
+    log_location: str, # e.g. '.enzy/llm_log.tsv'
+):
+    """
+    If `namespace` is unique, then it will read the log file at `log_location` with namespace
+    and the latest version, and produce a polars DataFrame.
+
+    If `namespace` is not unique, then should obtain the latest version.
+    """
+    llm_log = read_log(log_location)
+
+    row = llm_log.filter(pl.col('namespace') == namespace)
+
+    if row.select('version').n_unique() > 1:
+        print("Warning: namespace has multiple versions. Using the latest version only.")
+        row = row.sort('version', descending=True)
+
+    version = row.item(row=0, column='version')
+    print("Using namespace:", namespace, "version:", version)
+
+    row = row.filter(pl.col('version') == version)
+    return namespace, version, row
+
 def namespace_to_parquet(
     namespace: str,
     log_location: str, # e.g. '.enzy/llm_log.tsv'
@@ -114,18 +138,7 @@ def namespace_to_parquet(
     If not provided, it will not write to disk.
     """
 
-    llm_log = read_log(log_location)
-
-    row = llm_log.filter(pl.col('namespace') == namespace)
-
-    if row.select('version').n_unique() > 1:
-        print("Warning: namespace has multiple versions. Using the latest version only.")
-        row = row.sort('version', descending=True)
-
-    version = row.item(row=0, column='version')
-    print("Using namespace:", namespace, "version:", version)
-
-    row = row.filter(pl.col('version') == version)
+    namespace, version, row = namespace_with_version(namespace=namespace, log_location=log_location)
 
     structured = row.item(row=0, column='structured')
     compl_fpath = row.item(row=0, column='completion_fpath')
