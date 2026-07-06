@@ -174,11 +174,17 @@ def get_unknown_accessions(deduct_known=False):
         refseq_unknown = refseq
         genbank_unknown = genbank
 
-    print("Writing to data/enzymes/accessions/unknown/")
-    pdb_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_pdb.parquet')
-    uniprot_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_uniprot.parquet')
-    refseq_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_refseq.parquet')
-    genbank_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_genbank.parquet')
+    return {
+        "pdb": pdb_unknown,
+        "uniprot": uniprot_unknown,
+        "refseq": refseq_unknown,
+        "genbank": genbank_unknown
+    }
+    # print("Writing to data/enzymes/accessions/unknown/")
+    # pdb_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_pdb.parquet')
+    # uniprot_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_uniprot.parquet')
+    # refseq_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_refseq.parquet')
+    # genbank_unknown.write_parquet('data/enzymes/accessions/unknown/unknown_genbank.parquet')
 
 
 

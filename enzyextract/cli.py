@@ -2,8 +2,10 @@
 Command-line interface for EnzyExtract.
 
 Usage:
-    enzyextract submit     Preprocess PDFs and submit LLM batch
-    enzyextract download  Download batch results and convert to DataFrame
+    enzyextract submit              Preprocess PDFs and submit LLM batch
+    enzyextract download            Download batch results and convert to DataFrame
+    enzyextract sequences           Scan PDFs for accession IDs & fetch sequences
+    enzyextract attach              Attach sequences to GPT-extracted data
 """
 
 import argparse
@@ -86,6 +88,54 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional path to write results as a CSV file",
     )
 
+    # --- sequences ---
+    sequences_parser = subparsers.add_parser(
+        "sequences",
+        help="Scan PDFs for accession IDs (PDB, UniProt, RefSeq, GenBank) and fetch sequences",
+    )
+    sequences_parser.add_argument(
+        "--pdf-root",
+        required=True,
+        help="Directory containing PDF files to scan",
+    )
+    sequences_parser.add_argument(
+        "--pmids-csv",
+        default=None,
+        help="Optional CSV with a 'pmid' column; UniProt entries linked to those PMIDs are also fetched",
+    )
+    sequences_parser.add_argument(
+        "--output-dir",
+        default=None,
+        help="Directory to write the fetched sequences parquet files (default: <enzy-root>/sequences)",
+    )
+
+    # --- attach ---
+    attach_parser = subparsers.add_parser(
+        "attach",
+        help="Attach enzyme sequences to GPT-extracted data via string-similarity matching",
+    )
+    attach_parser.add_argument(
+        "--download-csv",
+        required=True,
+        help="Path to the CSV produced by the 'download' subcommand",
+    )
+    attach_parser.add_argument(
+        "--sequences-dir",
+        required=True,
+        help="Directory containing the parquet files written by the 'sequences' subcommand",
+    )
+    attach_parser.add_argument(
+        "--output-csv",
+        default=None,
+        help="Optional path to write the enriched DataFrame as a CSV file",
+    )
+    attach_parser.add_argument(
+        "--use-llm",
+        action="store_true",
+        default=False,
+        help="Use an LLM to confirm / improve accession matching",
+    )
+
     return parser
 
 
@@ -124,9 +174,37 @@ def cmd_download_results(args: argparse.Namespace) -> None:
     print(f"Done. Result: {len(df)} rows, {len(df.columns)} columns")
 
 
+def cmd_fetch_sequences(args: argparse.Namespace) -> None:
+    """Handle the 'sequences' subcommand."""
+    extractor = _build_extractor(args)
+    print(f"Fetching sequences (pdf_root={args.pdf_root})...")
+    summary = extractor.fetch_sequences(
+        pdf_root=args.pdf_root,
+        pmids_csv=args.pmids_csv,
+        output_dir=args.output_dir,
+    )
+    print(summary)
+    print("Done.")
+
+
+def cmd_attach_sequences(args: argparse.Namespace) -> None:
+    """Handle the 'attach' subcommand."""
+    extractor = _build_extractor(args)
+    print(f"Attaching sequences (download_csv={args.download_csv})...")
+    df = extractor.attach_sequences(
+        download_csv=args.download_csv,
+        sequences_dir=args.sequences_dir,
+        output_csv=args.output_csv,
+        use_llm=args.use_llm,
+    )
+    print(f"Done. Result: {len(df)} rows, {len(df.columns)} columns")
+
+
 COMMAND_DISPATCH = {
     "submit": cmd_submit_pdfs,
     "download": cmd_download_results,
+    "sequences": cmd_fetch_sequences,
+    "attach": cmd_attach_sequences,
 }
 
 

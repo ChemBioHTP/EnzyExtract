@@ -63,6 +63,9 @@ class IntermediateFileManager:
         self.llm_df_dir = f"{self.enzy_root}/post/valid"
         """Path to location where LLM results are stored as a Polars DataFrame (default: .enzy/post/valid)"""
 
+        self.sequences_dir = f"{self.enzy_root}/sequences"
+        """Path to location where fetched accession sequences are stored (default: .enzy/sequences)"""
+
         for folder in [
             self.mM_dir,
             self.tables_dir,
@@ -74,6 +77,7 @@ class IntermediateFileManager:
             self.completions_dir,
             self.errors_dir,
             self.llm_df_dir,
+            self.sequences_dir,
         ]:
             Path(folder).mkdir(parents=True, exist_ok=True)
 
@@ -116,7 +120,6 @@ class EnzyExtract:
         Runs preprocessing of PDF documents.
         """        
         from enzyextract.pre.reocr.m_mu_reocr import script_scan_mM
-        from enzyextract.pre.scans.scan_to_parquet import scan_papers
         from enzyextract.pre.table.scan_tables import process_pdfs
 
         if self.pdf_root is None:
@@ -138,11 +141,10 @@ class EnzyExtract:
         )
 
         print(f"Compressing PDFs to {self.fm.pdf_scans_dir}/pdf.parquet")
-        df = scan_papers(
+        self.scan_papers_and_save(
             pdfs_folder=self.pdf_root,
             recursive=False,
         )
-        df.write_parquet(f'{self.fm.pdf_scans_dir}/pdf.parquet')
 
     def step_0_preprocess_xml(self):
         """
@@ -299,6 +301,426 @@ class EnzyExtract:
             df.to_csv(output_csv)
             print(f"Results written to {output_csv}")
         return df
+
+    def scan_papers_and_save(
+        self,
+        pdfs_folder=None,
+        *,
+        recursive=False,
+    ):
+        """
+        Scan PDFs into a DataFrame with progress tracking via checkpoint files.
+
+        :param pdfs_folder: Path to the folder of PDFs to process. If None, uses self.pdf_root.
+        :param recursive: Whether to scan PDFs recursively in subdirectories.
+        """
+        
+        parquet_loc = f"{self.fm.pdf_scans_dir}/pdf.parquet"
+
+        if Path(parquet_loc).exists():
+            print(f"Found existing parquet file at {parquet_loc}. Loading...")
+            df = pl.read_parquet(parquet_loc)
+            return df
+        else:
+            from enzyextract.pre.scans.scan_to_parquet import scan_papers
+
+            df = scan_papers(pdfs_folder=pdfs_folder, recursive=recursive)
+            df.write_parquet(f"{self.fm.pdf_scans_dir}/pdf.parquet")
+            return df
+    # ──────────────────────────────────────────────
+    # sequences: scan PDFs for accession IDs & fetch
+    # ──────────────────────────────────────────────
+
+    def fetch_sequences(
+        self,
+        pdf_root: str,
+        *,
+        pmids_csv: Optional[str] = None,
+        output_dir: Optional[str] = None,
+    ) -> "pl.DataFrame":
+        """
+        Scan PDFs for accession IDs (PDB, UniProt, RefSeq, GenBank) and fetch
+        their sequences from the respective APIs.
+
+        This wraps the logic of acc1–acc3 from the accessions pipeline:
+
+          1. acc1 — scan PDFs for accession IDs
+          2. acc2 — fetch sequences from UniProt / PDB / NCBI
+          3. acc3 — (optional) fetch UniProt entries linked to a list of PMIDs
+
+        Parameters
+        ----------
+        pdf_root : str
+            Directory containing PDF files to scan.
+        pmids_csv : str, optional
+            Path to a CSV with a ``pmid`` column.  If given, UniProt entries
+            associated with those PMIDs will also be fetched.
+        output_dir : str, optional
+            Where to write the intermediate parquet files.  Defaults to
+            ``{enzy_root}/sequences``.
+
+        Returns
+        -------
+        pl.DataFrame
+            A DataFrame with columns described below.
+        """
+        from enzyextract.pre.scans.scan_accessions import extract_enzyme_accessions
+        from enzyextract.fetch_sequences.query_idents import fetch_pdbs, fetch_ncbis
+        from enzyextract.fetch_sequences.query_uniprot import (
+            fetch_uniprots_latest,
+            fetch_uniprots_from_pmids,
+        )
+
+        if output_dir is None:
+            output_dir = self.fm.sequences_dir
+
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        print(f"[sequences] Output directory: {output_dir}")
+
+        # ---- 1. Scan PDFs & extract accession IDs --------------------------
+        # (uses the better regexes from scan_accessions.py / protein_patterns.py)
+        print(f"[sequences] Scanning PDFs in {pdf_root} …")
+        scan_df = self.scan_papers_and_save(
+            pdfs_folder=pdf_root,
+            recursive=False,
+        )
+        print(f"[sequences] Scanned {scan_df.height} page(s) from PDF(s)")
+
+        print("[sequences] Extracting accession IDs from text …")
+        idents_lf = extract_enzyme_accessions(scan_df.lazy(), col=pl.col("text"))
+        idents_df = idents_lf.collect()
+        print(f"[sequences] Extracted accessions from {idents_df.height} page(s)")
+
+        # Write checkpoint — native polars List(Utf8) columns write cleanly
+        idents_df.write_parquet(f"{output_dir}/scanned_accessions.parquet")
+        print(f"[sequences] Saved scanned_accessions.parquet ({idents_df.height} rows)")
+
+        # Collect unique IDs per type (polars-native: explode lists → unique)
+        def _unique_ids(col_name: str) -> set[str]:
+            if col_name not in idents_df.columns:
+                return set()
+            col = idents_df[col_name]
+            if col.dtype == pl.Null:
+                return set()
+            return set(col.drop_nulls().explode().unique().to_list())
+
+        all_pdb = _unique_ids("pdb")
+        all_uniprot = _unique_ids("uniprot")
+        all_refseq = _unique_ids("refseq")
+        all_genbank = _unique_ids("genbank")
+
+        print(
+            f"[sequences] Found {len(all_pdb)} PDB, {len(all_uniprot)} UniProt, "
+            f"{len(all_refseq)} RefSeq, {len(all_genbank)} GenBank ID(s)"
+        )
+
+        # ---- 2. Fetch PDB sequences ----------------------------------------
+        pdb_df = pl.DataFrame()
+        if all_pdb:
+            print(f"[sequences] Fetching {len(all_pdb)} PDB entries …")
+            pdb_df = pl.from_pandas(fetch_pdbs(list(all_pdb)))
+            pdb_df.write_parquet(f"{output_dir}/pdb_sequences.parquet")
+            print(f"[sequences] Got {len(pdb_df)} PDB rows")
+
+        # ---- 3. Fetch UniProt sequences ------------------------------------
+        uniprot_df = pl.DataFrame()
+        if all_uniprot:
+            print(f"[sequences] Fetching {len(all_uniprot)} UniProt entries …")
+            uniprot_df = fetch_uniprots_latest(list(all_uniprot))
+            uniprot_df.write_parquet(f"{output_dir}/uniprot_sequences.parquet")
+            print(f"[sequences] Got {len(uniprot_df)} UniProt rows")
+
+        # ---- 4. Fetch NCBI sequences (RefSeq + GenBank) --------------------
+        ncbi_df = pl.DataFrame()
+        all_ncbi = list(all_refseq | all_genbank)
+        if all_ncbi:
+            print(f"[sequences] Fetching {len(all_ncbi)} NCBI entries …")
+            ncbi_df = pl.from_pandas(fetch_ncbis(all_ncbi))
+            ncbi_df.write_parquet(f"{output_dir}/ncbi_sequences.parquet")
+            print(f"[sequences] Got {len(ncbi_df)} NCBI rows")
+
+        # ---- 5. (Optional) Fetch UniProt entries linked to PMIDs -----------
+        pmid_uniprot_df = pl.DataFrame()
+        if pmids_csv:
+            pmids_df = pl.read_csv(pmids_csv)
+            if "pmid" not in pmids_df.columns:
+                print("[sequences] WARNING: pmids_csv has no 'pmid' column — skipping")
+            else:
+                pmids = pmids_df["pmid"].drop_nulls().unique().to_list()
+                print(f"[sequences] Fetching UniProt entries for {len(pmids)} PMID(s) …")
+                pmid_uniprot_df = fetch_uniprots_from_pmids(pmids)
+                pmid_uniprot_df.write_parquet(
+                    f"{output_dir}/pmid_uniprot_sequences.parquet"
+                )
+                print(f"[sequences] Got {len(pmid_uniprot_df)} PMID-linked UniProt rows")
+
+        # ---- 6. Return summary ---------------------------------------------
+        n_unique_pdfs = scan_df["pmid"].n_unique()
+        summary = pl.DataFrame(
+            {
+                "source": ["scanned_pdfs", "with_accessions", "pdb", "uniprot", "ncbi", "pmid_uniprot"],
+                "count": [
+                    n_unique_pdfs,
+                    idents_df["pmid"].n_unique(),
+                    len(pdb_df),
+                    len(uniprot_df),
+                    len(ncbi_df),
+                    len(pmid_uniprot_df),
+                ],
+            }
+        )
+        print("[sequences] Done.")
+        return summary
+
+    # ──────────────────────────────────────────────
+    # attach: match accessions to GPT data & output
+    # ──────────────────────────────────────────────
+
+    def attach_sequences(
+        self,
+        download_csv: str,
+        sequences_dir: str,
+        *,
+        output_csv: Optional[str] = None,
+        use_llm: bool = False,
+    ) -> "pl.DataFrame":
+        """
+        Attach enzyme sequences to the GPT-extracted data by matching accession
+        descriptions to enzyme names via string similarity (and optionally LLM).
+
+        This corresponds to the 'attach' subcommand and wraps the core matching
+        logic found in ``step5_generate_identifiers``.
+
+        Parameters
+        ----------
+        download_csv : str
+            Path to the CSV produced by the ``download`` subcommand (the
+            GPT-extracted enzyme kinetic data).
+        sequences_dir : str
+            Directory containing the parquet files written by
+            :meth:`fetch_sequences` (``pdb_sequences.parquet``,
+            ``uniprot_sequences.parquet``, ``ncbi_sequences.parquet``).
+        output_csv : str, optional
+            If provided, the final enriched DataFrame is written to this CSV.
+        use_llm : bool
+            Whether to use an LLM to confirm/improve accession matching
+            (default: ``False``).
+
+        Returns
+        -------
+        pl.DataFrame
+            The GPT-extracted DataFrame augmented with sequence columns.
+        """
+        import os
+
+        from rapidfuzz import fuzz
+
+        from enzyextract.fetch_sequences.accession_schemas import (
+            pdb_df_schema,
+            uniprot_df_schema,
+        )
+
+        # ---- 1. Load GPT-extracted data ------------------------------------
+        print(f"[attach] Loading download CSV: {download_csv}")
+        gpt_df = pl.read_csv(download_csv)
+        print(f"[attach] Loaded {len(gpt_df)} rows with columns: {gpt_df.columns}")
+
+        # ---- 2. Load fetched sequences -------------------------------------
+        pdb_path = os.path.join(sequences_dir, "pdb_sequences.parquet")
+        uniprot_path = os.path.join(sequences_dir, "uniprot_sequences.parquet")
+        ncbi_path = os.path.join(sequences_dir, "ncbi_sequences.parquet")
+
+        pdb_df = pl.read_parquet(pdb_path) if os.path.exists(pdb_path) else pl.DataFrame()
+        uniprot_df = (
+            pl.read_parquet(uniprot_path) if os.path.exists(uniprot_path) else pl.DataFrame()
+        )
+        ncbi_df = (
+            pl.read_parquet(ncbi_path) if os.path.exists(ncbi_path) else pl.DataFrame()
+        )
+        print(
+            f"[attach] Loaded {len(pdb_df)} PDB, {len(uniprot_df)} UniProt, "
+            f"{len(ncbi_df)} NCBI sequences"
+        )
+
+        # ---- 3. Ensure required columns exist on GPT df --------------------
+        for col in ("sequence", "sequence_source", "uniprot", "ncbi", "pdb"):
+            if col not in gpt_df.columns:
+                gpt_df = gpt_df.with_columns(pl.lit(None).alias(col))
+
+        # ---- 4. Build a unified accession lookup ---------------------------
+        # We collect every accession along with its descriptive text and
+        # sequence so we can fuzzy-match against enzyme names.
+
+        accession_records: list[dict] = []
+
+        # PDB
+        if pdb_df.height > 0:
+            for row in pdb_df.iter_rows(named=True):
+                desc = (
+                    row.get("name")
+                    or row.get("sys_name")
+                    or row.get("descriptor")
+                    or ""
+                )
+                accession_records.append(
+                    {
+                        "source": "pdb",
+                        "accession": str(row.get("pdb", "")),
+                        "description": str(desc),
+                        "organism": str(row.get("organism") or ""),
+                        "sequence": str(row.get("seq_can") or row.get("seq") or ""),
+                    }
+                )
+
+        # UniProt
+        if uniprot_df.height > 0:
+            for row in uniprot_df.iter_rows(named=True):
+                accession_records.append(
+                    {
+                        "source": "uniprot",
+                        "accession": str(row.get("uniprot", "")),
+                        "description": str(row.get("enzyme_name") or ""),
+                        "organism": str(row.get("organism") or ""),
+                        "sequence": str(row.get("sequence") or ""),
+                    }
+                )
+
+        # NCBI
+        if ncbi_df.height > 0:
+            for row in ncbi_df.iter_rows(named=True):
+                accession_records.append(
+                    {
+                        "source": "ncbi",
+                        "accession": str(row.get("ncbi", "")),
+                        "description": str(row.get("descriptor") or ""),
+                        "organism": "",
+                        "sequence": str(row.get("sequence") or ""),
+                    }
+                )
+
+        if not accession_records:
+            print("[attach] WARNING: no accession records loaded — nothing to match")
+            if output_csv:
+                gpt_df.write_csv(output_csv)
+            return gpt_df
+
+        acc_df = pl.DataFrame(accession_records)
+        print(f"[attach] Built lookup table with {len(acc_df)} accession record(s)")
+
+        # ---- 5. Fuzzy-match each GPT row to the best accession -------------
+        # We match on (enzyme + organism) against (description + organism).
+
+        match_results: list[dict] = []
+
+        for row in gpt_df.iter_rows(named=True):
+            enzyme = str(row.get("enzyme") or "")
+            organism = str(row.get("organism") or "")
+            enzyme_full = str(row.get("enzyme_full") or "")
+
+            # Build query strings
+            query_enzyme = (enzyme_full or enzyme).lower().strip()
+            query_organism = organism.lower().strip()
+
+            best = {
+                "accession": None,
+                "source": None,
+                "sequence": None,
+                "score_enzyme": 0.0,
+                "score_organism": 0.0,
+                "score_total": 0.0,
+            }
+
+            for acc_row in acc_df.iter_rows(named=True):
+                acc_desc = (acc_row["description"] or "").lower().strip()
+                acc_org = (acc_row["organism"] or "").lower().strip()
+
+                if not query_enzyme or not acc_desc:
+                    continue
+
+                # String similarity on enzyme name ↔ description
+                score_enzyme = fuzz.partial_ratio(query_enzyme, acc_desc)
+
+                # Organism bonus
+                score_organism = 0.0
+                if query_organism and acc_org:
+                    score_organism = fuzz.ratio(query_organism, acc_org)
+                elif not query_organism and not acc_org:
+                    score_organism = 50.0  # neutral when both missing
+                # Penalize when one has organism and the other doesn't
+                elif query_organism and not acc_org:
+                    score_organism = 25.0
+                else:
+                    score_organism = 25.0
+
+                score_total = score_enzyme * 0.7 + score_organism * 0.3
+
+                if score_total > best["score_total"] and score_enzyme >= 50:
+                    best.update(
+                        {
+                            "accession": acc_row["accession"],
+                            "source": acc_row["source"],
+                            "sequence": acc_row["sequence"],
+                            "score_enzyme": score_enzyme,
+                            "score_organism": score_organism,
+                            "score_total": score_total,
+                        }
+                    )
+
+            match_results.append(
+                {
+                    "_row_idx": len(match_results),
+                    "matched_accession": best["accession"],
+                    "matched_source": best["source"],
+                    "matched_sequence": best["sequence"],
+                    "match_score_enzyme": best["score_enzyme"],
+                    "match_score_organism": best["score_organism"],
+                    "match_score_total": best["score_total"],
+                }
+            )
+
+        match_df = pl.DataFrame(match_results)
+
+        # ---- 6. Attach matches back to GPT df ------------------------------
+        gpt_df = gpt_df.with_row_index("_row_idx").join(
+            match_df.select(
+                [
+                    "_row_idx",
+                    "matched_accession",
+                    "matched_source",
+                    "matched_sequence",
+                    "match_score_enzyme",
+                    "match_score_organism",
+                    "match_score_total",
+                ]
+            ),
+            on="_row_idx",
+            how="left",
+        )
+
+        # Coalesce: prefer fuzzy-matched values over None
+        gpt_df = gpt_df.with_columns(
+            [
+                pl.coalesce(["matched_accession", pl.col("uniprot")]).alias("uniprot"),
+                pl.coalesce(["matched_sequence", pl.col("sequence")]).alias("sequence"),
+                pl.when(pl.col("matched_sequence").is_not_null())
+                .then(pl.lit("fuzzy matched"))
+                .otherwise(pl.col("sequence_source"))
+                .alias("sequence_source"),
+            ]
+        ).drop("matched_accession", "matched_sequence", "_row_idx")
+
+        # ---- 7. Optional LLM-based refinement ----------------------------
+        if use_llm:
+            print("[attach] LLM-based matching not yet implemented — skipping")
+
+        # ---- 8. Write output -----------------------------------------------
+        if output_csv:
+            gpt_df.write_csv(output_csv)
+            print(f"[attach] Wrote {len(gpt_df)} rows to {output_csv}")
+
+        print("[attach] Done.")
+        return gpt_df
+
 
 if __name__ == "__main__":
     from enzyextract.extractor.extractor import EnzyExtract, EnzyExtractConfig
