@@ -23,11 +23,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     # --- global options mirroring EnzyExtractConfig ---
     parser.add_argument(
-        "--reocr-model-path",
-        default="data/models/resnet18-remicro-iter3.pth",
-        help="Path to the ResNet18 mM OCR model (default: data/models/resnet18-remicro-iter3.pth)",
-    )
-    parser.add_argument(
         "--llm-name",
         default="openai/gpt-4o",
         help="LLM model name (default: openai/gpt-4o)",
@@ -43,6 +38,11 @@ def build_parser() -> argparse.ArgumentParser:
     submit_parser = subparsers.add_parser(
         "submit",
         help="Preprocess PDFs and create LLM batch files",
+    )
+    submit_parser.add_argument(
+        "--reocr-model-path",
+        default="data/models/resnet18-remicro-iter3.pth",
+        help="Path to the ResNet18 mM OCR model (default: data/models/resnet18-remicro-iter3.pth)",
     )
     submit_parser.add_argument(
         "--pdf-root",
@@ -135,8 +135,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _build_extractor(args: argparse.Namespace) -> EnzyExtract:
     """Build an EnzyExtract instance from parsed CLI arguments."""
+    reocr_model_path = getattr(args, "reocr_model_path", "data/models/resnet18-remicro-iter3.pth")
     config = EnzyExtractConfig(
-        reocr_model_path=args.reocr_model_path,
+        reocr_model_path=reocr_model_path,
         llm_name=args.llm_name,
     )
     extractor = EnzyExtract(
@@ -171,7 +172,7 @@ def cmd_fetch_sequences(args: argparse.Namespace) -> None:
     """Handle the 'sequences' subcommand."""
     extractor = _build_extractor(args)
     print(f"Fetching sequences (pdf_root={args.pdf_root})...")
-    summary = extractor.fetch_sequences(
+    summary = extractor.step_4_fetch_sequences(
         pdf_root=args.pdf_root,
         pmids_csv=args.pmids_csv,
         output_dir=args.output_dir,
@@ -184,9 +185,8 @@ def cmd_attach_sequences(args: argparse.Namespace) -> None:
     """Handle the 'attach' subcommand."""
     extractor = _build_extractor(args)
     print(f"Attaching sequences (download_csv={args.download_csv})...")
-    df = extractor.attach_sequences(
+    df = extractor.step_5_attach_sequences(
         download_csv=args.download_csv,
-        sequences_dir=args.sequences_dir,
         output_csv=args.output_csv,
         use_llm=args.use_llm,
     )

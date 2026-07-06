@@ -324,7 +324,7 @@ class EnzyExtract:
     # sequences: scan PDFs for accession IDs & fetch
     # ──────────────────────────────────────────────
 
-    def fetch_sequences(
+    def step_4_fetch_sequences(
         self,
         pdf_root: str,
         *,
@@ -469,14 +469,13 @@ class EnzyExtract:
     # attach: match accessions to GPT data & output
     # ──────────────────────────────────────────────
 
-    def attach_sequences(
+    def step_5_attach_sequences(
         self,
         download_csv: str,
-        sequences_dir: str,
         *,
+        sequences_dir: Optional[str] = None,
         output_csv: Optional[str] = None,
         use_llm: bool = False,
-        subs_df: Optional["pl.DataFrame"] = None,
     ) -> "pl.DataFrame":
         """
         Attach enzyme sequences to the GPT-extracted data.
@@ -532,6 +531,8 @@ class EnzyExtract:
             gpt_df = gpt_df.with_columns(pl.col("pmid").alias("canonical"))
 
         # ---- 3. Load fetched sequences -------------------------------------
+        if sequences_dir is None:
+            sequences_dir = self.fm.sequences_dir
         pdb_path = f"{sequences_dir}/pdb_sequences.parquet"
         uniprot_path = f"{sequences_dir}/uniprot_sequences.parquet"
         ncbi_path = f"{sequences_dir}/ncbi_sequences.parquet"
