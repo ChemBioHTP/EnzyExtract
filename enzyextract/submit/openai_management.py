@@ -24,7 +24,9 @@ def process_env(filepath, raise_if_openai_not_found=True):
                 _openai_client = openai.OpenAI(api_key=value)
                 break
         else:
-            if raise_if_openai_not_found:
+            if os.environ.get('OPENAI_API_KEY'):
+                _openai_client = openai.OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+            elif raise_if_openai_not_found:
                 raise ValueError("No OpenAI key found!")
                 
 def get_openai_client():

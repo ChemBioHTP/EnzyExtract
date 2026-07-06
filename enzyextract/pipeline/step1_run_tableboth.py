@@ -266,6 +266,7 @@ def step1_main(
     tables_from: Optional[str],
     model_name: str, # model settings
     prompt: str, 
+    confirmation: Optional[str],
 
     log_location: str,
     dest_folder: str, # write to
@@ -428,6 +429,7 @@ def step1_main(
             filepath=batch_fpath,
             count=count,
             submit_suffix=f"Submit to {llm_provider}?",
+            confirmation=confirmation
         )
         
         if inp == SubmitPreference.REMOVE:

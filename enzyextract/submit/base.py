@@ -40,9 +40,11 @@ class SubmitPreference(Enum):
 
 persist_state = {}
 
-def get_user_submit_consent() -> SubmitPreference:
+def get_user_submit_consent(confirmation: Optional[str] = None) -> SubmitPreference:
     """
     Get user consent to submit batch.
+
+    :param confirmation: Optional string to confirm submission. If provided, will be used instead of asking the user.
     """
     global persist_state
     persist_key = 'submit_to_llm'
@@ -51,7 +53,12 @@ def get_user_submit_consent() -> SubmitPreference:
     
     user_advice = f"{Fore.GREEN}Proceed?{Style.RESET_ALL} ([y]es, [l]ocal, [u]ntrack, [r]emove, [h]elp): "
     print(user_advice, end='')
-    inp = input().lower()
+
+    if confirmation is not None:
+        inp = confirmation.lower()
+        print(inp)
+    else:
+        inp = input().lower()
     match inp:
         case 'Y':
             persist_state[persist_key] = SubmitPreference.SUBMIT
@@ -84,6 +91,7 @@ def do_presubmit(
     count: int = None,
     submit_suffix: str = 'Submit to OpenAI?',
     
+    confirmation: Optional[str] = None,
     ):
     """couple of quality of life checks before submission."""
 
@@ -98,7 +106,7 @@ def do_presubmit(
     else:
         raise ValueError("Must provide either filepath or count.")
 
-    return get_user_submit_consent()
+    return get_user_submit_consent(confirmation=confirmation)
 
 @dataclass
 class LLMCommonBatch:

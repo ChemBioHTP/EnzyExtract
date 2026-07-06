@@ -33,6 +33,9 @@ dependencies = [
 ]
 
 
+[project.scripts]
+enzyextract = "enzyextract.cli:main"
+
 [build-system]
 build-backend = "flit_core.buildapi"
 requires = ["flit_core >=3.2,<4"]
