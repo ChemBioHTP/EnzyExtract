@@ -96,68 +96,56 @@ class EnzyExtract:
     def __init__(
         self,
         enzy_root: Union[str, Path],
-        pdf_root: Union[str, Path],
         *,
-        xml_root: Optional[Union[str, Path]] = None,
         config: Optional[EnzyExtractConfig] = None,
     ):
         """
         Initialize the EnzyExtract instance.
         :param base_dir: Path to folder where extracted data will be stored.
-        :param pdf_root: Path to the folder of PDFs to process.
-        :param xml_root: Path to the folder of XMLs to process.
         """
         self.enzy_root = Path(enzy_root).as_posix()
-        self.pdf_root = Path(pdf_root).as_posix() if pdf_root is not None else None
-        """Path to the folder of PDFs to process"""
-        self.xml_root = Path(xml_root).as_posix() if xml_root is not None else None
-        """Path to the folder of XMLs to process"""
         self.fm = IntermediateFileManager(base_dir=enzy_root)
         self.config = config if config is not None else EnzyExtractConfig()
 
-    def step_0_preprocess_pdf(self):
+    def step_0_preprocess_pdf(self, pdf_root):
         """
         Runs preprocessing of PDF documents.
+
+        :param pdf_root: Path to the folder of PDFs to process.
         """        
         from enzyextract.pre.reocr.m_mu_reocr import script_scan_mM
         from enzyextract.pre.table.scan_tables import process_pdfs
 
-        if self.pdf_root is None:
-            print("No PDFs specified. Skipping PDF preprocessing.")
-            return
-
         print("Starting mM...")
         script_scan_mM(
-            pdf_root=self.pdf_root, 
+            pdf_root=pdf_root, 
             write_dir=self.fm.mM_dir, 
             model_path=self.config.reocr_model_path
         )
 
         print("Starting tables...")
         process_pdfs(
-            pdf_root=self.pdf_root,
+            pdf_root=pdf_root,
             write_dir=self.fm.tables_dir,
             micros_path=self.fm.mM_parquet
         )
 
-        print(f"Compressing PDFs to {self.fm.pdf_scans_dir}/pdf.parquet")
         self.scan_papers_and_save(
-            pdfs_folder=self.pdf_root,
+            pdfs_folder=pdf_root,
             recursive=False,
         )
 
-    def step_0_preprocess_xml(self):
+    def step_0_preprocess_xml(self, xml_root):
         """
         Run preprocessing of XML documents.
+
+        :param xml_root: Path to the folder of XMLs to process.
         """
         from enzyextract.pre.scans.scan_to_parquet import scan_xmls_by_folder
 
-        if self.xml_root is None:
-            print("No XMLs specified. Skipping XML preprocessing.")
-            return
         print(f"Compressing XMLs to {self.fm.xml_scans_dir}/xml.parquet")
         df = scan_xmls_by_folder(
-            xmls_folder=self.xml_root,
+            xmls_folder=xml_root,
             recursive=False,
         )
         df.write_parquet(f'{self.fm.xml_scans_dir}/xml.parquet')
@@ -166,6 +154,7 @@ class EnzyExtract:
         self,
         namespace="default-namespace",
         *,
+        pdf_root,
         version: Optional[str]=None,
         mode: Literal["interactive", "batch", "confirm"]=None
     ):
@@ -173,6 +162,7 @@ class EnzyExtract:
         Make calls to LLMs in batches, using the preprocessed data from step 0.
 
         :param namespace: Namespace for the LLM batch. Must be a valid file name (no colons, etc.).
+        :param pdf_root: Path to the folder of PDFs to process.
         :param version: Optional version, such as "v1", to distinguish new versions of a namespace.
             If not provided, a version will be assigned automatically.
         :param mode: Mode for the LLM batch. Can be "interactive", "batch", or "confirm".
@@ -197,9 +187,9 @@ class EnzyExtract:
             confirmation = "local"
         elif mode == "batch":
             confirmation = "yes"
-        step1_main(
+        return step1_main(
             namespace=namespace,
-            pdf_root=self.pdf_root,
+            pdf_root=pdf_root,
             micro_path=self.fm.mM_parquet,
             tables_from=self.fm.tables_markdown_dir,
             dest_folder=self.fm.batches_dir,
@@ -265,6 +255,7 @@ class EnzyExtract:
 
     def submit_pdfs(
         self,
+        pdf_root,
         namespace="default-namespace",
         *,
         version: Optional[str]=None,
@@ -273,15 +264,16 @@ class EnzyExtract:
         """
         Preprocess PDFs and ask the LLM.
 
+        :param pdf_root: Path to the folder of PDFs to process.
         :param namespace: Namespace for the LLM batch. Must be a valid file name (no colons, etc.).
         :param version: Optional version, such as "v1", to distinguish new versions of a namespace.
             If not provided, a version will be assigned automatically.
         """
 
-        self.step_0_preprocess_pdf()
-        self.step_1_ask_llm(namespace=namespace, version=version, mode=mode)
+        self.step_0_preprocess_pdf(pdf_root=pdf_root)
+        status = self.step_1_ask_llm(namespace=namespace, pdf_root=pdf_root, version=version, mode=mode)
 
-        if mode == "interactive":
+        if mode == "interactive" and status:
             self.step_2_process_batch_serially(namespace=namespace)
 
 
@@ -311,19 +303,20 @@ class EnzyExtract:
         """
         Scan PDFs into a DataFrame with progress tracking via checkpoint files.
 
-        :param pdfs_folder: Path to the folder of PDFs to process. If None, uses self.pdf_root.
+        :param pdfs_folder: Path to the folder of PDFs to process.
         :param recursive: Whether to scan PDFs recursively in subdirectories.
         """
         
         parquet_loc = f"{self.fm.pdf_scans_dir}/pdf.parquet"
 
         if Path(parquet_loc).exists():
-            print(f"Found existing parquet file at {parquet_loc}. Loading...")
+            print(f"Found existing parquet file at {parquet_loc}.")
             df = pl.read_parquet(parquet_loc)
             return df
         else:
             from enzyextract.pre.scans.scan_to_parquet import scan_papers
 
+            print(f"Compressing PDFs to {self.fm.pdf_scans_dir}/pdf.parquet")
             df = scan_papers(pdfs_folder=pdfs_folder, recursive=recursive)
             df.write_parquet(f"{self.fm.pdf_scans_dir}/pdf.parquet")
             return df
@@ -483,13 +476,16 @@ class EnzyExtract:
         *,
         output_csv: Optional[str] = None,
         use_llm: bool = False,
+        subs_df: Optional["pl.DataFrame"] = None,
     ) -> "pl.DataFrame":
         """
-        Attach enzyme sequences to the GPT-extracted data by matching accession
-        descriptions to enzyme names via string similarity (and optionally LLM).
+        Attach enzyme sequences to the GPT-extracted data.
 
-        This corresponds to the 'attach' subcommand and wraps the core matching
-        logic found in ``step5_generate_identifiers``.
+        This method now delegates to the proper ``step5_generate_identifiers``
+        pipeline (``add_identifiers`` + ``add_enzyme_sequences``) instead of
+        using an ad-hoc fuzzy-matching routine.  The old fuzzy-matching logic
+        has been moved to
+        ``enzyextract.pipeline.accessions.shortcut_pick_accessions``.
 
         Parameters
         ----------
@@ -504,31 +500,41 @@ class EnzyExtract:
             If provided, the final enriched DataFrame is written to this CSV.
         use_llm : bool
             Whether to use an LLM to confirm/improve accession matching
-            (default: ``False``).
+            (default: ``False``).  Currently a no-op.
+        subs_df : pl.DataFrame, optional
+            Substrate thesaurus DataFrame (columns ``name``, ``cid``,
+            ``brenda_id``, ``smiles``, ``smiles_brenda``).  If not provided,
+            an empty DataFrame is used, so identifier columns (EC, CID, …)
+            will be left as null.
 
         Returns
         -------
         pl.DataFrame
-            The GPT-extracted DataFrame augmented with sequence columns.
+            The GPT-extracted DataFrame augmented with sequence and
+            identifier columns.
         """
         import os
 
-        from rapidfuzz import fuzz
-
-        from enzyextract.fetch_sequences.accession_schemas import (
-            pdb_df_schema,
-            uniprot_df_schema,
+        from enzyextract.pipeline.step5_generate_identifiers import (
+            add_enzyme_sequences,
+        )
+        from enzyextract.pipeline.accessions.shortcut_pick_accessions import (
+            pick_accessions_by_fuzzy_match,
         )
 
         # ---- 1. Load GPT-extracted data ------------------------------------
         print(f"[attach] Loading download CSV: {download_csv}")
-        gpt_df = pl.read_csv(download_csv)
+        gpt_df = pl.read_csv(download_csv, schema_overrides={"pmid": pl.Utf8})
         print(f"[attach] Loaded {len(gpt_df)} rows with columns: {gpt_df.columns}")
 
-        # ---- 2. Load fetched sequences -------------------------------------
-        pdb_path = os.path.join(sequences_dir, "pdb_sequences.parquet")
-        uniprot_path = os.path.join(sequences_dir, "uniprot_sequences.parquet")
-        ncbi_path = os.path.join(sequences_dir, "ncbi_sequences.parquet")
+        # Ensure ``canonical`` exists (needed by add_enzyme_sequences).
+        if "canonical" not in gpt_df.columns:
+            gpt_df = gpt_df.with_columns(pl.col("pmid").alias("canonical"))
+
+        # ---- 3. Load fetched sequences -------------------------------------
+        pdb_path = f"{sequences_dir}/pdb_sequences.parquet"
+        uniprot_path = f"{sequences_dir}/uniprot_sequences.parquet"
+        ncbi_path = f"{sequences_dir}/ncbi_sequences.parquet"
 
         pdb_df = pl.read_parquet(pdb_path) if os.path.exists(pdb_path) else pl.DataFrame()
         uniprot_df = (
@@ -542,178 +548,69 @@ class EnzyExtract:
             f"{len(ncbi_df)} NCBI sequences"
         )
 
-        # ---- 3. Ensure required columns exist on GPT df --------------------
-        for col in ("sequence", "sequence_source", "uniprot", "ncbi", "pdb"):
-            if col not in gpt_df.columns:
-                gpt_df = gpt_df.with_columns(pl.lit(None).alias(col))
-
-        # ---- 4. Build a unified accession lookup ---------------------------
-        # We collect every accession along with its descriptive text and
-        # sequence so we can fuzzy-match against enzyme names.
-
-        accession_records: list[dict] = []
-
-        # PDB
-        if pdb_df.height > 0:
-            for row in pdb_df.iter_rows(named=True):
-                desc = (
-                    row.get("name")
-                    or row.get("sys_name")
-                    or row.get("descriptor")
-                    or ""
-                )
-                accession_records.append(
-                    {
-                        "source": "pdb",
-                        "accession": str(row.get("pdb", "")),
-                        "description": str(desc),
-                        "organism": str(row.get("organism") or ""),
-                        "sequence": str(row.get("seq_can") or row.get("seq") or ""),
-                    }
-                )
-
-        # UniProt
-        if uniprot_df.height > 0:
-            for row in uniprot_df.iter_rows(named=True):
-                accession_records.append(
-                    {
-                        "source": "uniprot",
-                        "accession": str(row.get("uniprot", "")),
-                        "description": str(row.get("enzyme_name") or ""),
-                        "organism": str(row.get("organism") or ""),
-                        "sequence": str(row.get("sequence") or ""),
-                    }
-                )
-
-        # NCBI
-        if ncbi_df.height > 0:
-            for row in ncbi_df.iter_rows(named=True):
-                accession_records.append(
-                    {
-                        "source": "ncbi",
-                        "accession": str(row.get("ncbi", "")),
-                        "description": str(row.get("descriptor") or ""),
-                        "organism": "",
-                        "sequence": str(row.get("sequence") or ""),
-                    }
-                )
-
-        if not accession_records:
-            print("[attach] WARNING: no accession records loaded — nothing to match")
-            if output_csv:
-                gpt_df.write_csv(output_csv)
-            return gpt_df
-
-        acc_df = pl.DataFrame(accession_records)
-        print(f"[attach] Built lookup table with {len(acc_df)} accession record(s)")
-
-        # ---- 5. Fuzzy-match each GPT row to the best accession -------------
-        # We match on (enzyme + organism) against (description + organism).
-
-        match_results: list[dict] = []
-
-        for row in gpt_df.iter_rows(named=True):
-            enzyme = str(row.get("enzyme") or "")
-            organism = str(row.get("organism") or "")
-            enzyme_full = str(row.get("enzyme_full") or "")
-
-            # Build query strings
-            query_enzyme = (enzyme_full or enzyme).lower().strip()
-            query_organism = organism.lower().strip()
-
-            best = {
-                "accession": None,
-                "source": None,
-                "sequence": None,
-                "score_enzyme": 0.0,
-                "score_organism": 0.0,
-                "score_total": 0.0,
-            }
-
-            for acc_row in acc_df.iter_rows(named=True):
-                acc_desc = (acc_row["description"] or "").lower().strip()
-                acc_org = (acc_row["organism"] or "").lower().strip()
-
-                if not query_enzyme or not acc_desc:
-                    continue
-
-                # String similarity on enzyme name ↔ description
-                score_enzyme = fuzz.partial_ratio(query_enzyme, acc_desc)
-
-                # Organism bonus
-                score_organism = 0.0
-                if query_organism and acc_org:
-                    score_organism = fuzz.ratio(query_organism, acc_org)
-                elif not query_organism and not acc_org:
-                    score_organism = 50.0  # neutral when both missing
-                # Penalize when one has organism and the other doesn't
-                elif query_organism and not acc_org:
-                    score_organism = 25.0
-                else:
-                    score_organism = 25.0
-
-                score_total = score_enzyme * 0.7 + score_organism * 0.3
-
-                if score_total > best["score_total"] and score_enzyme >= 50:
-                    best.update(
-                        {
-                            "accession": acc_row["accession"],
-                            "source": acc_row["source"],
-                            "sequence": acc_row["sequence"],
-                            "score_enzyme": score_enzyme,
-                            "score_organism": score_organism,
-                            "score_total": score_total,
-                        }
-                    )
-
-            match_results.append(
-                {
-                    "_row_idx": len(match_results),
-                    "matched_accession": best["accession"],
-                    "matched_source": best["source"],
-                    "matched_sequence": best["sequence"],
-                    "match_score_enzyme": best["score_enzyme"],
-                    "match_score_organism": best["score_organism"],
-                    "match_score_total": best["score_total"],
-                }
-            )
-
-        match_df = pl.DataFrame(match_results)
-
-        # ---- 6. Attach matches back to GPT df ------------------------------
-        gpt_df = gpt_df.with_row_index("_row_idx").join(
-            match_df.select(
-                [
-                    "_row_idx",
-                    "matched_accession",
-                    "matched_source",
-                    "matched_sequence",
-                    "match_score_enzyme",
-                    "match_score_organism",
-                    "match_score_total",
-                ]
-            ),
-            on="_row_idx",
-            how="left",
+        # ---- 4. Fuzzy-match accessions via shortcut_pick_accessions ---------
+        result = pick_accessions_by_fuzzy_match(
+            gpt_df=gpt_df,
+            pdb_df=pdb_df,
+            uniprot_df=uniprot_df,
+            ncbi_df=ncbi_df,
         )
 
-        # Coalesce: prefer fuzzy-matched values over None
-        gpt_df = gpt_df.with_columns(
-            [
-                pl.coalesce(["matched_accession", pl.col("uniprot")]).alias("uniprot"),
-                pl.coalesce(["matched_sequence", pl.col("sequence")]).alias("sequence"),
-                pl.when(pl.col("matched_sequence").is_not_null())
-                .then(pl.lit("fuzzy matched"))
-                .otherwise(pl.col("sequence_source"))
-                .alias("sequence_source"),
-            ]
-        ).drop("matched_accession", "matched_sequence", "_row_idx")
+        # ---- 5. Add enzyme sequences via step5 pipeline --------------------
+        # Empty confidence/alignment DataFrames with the correct schemas.
+        _conf_schema = {
+            "canonical": pl.Utf8,
+            "enzyme": pl.Utf8,
+            "enzyme_full": pl.Utf8,
+            "organism": pl.Utf8,
+            "max_enzyme_similarity": pl.Float64,
+            "max_organism_similarity": pl.Float64,
+            "total_similarity": pl.Float64,
+            "sequence": pl.Utf8,
+        }
 
-        # ---- 7. Optional LLM-based refinement ----------------------------
+        uniprot_conf = pl.DataFrame(
+            schema={**_conf_schema, "uniprot": pl.Utf8}
+        )
+        pdb_conf = pl.DataFrame(
+            schema={**_conf_schema, "pdb": pl.Utf8}
+        )
+        ncbi_conf = pl.DataFrame(
+            schema={**_conf_schema, "ncbi": pl.Utf8}
+        )
+
+        uniprot_searched = pl.DataFrame(
+            schema={
+                "query_enzyme": pl.Utf8,
+                "query_organism": pl.Utf8,
+                "uniprot": pl.Utf8,
+                "sequence": pl.Utf8,
+                "max_enzyme_similarity": pl.Float64,
+                "max_organism_similarity": pl.Float64,
+            }
+        )
+
+        gpt_df = add_enzyme_sequences(
+            gpt_df,
+            uniprot_conf=uniprot_conf,
+            pdb_conf=pdb_conf,
+            ncbi_conf=ncbi_conf,
+            uniprot2seq=result["uniprot2seq"],
+            pdb2seq=result["pdb2seq"],
+            ncbi2seq=result["ncbi2seq"],
+            uniprot_picked=result["uniprot_picked"].unique(keep="first"),
+            pdb_picked=result["pdb_picked"].unique(keep="first"),
+            ncbi_picked=result["ncbi_picked"].unique(keep="first"),
+            uniprot_cited=None,
+            uniprot_searched=uniprot_searched,
+        )
+        print(f"[attach] After add_enzyme_sequences: {len(gpt_df)} rows")
+
+        # ---- 6. Optional LLM-based refinement ------------------------------
         if use_llm:
             print("[attach] LLM-based matching not yet implemented — skipping")
 
-        # ---- 8. Write output -----------------------------------------------
+        # ---- 7. Write output -----------------------------------------------
         if output_csv:
             gpt_df.write_csv(output_csv)
             print(f"[attach] Wrote {len(gpt_df)} rows to {output_csv}")
@@ -729,10 +626,9 @@ if __name__ == "__main__":
 
     extractor = EnzyExtract(
         enzy_root=".enzy",
-        pdf_root="pdfs",
         config=config,
     )
     print("OK")
-    extractor.submit_pdfs()
+    extractor.submit_pdfs(pdf_root="pdfs")
 
     extractor.download_results()

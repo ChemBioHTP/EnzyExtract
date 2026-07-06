@@ -322,7 +322,7 @@ def step1_main(
             print(f"Using custom version {version}.")
         else:
             print("Aborting.")
-            return
+            return False
     else:
         # nothing found, so assign a new version
         version = new_version
@@ -342,7 +342,7 @@ def step1_main(
     
     if reuse_pref == ReusePreference.ABORT:
         print("Aborting submission.")
-        return
+        return False
 
     os.makedirs(dest_folder, exist_ok=True)
     os.makedirs(corresp_folder, exist_ok=True)
@@ -468,7 +468,7 @@ def step1_main(
             status = 'local'
         else:
             print("Unknown consent", inp, "exiting.")
-            return
+            return False
 
         # update log
         update_log(
@@ -490,3 +490,4 @@ def step1_main(
             # try to update (and replace) existing record if it had already existed
             replace_existing_record=_should_exist
         )
+        return True

@@ -30,6 +30,8 @@ dependencies = [
   "bs4",
   "transformers<5.4.0",
   "pyarrow",
+  "rapidfuzz",
+  "scipy",
 ]
 
 

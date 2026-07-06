@@ -37,23 +37,17 @@ def build_parser() -> argparse.ArgumentParser:
         default=".enzy",
         help="Working directory for intermediate files (default: .enzy)",
     )
-    parser.add_argument(
-        "--pdf-root",
-        default=None,
-        help="Directory containing PDF files to process",
-    )
-    parser.add_argument(
-        "--xml-root",
-        default=None,
-        help="Directory containing XML files to process",
-    )
-
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # --- submit ---
     submit_parser = subparsers.add_parser(
         "submit",
         help="Preprocess PDFs and create LLM batch files",
+    )
+    submit_parser.add_argument(
+        "--pdf-root",
+        required=True,
+        help="Directory containing PDF files to process",
     )
     submit_parser.add_argument(
         "--namespace",
@@ -147,8 +141,6 @@ def _build_extractor(args: argparse.Namespace) -> EnzyExtract:
     )
     extractor = EnzyExtract(
         enzy_root=args.enzy_root,
-        pdf_root=args.pdf_root,
-        xml_root=args.xml_root,
         config=config,
     )
     return extractor
@@ -156,13 +148,14 @@ def _build_extractor(args: argparse.Namespace) -> EnzyExtract:
 
 def cmd_submit_pdfs(args: argparse.Namespace) -> None:
     """Handle the 'submit' subcommand."""
-    if not args.pdf_root:
-        print("Error: --pdf-root is required for 'submit'.", file=sys.stderr)
-        sys.exit(1)
-
     extractor = _build_extractor(args)
     print(f"Submitting PDFs (namespace={args.namespace}, mode={args.mode})...")
-    extractor.submit_pdfs(namespace=args.namespace, version=args.version, mode=args.mode)
+    extractor.submit_pdfs(
+        pdf_root=args.pdf_root,
+        namespace=args.namespace,
+        version=args.version,
+        mode=args.mode,
+    )
     print("Done.")
 
 
