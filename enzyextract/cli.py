@@ -98,6 +98,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional CSV with a 'pmid' column; UniProt entries linked to those PMIDs are also fetched",
     )
     sequences_parser.add_argument(
+        "--entrez-email",
+        required=True,
+        help="Email address required by NCBI Entrez (BioPython) for sequence fetching",
+    )
+    sequences_parser.add_argument(
         "--output-dir",
         default=None,
         help="Directory to write the fetched sequences parquet files (default: <enzy-root>/sequences)",
@@ -175,6 +180,7 @@ def cmd_fetch_sequences(args: argparse.Namespace) -> None:
     summary = extractor.step_4_fetch_sequences(
         pdf_root=args.pdf_root,
         pmids_csv=args.pmids_csv,
+        entrez_email=args.entrez_email,
         output_dir=args.output_dir,
     )
     print(summary)

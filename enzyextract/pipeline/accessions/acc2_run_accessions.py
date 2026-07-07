@@ -1,5 +1,6 @@
 import os
-from typing import Literal
+from pathlib import Path
+from typing import Literal, Union
 from Bio import Entrez
 import time
 
@@ -162,26 +163,25 @@ def _makedirs_exist_ok(fpath):
     os.makedirs(parent_dir, exist_ok=True)
 
 
-
-def script_download_accessions(
-    working: Literal['uniprot', 'uniparc', 'uniprot_slow', 'pdb', 'refseq', 'genbank'],
+def accession_batch_downloader(
+    working: Literal["uniprot", "uniparc", "uniprot_slow", "pdb", "refseq", "genbank"],
     entrez_email,
-    df: pl.DataFrame = None,
+    df: pl.DataFrame,
+    write_folder: Union[str, Path],
     processed: pl.DataFrame = None,
-    write_dest: str = None,
 ):
     """
     Main entry point for the script.
 
     df: a polars DataFrame that contains the accessions to process. Depending on the type of accession,
-    it should have a column named `uniprot`, `pdb`, or `ncbi` (for refseq and genbank).
+    it should have a column named `uniprot`, `pdb`, `refseq`, or `genbank`.
 
     processed: a polars DataFrame that contains the accessions that have already been processed. It should have a column
-    named `uniprot`, `pdb`, or `ncbi` depending on the working type.
-    If not provided, then the script searches `data/enzymes/accessions/{working}` for existing parquet files.
+    named `uniprot`, `pdb`, `refseq`, or `genbank` depending on the working type.
+    If not provided, then the script searches `{write_folder}/{working}` for existing parquet files.
 
     write_dest: the path to write the parquet file to. If not provided, it will be written to
-    `data/enzymes/accessions/{working}/{working}_{timestamp}.parquet`.
+    `{write_folder}/{working}/{working}_{timestamp}.parquet`.
     """
 
     # Format the current time
@@ -190,99 +190,91 @@ def script_download_accessions(
     # UniProt
     # refseq failed
 
-    if df is None:
-        _parquet_name = working.split('_')[0]
-        df = pl.read_parquet(f'data/enzymes/accessions/unknown/unknown_{_parquet_name}.parquet')
-
-    if working in ['uniprot', 'uniprot_slow', 'uniparc']:
-        col_name = 'uniprot'
-    elif working in ['refseq', 'genbank']:
-        col_name = 'ncbi'
-    elif working in ['pdb']:
-        col_name = 'pdb'
+    if working in ["uniprot", "uniprot_slow", "uniparc"]:
+        col_name = "uniprot"
+    elif working in ["refseq", "genbank"]:
+        col_name = "ncbi"
+    elif working in ["pdb"]:
+        col_name = "pdb"
     else:
         raise ValueError("Unknown working type")
 
     # Small modifications to df
-    if working == 'uniparc':
-        # if df is None:
-        #     df = pl.read_parquet('data/enzymes/accessions/final/uniprot.parquet')
-        # df = df.filter(
-        #     pl.col('why_deleted').is_not_null()
-        #     & pl.col('uniparc').is_not_null()
-        # ).select('uniparc').unique().rename({'uniparc': 'uniprot'})
-        df = df.rename({'uniparc': 'uniprot'}, strict=False)
-    elif working == 'refseq':
+    if working == "uniparc":
+        df = df.rename({"uniparc": "uniprot"}, strict=False)
+    elif working == "refseq":
         df = df.filter(
-            pl.col('refseq').str.starts_with('NP_')
-            | pl.col('refseq').str.starts_with('YP_')
-            | pl.col('refseq').str.starts_with('XP_')
-            | pl.col('refseq').str.starts_with('WP_')
+            pl.col("refseq").str.starts_with("NP_")
+            | pl.col("refseq").str.starts_with("YP_")
+            | pl.col("refseq").str.starts_with("XP_")
+            | pl.col("refseq").str.starts_with("WP_")
         ) # only proteins
-        df = df.rename({'refseq': 'ncbi'}, strict=False)
-    elif working == 'genbank':
-        df = df.rename({'genbank': 'ncbi'}, strict=False)
+        df = df.rename({"refseq": "ncbi"}, strict=False)
+    elif working == "genbank":
+        df = df.rename({"genbank": "ncbi"}, strict=False)
 
 
     if processed is None:
-        if working == 'uniprot' or working == 'uniprot_slow':
-            processed = read_all_dfs('data/enzymes/accessions/uniprot')
-            # bdr = []
-            # for filename in os.listdir('data/enzymes/accessions/uniprot'):
-            #     if filename.endswith('.parquet'):
-            #         bdr.append(
-            #             pl.scan_parquet(f'data/enzymes/accessions/uniprot/{filename}').select(
-            #                 cs.exclude('full_response')
-            #             ).collect()
-            #         )
-            # processed = pl.concat(bdr, how='diagonal')
-            # # add in merged/demerged uniprots
-            # additional = processed.filter(
-            #     pl.col('why_deleted').is_in(['merged', 'demerged'])
-            # ).select('uniprot_aliases').explode('uniprot_aliases').rename({'uniprot_aliases': 'uniprot'})
-            # # remove those which act as a secondary accession to a primary accession with a sequence
-            # secondaries = processed.filter(
-            #     pl.col('sequence').is_not_null()
-            #     & pl.col('uniprot_aliases').is_not_null()
-            # ).select('uniprot_aliases').explode('uniprot_aliases').rename({'uniprot_aliases': 'uniprot'})
-            # df = pl.concat([df, additional], how='diagonal')
-            # df = df.filter(~pl.col('uniprot').is_in(secondaries['uniprot']))
-            # pass
+        if working == "uniprot" or working == "uniprot_slow":
+            processed = read_all_dfs(f"{write_folder}/{working}")
 
-        elif working == 'pdb':
-            processed = read_all_dfs('data/enzymes/accessions/pdb')
-        elif working == 'refseq':
-            processed = read_all_dfs('data/enzymes/accessions/refseq')
-        elif working == 'genbank':
-            processed = read_all_dfs('data/enzymes/accessions/ncbi')
+        elif working == "pdb":
+            processed = read_all_dfs(f"{write_folder}/{working}")
+        elif working == "refseq":
+            processed = read_all_dfs(f"{write_folder}/{working}")
+        elif working == "genbank":
+            processed = read_all_dfs(f"{write_folder}/{working}")
 
     
-    if write_dest is None:
-        write_to = f'data/enzymes/accessions/{working}/{working}_{ts}.parquet'
+    write_to = f"{write_folder}/{working}/{working}_{ts}.parquet"
     _makedirs_exist_ok(write_to)
 
     print("Read", df.height, working, "entries")
 
     if processed is not None and processed.height:
         df = df.filter(~pl.col(col_name).is_in(processed[col_name]))
+
+    # adjust pdbs based on first 4 characters (ignoring version differences)
+    if working == "pdb":
+        df = df.with_columns(
+            pl.col("pdb").str.to_lowercase().str.slice(0, 4).alias("pdb_temp")
+        ).join(
+            processed.select(
+                pl.col("pdb").str.to_lowercase().str.slice(0, 4).alias("pdb_temp")
+            ),
+            on="pdb_temp",
+            how="anti",
+        ).drop("pdb_temp")
+    elif working in ["refseq", "genbank"]:
+        # remove .\d version
+        df = df.with_columns(
+            pl.col("ncbi").str.replace(r"\.\d+$", "").alias("ncbi_temp")
+        ).join(
+            processed.with_columns(
+                pl.col("ncbi").str.replace(r"\.\d+$", "").alias("ncbi_temp")
+            ).select("ncbi_temp"),
+            on="ncbi_temp",
+            how="anti",
+        ).drop("ncbi_temp")
+
     print("Keeping", df.height, "entries")
     print("Writing to", write_to)
 
-    if working == 'uniprot':
+    if working == "uniprot":
         # perform some more pruning
 
         submit_script_uniprot(df, write_to)
-    elif working == 'uniprot_slow':
+    elif working == "uniprot_slow":
         submit_script_uniprot(df, write_to, individually=True)
-    elif working == 'uniparc':
+    elif working == "uniparc":
         submit_script_uniprot(df, write_to, uniparc=True)
-    elif working == 'pdb':
+    elif working == "pdb":
         submit_script_pdb(df, write_to)
     
-    elif working == 'refseq':
-        submit_script_ncbi(df, write_to, db='protein', entrez_email=entrez_email)
+    elif working == "refseq":
+        submit_script_ncbi(df, write_to, db="protein", entrez_email=entrez_email)
     
-    elif working == 'genbank':
+    elif working == "genbank":
         submit_script_ncbi(df, write_to, entrez_email=entrez_email)
     else:
         raise ValueError("Unknown working type")
@@ -291,7 +283,7 @@ def script_download_accessions(
 def _main(
     df = REQUIRE('data/enzymes/accessions/unknown/unknown_uniprot.parquet')
 ):
-    script_download_accessions(
+    accession_batch_downloader(
         # entrez_email=Your email here
         working='uniprot',
         df=df

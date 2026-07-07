@@ -328,6 +328,7 @@ class EnzyExtract:
         self,
         pdf_root: str,
         *,
+        entrez_email: str,
         pmids_csv: Optional[str] = None,
         output_dir: Optional[str] = None,
     ) -> "pl.DataFrame":
@@ -348,6 +349,9 @@ class EnzyExtract:
         pmids_csv : str, optional
             Path to a CSV with a ``pmid`` column.  If given, UniProt entries
             associated with those PMIDs will also be fetched.
+        entrez_email : str
+            Email address required by NCBI Entrez.  Will be set via
+            ``Bio.Entrez.email`` before any NCBI API calls.
         output_dir : str, optional
             Where to write the intermediate parquet files.  Defaults to
             ``{enzy_root}/sequences``.
@@ -358,10 +362,11 @@ class EnzyExtract:
             A DataFrame with columns described below.
         """
         from enzyextract.pre.scans.scan_accessions import extract_enzyme_accessions
-        from enzyextract.fetch_sequences.query_idents import fetch_pdbs, fetch_ncbis
-        from enzyextract.fetch_sequences.query_uniprot import (
-            fetch_uniprots_latest,
-            fetch_uniprots_from_pmids,
+        from enzyextract.pipeline.accessions.acc2_run_accessions import (
+            accession_batch_downloader,
+        )
+        from enzyextract.pipeline.accessions.acc3_run_uniprot_from_pmid import (
+            pmid2uniprot_batch_downloader,
         )
 
         if output_dir is None:
@@ -371,7 +376,6 @@ class EnzyExtract:
         print(f"[sequences] Output directory: {output_dir}")
 
         # ---- 1. Scan PDFs & extract accession IDs --------------------------
-        # (uses the better regexes from scan_accessions.py / protein_patterns.py)
         print(f"[sequences] Scanning PDFs in {pdf_root} …")
         scan_df = self.scan_papers_and_save(
             pdfs_folder=pdf_root,
@@ -402,63 +406,90 @@ class EnzyExtract:
         all_refseq = _unique_ids("refseq")
         all_genbank = _unique_ids("genbank")
 
+        n_pdb = len(all_pdb)
+        n_uniprot = len(all_uniprot)
+        n_refseq = len(all_refseq)
+        n_genbank = len(all_genbank)
+        n_pmid = 0
+
         print(
-            f"[sequences] Found {len(all_pdb)} PDB, {len(all_uniprot)} UniProt, "
-            f"{len(all_refseq)} RefSeq, {len(all_genbank)} GenBank ID(s)"
+            f"[sequences] Found {n_pdb} PDB, {n_uniprot} UniProt, "
+            f"{n_refseq} RefSeq, {n_genbank} GenBank ID(s)"
         )
 
-        # ---- 2. Fetch PDB sequences ----------------------------------------
-        pdb_df = pl.DataFrame()
+        # ---- 2. Fetch sequences via batch downloaders ----------------------
         if all_pdb:
-            print(f"[sequences] Fetching {len(all_pdb)} PDB entries …")
-            pdb_df = pl.from_pandas(fetch_pdbs(list(all_pdb)))
-            pdb_df.write_parquet(f"{output_dir}/pdb_sequences.parquet")
-            print(f"[sequences] Got {len(pdb_df)} PDB rows")
+            print(f"[sequences] Fetching {n_pdb} PDB entries via batch downloader …")
+            accession_batch_downloader(
+                working="pdb",
+                df=pl.DataFrame({"pdb": list(all_pdb)}),
+                entrez_email=entrez_email,
+                write_folder=output_dir,
+            )
 
-        # ---- 3. Fetch UniProt sequences ------------------------------------
-        uniprot_df = pl.DataFrame()
         if all_uniprot:
-            print(f"[sequences] Fetching {len(all_uniprot)} UniProt entries …")
-            uniprot_df = fetch_uniprots_latest(list(all_uniprot))
-            uniprot_df.write_parquet(f"{output_dir}/uniprot_sequences.parquet")
-            print(f"[sequences] Got {len(uniprot_df)} UniProt rows")
+            print(f"[sequences] Fetching {n_uniprot} UniProt entries via batch downloader …")
+            accession_batch_downloader(
+                working="uniprot",
+                df=pl.DataFrame({"uniprot": list(all_uniprot)}),
+                entrez_email=entrez_email,
+                write_folder=output_dir,
+            )
 
-        # ---- 4. Fetch NCBI sequences (RefSeq + GenBank) --------------------
-        ncbi_df = pl.DataFrame()
-        all_ncbi = list(all_refseq | all_genbank)
-        if all_ncbi:
-            print(f"[sequences] Fetching {len(all_ncbi)} NCBI entries …")
-            ncbi_df = pl.from_pandas(fetch_ncbis(all_ncbi))
-            ncbi_df.write_parquet(f"{output_dir}/ncbi_sequences.parquet")
-            print(f"[sequences] Got {len(ncbi_df)} NCBI rows")
+        if all_refseq:
+            print(f"[sequences] Fetching {n_refseq} RefSeq entries via batch downloader …")
+            accession_batch_downloader(
+                working="refseq",
+                df=pl.DataFrame({"refseq": list(all_refseq)}),
+                entrez_email=entrez_email,
+                write_folder=output_dir,
+            )
 
-        # ---- 5. (Optional) Fetch UniProt entries linked to PMIDs -----------
-        pmid_uniprot_df = pl.DataFrame()
+        if all_genbank:
+            print(f"[sequences] Fetching {n_genbank} GenBank entries via batch downloader …")
+            accession_batch_downloader(
+                working="genbank",
+                df=pl.DataFrame({"genbank": list(all_genbank)}),
+                entrez_email=entrez_email,
+                write_folder=output_dir,
+            )
+
+        # ---- 3. (Optional) Fetch UniProt entries linked to PMIDs -----------
         if pmids_csv:
             pmids_df = pl.read_csv(pmids_csv)
             if "pmid" not in pmids_df.columns:
                 print("[sequences] WARNING: pmids_csv has no 'pmid' column — skipping")
             else:
-                pmids = pmids_df["pmid"].drop_nulls().unique().to_list()
-                print(f"[sequences] Fetching UniProt entries for {len(pmids)} PMID(s) …")
-                pmid_uniprot_df = fetch_uniprots_from_pmids(pmids)
-                pmid_uniprot_df.write_parquet(
-                    f"{output_dir}/pmid_uniprot_sequences.parquet"
-                )
-                print(f"[sequences] Got {len(pmid_uniprot_df)} PMID-linked UniProt rows")
+                pmids = pmids_df.select("pmid").drop_nulls().unique()
+                n_pmid = pmids.height
+                if n_pmid:
+                    print(f"[sequences] Fetching UniProt entries for {n_pmid} PMID(s) …")
+                    pmid2uniprot_batch_downloader(
+                        df=pmids,
+                        write_folder=output_dir,
+                    )
 
-        # ---- 6. Return summary ---------------------------------------------
+        # ---- 4. Return summary ---------------------------------------------
         n_unique_pdfs = scan_df["pmid"].n_unique()
         summary = pl.DataFrame(
             {
-                "source": ["scanned_pdfs", "with_accessions", "pdb", "uniprot", "ncbi", "pmid_uniprot"],
+                "source": [
+                    "scanned_pdfs",
+                    "with_accessions",
+                    "pdb",
+                    "uniprot",
+                    "refseq",
+                    "genbank",
+                    "pmid_uniprot",
+                ],
                 "count": [
                     n_unique_pdfs,
                     idents_df["pmid"].n_unique(),
-                    len(pdb_df),
-                    len(uniprot_df),
-                    len(ncbi_df),
-                    len(pmid_uniprot_df),
+                    n_pdb,
+                    n_uniprot,
+                    n_refseq,
+                    n_genbank,
+                    n_pmid,
                 ],
             }
         )
@@ -493,8 +524,9 @@ class EnzyExtract:
             GPT-extracted enzyme kinetic data).
         sequences_dir : str
             Directory containing the parquet files written by
-            :meth:`fetch_sequences` (``pdb_sequences.parquet``,
-            ``uniprot_sequences.parquet``, ``ncbi_sequences.parquet``).
+            :meth:`fetch_sequences` (``pdb_*.parquet``,
+            ``uniprot_*.parquet``, ``refseq_*.parquet``,
+            ``genbank_*.parquet``).
         output_csv : str, optional
             If provided, the final enriched DataFrame is written to this CSV.
         use_llm : bool
@@ -533,17 +565,23 @@ class EnzyExtract:
         # ---- 3. Load fetched sequences -------------------------------------
         if sequences_dir is None:
             sequences_dir = self.fm.sequences_dir
-        pdb_path = f"{sequences_dir}/pdb_sequences.parquet"
-        uniprot_path = f"{sequences_dir}/uniprot_sequences.parquet"
-        ncbi_path = f"{sequences_dir}/ncbi_sequences.parquet"
 
-        pdb_df = pl.read_parquet(pdb_path) if os.path.exists(pdb_path) else pl.DataFrame()
-        uniprot_df = (
-            pl.read_parquet(uniprot_path) if os.path.exists(uniprot_path) else pl.DataFrame()
-        )
-        ncbi_df = (
-            pl.read_parquet(ncbi_path) if os.path.exists(ncbi_path) else pl.DataFrame()
-        )
+        def _find_latest(prefix: str) -> pl.DataFrame:
+            """Find the newest parquet file matching ``{prefix}_*.parquet``."""
+            import glob
+            pattern = f"{sequences_dir}/{prefix}_*.parquet"
+            matches = sorted(glob.glob(pattern))
+            if not matches:
+                return pl.DataFrame()
+            return pl.read_parquet(matches[-1])
+
+        pdb_df = _find_latest("pdb")
+        uniprot_df = _find_latest("uniprot")
+        ncbi_dfs = []
+        for ref in (_find_latest("refseq"), _find_latest("genbank")):
+            if ref.height:
+                ncbi_dfs.append(ref)
+        ncbi_df = pl.concat(ncbi_dfs, how="diagonal") if ncbi_dfs else pl.DataFrame()
         print(
             f"[attach] Loaded {len(pdb_df)} PDB, {len(uniprot_df)} UniProt, "
             f"{len(ncbi_df)} NCBI sequences"
