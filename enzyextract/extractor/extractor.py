@@ -544,7 +544,6 @@ class EnzyExtract:
             The GPT-extracted DataFrame augmented with sequence and
             identifier columns.
         """
-        import os
 
         from enzyextract.pipeline.step5_generate_identifiers import (
             add_enzyme_sequences,

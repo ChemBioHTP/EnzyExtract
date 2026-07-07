@@ -235,7 +235,7 @@ def accession_batch_downloader(
         df = df.filter(~pl.col(col_name).is_in(processed[col_name]))
 
     # adjust pdbs based on first 4 characters (ignoring version differences)
-    if working == "pdb":
+    if working == "pdb" and processed is not None:
         df = df.with_columns(
             pl.col("pdb").str.to_lowercase().str.slice(0, 4).alias("pdb_temp")
         ).join(
@@ -245,7 +245,7 @@ def accession_batch_downloader(
             on="pdb_temp",
             how="anti",
         ).drop("pdb_temp")
-    elif working in ["refseq", "genbank"]:
+    elif working in ["refseq", "genbank"] and processed is not None:
         # remove .\d version
         df = df.with_columns(
             pl.col("ncbi").str.replace(r"\.\d+$", "").alias("ncbi_temp")
