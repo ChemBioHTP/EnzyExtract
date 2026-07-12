@@ -21,7 +21,7 @@ def xml_get_soup(raw_text) -> bs4.BeautifulSoup | None:
         raw_text = raw_text.replace(j, '')
 
     # idk why, but html.parser kept hanging 
-    soup = bs4.BeautifulSoup(raw_text, "lxml") # avoid putting in head/body tags
+    soup = bs4.BeautifulSoup(raw_text, "xml")
     return soup
 
 elename = {}
@@ -126,7 +126,7 @@ def xml_table_processing(soup: bs4.BeautifulSoup) -> list[str]:
     :param soup: input document
     :return: a list of strings of LLM-readable tables
     """
-    tables = soup.find_all('ce:table')
+    tables = soup.find_all(['ce:table', 'table'])
     ret = []
     for table in tables:
         handler = TableTraversalHandler()
@@ -141,7 +141,7 @@ def xml_abstract_processing(soup: bs4.BeautifulSoup):
     :param soup: input document
     :return: a string of the abstract
     """
-    abstract = soup.find('ce:abstract')
+    abstract = soup.find(['ce:abstract', 'abstract'])
     if abstract is None:
         return ''
     return abstract.get_text(strip=True, separator=' ')

@@ -9,6 +9,8 @@ outputs_schema = {
     "finish_reason": pl.Utf8,
     "input_tokens": pl.Int64,
     "output_tokens": pl.Int64,
+    "status_code": pl.Int64,
+    "error": pl.Utf8,
 }
 
 def stream_jsonl(fpath: str):
@@ -25,16 +27,23 @@ def stream_jsonl(fpath: str):
 def decode_openai_line(obj) -> dict:
     """decode openai batch output (a single line)"""
     custom_id = obj['custom_id']
-    content = obj['response']['body']['choices'][0]['message']['content']
-    finish_reason = obj['response']['body']['choices'][0]['finish_reason']
-    input_tokens = obj['response']['body']['usage']['prompt_tokens']
-    output_tokens = obj['response']['body']['usage']['completion_tokens']
+    response = obj.get('response') or {}
+    body = response.get('body') or {}
+    choices = body.get('choices') or []
+    usage = body.get('usage') or {}
+    error = response.get('error') or obj.get('error')
+    content = choices[0]['message'].get('content') if choices else None
+    finish_reason = choices[0].get('finish_reason') if choices else 'error'
+    input_tokens = usage.get('prompt_tokens', 0)
+    output_tokens = usage.get('completion_tokens', 0)
     return {
         "custom_id": custom_id,
         "content": content,
         "finish_reason": finish_reason,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
+        "status_code": response.get('status_code'),
+        "error": str(error) if error else None,
     }
 
 def decode_openai_batch(objs: list[dict]) -> pl.DataFrame:
@@ -58,6 +67,8 @@ def decode_anthropic_line(obj) -> dict:
         "finish_reason": finish_reason,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
+        "status_code": 200,
+        "error": None,
     }
 def decode_anthropic_batch(objs: list[dict]) -> pl.DataFrame:
     """decode anthropic batch outputs (a list of lines)"""

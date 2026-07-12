@@ -1,0 +1,19 @@
+{
+  "document_id": "document_id",
+  "parameter_type": "parameter_type",
+  "raw_value": "raw_value",
+  "raw_unit": "raw_unit",
+  "normalized_value": "normalized_value",
+  "normalized_unit": "normalized_unit",
+  "enzyme": "enzyme",
+  "substrate": "substrate",
+  "mutant": "mutant",
+  "organism": "organism",
+  "ph": "ph",
+  "temperature_c": "temperature_c",
+  "evidence_page": "evidence_page",
+  "evidence_text": "evidence_text",
+  "measurement_provenance": "measurement_provenance",
+  "protein_accession": "protein_accession",
+  "compound_identifier": "compound_identifier"
+}

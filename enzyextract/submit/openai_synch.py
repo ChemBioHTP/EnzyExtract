@@ -87,7 +87,7 @@ def process_batch_synchronously(batch_fpath: str, enzy_root: str) -> str:
                 "id": f"batch_req_{int(time.time() * 1000)}",
                 "custom_id": custom_id,
                 "response": {
-                    "status_code": 500,
+                    "status_code": int(getattr(e, "status_code", 500)),
                     "request_id": f"req_{int(time.time() * 1000)}",
                     "body": None,
                     "error": str(e)

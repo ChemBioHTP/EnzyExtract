@@ -1,0 +1,1165 @@
+
+<!DOCTYPE article
+  PUBLIC "-//NLM//DTD JATS (Z39.96) Journal Archiving and Interchange DTD with MathML3 v1.4 20241031//EN" "JATS-archivearticle1-4-mathml3.dtd">
+<article id="pro70229" xml:lang="en" article-type="research-article" dtd-version="1.4"><?da-xref-anchor-style superscripted?><processing-meta base-tagset="archiving" mathml-version="3.0" table-model="xhtml" tagset-family="jats"><restricted-by>pmc</restricted-by></processing-meta><front><journal-meta><journal-id journal-id-type="nlm-ta">Protein Sci</journal-id><journal-id journal-id-type="iso-abbrev">Protein Sci</journal-id><journal-id journal-id-type="pmc-domain-id">507</journal-id><journal-id journal-id-type="pmc-domain">prosci</journal-id><journal-id journal-id-type="publisher-id">PRO</journal-id><journal-title-group><journal-title>Protein Science : A Publication of the Protein Society</journal-title></journal-title-group><issn pub-type="ppub">0961-8368</issn><issn pub-type="epub">1469-896X</issn><publisher><publisher-name>Wiley</publisher-name></publisher></journal-meta><article-meta><article-id pub-id-type="pmcid">PMC12267109</article-id><article-id pub-id-type="pmcid-ver">PMC12267109.1</article-id><article-id pub-id-type="pmcaid">12267109</article-id><article-id pub-id-type="pmcaiid">12267109</article-id><article-id pub-id-type="pmid">40671269</article-id><article-id pub-id-type="doi">10.1002/pro.70229</article-id><article-id pub-id-type="publisher-id">PRO70229</article-id><article-version article-version-type="pmc-version">1</article-version><article-categories><subj-group subj-group-type="overline"><subject>Research Article</subject></subj-group><subj-group subj-group-type="heading"><subject>Research Article</subject></subj-group></article-categories><title-group><article-title>The enzyme kinetics of branched‐chain fatty acid synthesis of metazoan fatty acid synthase</article-title><alt-title alt-title-type="left-running-head">Gusenda et al.</alt-title></title-group><contrib-group><contrib id="pro70229-cr-0001" contrib-type="author" corresp="yes"><name name-style="western"><surname>Gusenda</surname><given-names initials="C">Christian</given-names></name><contrib-id contrib-id-type="orcid" authenticated="false">https://orcid.org/0009-0002-9159-0271</contrib-id><xref rid="pro70229-aff-0001" ref-type="aff">
+<sup>1</sup>
+</xref><address><email>gusenda@biochem.uni-frankfurt.de</email></address></contrib><contrib id="pro70229-cr-0002" contrib-type="author"><name name-style="western"><surname>Ochs</surname><given-names initials="K">Kim</given-names></name><contrib-id contrib-id-type="orcid" authenticated="false">https://orcid.org/0009-0001-4245-4006</contrib-id><xref rid="pro70229-aff-0001" ref-type="aff">
+<sup>1</sup>
+</xref></contrib><contrib id="pro70229-cr-0003" contrib-type="author"><name name-style="western"><surname>Cui</surname><given-names initials="Z">Ziheng</given-names></name><contrib-id contrib-id-type="orcid" authenticated="false">https://orcid.org/0000-0002-8852-8330</contrib-id><xref rid="pro70229-aff-0001" ref-type="aff">
+<sup>1</sup>
+</xref></contrib><contrib id="pro70229-cr-0004" contrib-type="author"><name name-style="western"><surname>Ludig</surname><given-names initials="DL">Damian L.</given-names></name><contrib-id contrib-id-type="orcid" authenticated="false">https://orcid.org/0000-0002-0042-6322</contrib-id><xref rid="pro70229-aff-0001" ref-type="aff">
+<sup>1</sup>
+</xref></contrib><contrib id="pro70229-cr-0005" contrib-type="author" corresp="yes"><name name-style="western"><surname>Grininger</surname><given-names initials="M">Martin</given-names></name><contrib-id contrib-id-type="orcid" authenticated="false">https://orcid.org/0000-0002-7269-0667</contrib-id><xref rid="pro70229-aff-0001" ref-type="aff">
+<sup>1</sup>
+</xref><address><email>grininger@chemie.uni-frankfurt.de</email></address></contrib></contrib-group><aff id="pro70229-aff-0001">
+<label>
+<sup>1</sup>
+</label>
+<named-content content-type="organisation-division">Institute of Organic Chemistry and Chemical Biology, Buchmann Institute of Molecular Life Sciences</named-content>
+<institution>Goethe University Frankfurt</institution>
+<city>Frankfurt am Main</city>
+<country country="DE">Germany</country>
+</aff><author-notes><corresp id="correspondenceTo">
+<label>*</label>
+<bold>Correspondence</bold>
+<break/>
+Christian Gusenda and Martin Grininger, Institute of Organic Chemistry and Chemical Biology, Buchmann Institute of Molecular Life Sciences, Goethe University Frankfurt, Max‐von‐Laue‐Str. 15, 60438 Frankfurt am Main, Germany.<break/>
+Email: <email>gusenda@biochem.uni-frankfurt.de</email> and <email>grininger@chemie.uni-frankfurt.de</email>
+<break/>
+</corresp></author-notes><pub-date pub-type="epub"><day>16</day><month>7</month><year>2025</year></pub-date><pub-date pub-type="collection"><month>8</month><year>2025</year></pub-date><volume>34</volume><issue seq="280">8</issue><issue-id pub-id-type="pmc-issue-id">493114</issue-id><issue-id pub-id-type="doi">10.1002/pro.v34.8</issue-id><elocation-id>e70229</elocation-id><history>
+<date date-type="rev-recd"><day>16</day><month>6</month><year>2025</year></date>
+<date date-type="received"><day>17</day><month>4</month><year>2025</year></date>
+<date date-type="accepted"><day>29</day><month>6</month><year>2025</year></date>
+</history><pub-history><event event-type="pmc-release"><date><day>16</day><month>07</month><year>2025</year></date></event><event event-type="pmc-live"><date><day>18</day><month>07</month><year>2025</year></date></event><event event-type="pmc-last-change"><date iso-8601-date="2025-07-18 13:25:14.730"><day>18</day><month>07</month><year>2025</year></date></event></pub-history><permissions><copyright-statement content-type="article-copyright">© 2025 The Author(s). <italic toggle="yes">Protein Science</italic> published by Wiley Periodicals LLC on behalf of The Protein Society.</copyright-statement><license><ali:license_ref xmlns:ali="http://www.niso.org/schemas/ali/1.0/" specific-use="textmining" content-type="ccbylicense">https://creativecommons.org/licenses/by/4.0/</ali:license_ref><license-p>This is an open access article under the terms of the <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" ext-link-type="uri" xlink:href="https://creativecommons.org/licenses/by/4.0/">http://creativecommons.org/licenses/by/4.0/</ext-link> License, which permits use, distribution and reproduction in any medium, provided the original work is properly cited.</license-p></license></permissions><self-uri xmlns:xlink="http://www.w3.org/1999/xlink" content-type="pmc-pdf" xlink:href="PRO-34-e70229.pdf"><?pdf-name PRO-34-e70229.pdf?><?pdf-size 3269387?><?pdf-md5 e3d87e46e8b74d8827a6449102440a2e?><?pdf-image-server-status NEVER_LOAD?><?pdf-cloudpmc-urn urn:app:89e7/12267109/e3d87e46e8b7/PRO-34-e70229.pdf?></self-uri><self-uri xmlns:xlink="http://www.w3.org/1999/xlink" content-type="pdf" xlink:href="file:PRO-34-e70229.pdf"/><abstract><title>Abstract</title><p>Branched‐chain fatty acids (BCFAs) exhibit enhanced oxidative stability, lower melting points, and reduced viscosity compared to straight‐chain fatty acids (StCFAs), making them valuable for biological systems and industrial applications. Previous studies have shown that metazoan fatty acid synthase (mFAS) can produce BCFAs through the incorporation of branched starter units and branched extender substrates such as methylmalonyl‐CoA (metmal‐CoA). However, the mechanistic and kinetic underpinnings of BCFA biosynthesis in metazoans remain poorly understood. Here, we address this by characterizing the kinetic parameters of mFAS‐catalyzed BCFA synthesis using NADPH consumption assays and analyzing the synthesized products via GC–MS. These experiments revealed a lower turnover number of mFAS with metmal‐CoA and a shift toward medium‐chain fatty acids compared to the native StCFA biosynthesis with malonyl‐CoA. The ketoacyl synthase (KS) kinetic measurements revealed low elongation rates, indicating that the KS domain dictates the substrate specificity and speed of BCFA production. To gain a better understanding of the reaction mechanism, we performed molecular dynamic simulations, which revealed key KS: substrate interactions by conserved threonine residues. These insights support a refined decarboxylative condensation mechanism and illuminate how substrate specificity arises within mFAS. These findings offer a foundation for future protein engineering and inhibitor design strategies.</p></abstract><kwd-group kwd-group-type="author-generated"><kwd id="pro70229-kwd-0001">biocatalysis</kwd><kwd id="pro70229-kwd-0002">biosynthesis</kwd><kwd id="pro70229-kwd-0003">branched‐chain fatty acids</kwd><kwd id="pro70229-kwd-0004">enzyme kinetics</kwd><kwd id="pro70229-kwd-0005">fatty acid synthase</kwd><kwd id="pro70229-kwd-0006">ketoacyl synthase</kwd><kwd id="pro70229-kwd-0007">methylmalonyl‐CoA</kwd><kwd id="pro70229-kwd-0008">molecular dynamics</kwd></kwd-group><funding-group><award-group id="funding-0001"><funding-source>
+<institution-wrap><institution>German Academic Exchange Service</institution><institution-id institution-id-type="doi">10.13039/100021828</institution-id></institution-wrap>
+</funding-source><award-id>57718047</award-id></award-group><award-group id="funding-0002"><funding-source>
+<institution-wrap><institution>Deutsche Forschungsgemeinschaft</institution><institution-id institution-id-type="doi">10.13039/501100001659</institution-id></institution-wrap>
+</funding-source><award-id>GR3854/10‐1</award-id></award-group><award-group id="funding-0003"><funding-source>
+<institution-wrap><institution>Verband der Chemischen Industrie</institution><institution-id institution-id-type="doi">10.13039/100007215</institution-id></institution-wrap>
+</funding-source></award-group></funding-group><counts><fig-count count="5"/><table-count count="2"/><page-count count="15"/><word-count count="10100"/></counts><custom-meta-group><custom-meta><meta-name>pmc-status-qastatus</meta-name><meta-value>0</meta-value></custom-meta><custom-meta><meta-name>pmc-status-live</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-status-embargo</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-status-released</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-open-access</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-olf</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-manuscript</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-legally-suppressed</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-has-pdf</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-has-supplement</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-pdf-only</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-suppress-copyright</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-is-real-version</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-is-scanned-article</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-preprint</meta-name><meta-value>no</meta-value></custom-meta><custom-meta><meta-name>pmc-prop-in-epmc</meta-name><meta-value>yes</meta-value></custom-meta><custom-meta><meta-name>source-schema-version-number</meta-name><meta-value>2.0</meta-value></custom-meta><custom-meta><meta-name>cover-date</meta-name><meta-value>August 2025</meta-value></custom-meta><custom-meta><meta-name>details-of-publishers-convertor</meta-name><meta-value>Converter:WILEY_ML3GV2_TO_JATSPMC version:6.5.9 mode:remove_FC converted:17.07.2025</meta-value></custom-meta></custom-meta-group></article-meta><notes><p content-type="self-citation">
+<mixed-citation publication-type="journal" id="pro70229-cit-9001">
+<string-name name-style="western">
+<surname>Gusenda</surname>
+<given-names>C</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Ochs</surname>
+<given-names>K</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Cui</surname>
+<given-names>Z</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Ludig</surname>
+<given-names>DL</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>The enzyme kinetics of branched‐chain fatty acid synthesis of metazoan fatty acid synthase</article-title>. <source>Protein Science</source>. <year>2025</year>;<volume>34</volume>(<issue>8</issue>):<elocation-id>e70229</elocation-id>. <pub-id pub-id-type="doi">10.1002/pro.70229</pub-id>
+<pub-id pub-id-type="pmid">40671269</pub-id></mixed-citation>
+</p><fn-group id="pro70229-ntgp-0001"><fn id="pro70229-note-0001" fn-type="equal"><p>Christian Gusenda and Kim Ochs contributed equally to this work.</p></fn><fn id="pro70229-note-0002"><p>
+<bold>Review Editor:</bold> Lynn Kamerlin</p></fn></fn-group></notes></front><body id="pro70229-body-0001"><sec id="pro70229-sec-0001"><label>1</label><title>INTRODUCTION</title><p>The most commonly found fatty acids (FAs) in all organisms are straight‐chain fatty acids (StCFAs), which serve various functions, including roles in membranes, energy storage, and signaling pathways (Calder, <xref rid="pro70229-bib-0015" ref-type="bibr">2015</xref>; van Meer et al., <xref rid="pro70229-bib-0068" ref-type="bibr">2008</xref>). In addition, branched‐chain fatty acids (BCFAs), although mostly present in low concentrations, also serve important biological functions—for example, by regulating membrane fluidity (Budin et al., <xref rid="pro70229-bib-0012" ref-type="bibr">2018</xref>). In humans, BCFAs have been identified in milk (Insull &amp; Ahrens, <xref rid="pro70229-bib-0032" ref-type="bibr">1959</xref>), blood (James et al., <xref rid="pro70229-bib-0035" ref-type="bibr">1959</xref>), sebum (James &amp; Wheatley, <xref rid="pro70229-bib-0036" ref-type="bibr">1956</xref>), meibum (Andrews, <xref rid="pro70229-bib-0003" ref-type="bibr">1970</xref>; Harvey et al., <xref rid="pro70229-bib-0029" ref-type="bibr">1987</xref>), vernix (Ran‐Ressler et al., <xref rid="pro70229-bib-0056" ref-type="bibr">2008</xref>), and adipose tissue (Horning et al., <xref rid="pro70229-bib-0031" ref-type="bibr">1961</xref>). Their function in humans is largely unknown, yet they have been associated with gut health (Ran‐Ressler et al., <xref rid="pro70229-bib-0056" ref-type="bibr">2008</xref>; Ran‐Ressler et al., <xref rid="pro70229-bib-0057" ref-type="bibr">2011</xref>), cancer control (Wongtangtintharn et al., <xref rid="pro70229-bib-0072" ref-type="bibr">2004</xref>; Yang et al., <xref rid="pro70229-bib-0073" ref-type="bibr">2000</xref>), obesity, and hypoxia (Wallace et al., <xref rid="pro70229-bib-0070" ref-type="bibr">2018</xref>), among other processes (Gozdzik et al., <xref rid="pro70229-bib-0026" ref-type="bibr">2023</xref>). Moreover, BCFAs exhibit higher oxidative stability, lower melting points, and lower viscosity than their straight‐chain counterparts, which make them a promising target for biolubricants and biofuels (Bai et al., <xref rid="pro70229-bib-0005" ref-type="bibr">2019</xref>; Wagner et al., <xref rid="pro70229-bib-0069" ref-type="bibr">2001</xref>). They also show great potential as food additives and aroma compounds, both of which make the biotechnological production of BCFAs desirable (Fan et al., <xref rid="pro70229-bib-0023" ref-type="bibr">2023</xref>; Zhou et al., <xref rid="pro70229-bib-0074" ref-type="bibr">2025</xref>). Despite their known physiological and industrial importance, the mechanisms underlying BCFA synthesis in metazoans are not thoroughly understood.</p><p>Recent studies show that BCFAs can not only be consumed with our diet but also de novo synthesized in metazoans by the same multidomain fatty acid synthase (FAS) that catalyzes the synthesis of StCFAs, albeit at substantially lower rates (Figure <xref rid="pro70229-fig-0001" ref-type="fig">1a</xref>) (Buckner et al., <xref rid="pro70229-bib-0011" ref-type="bibr">1978</xref>; Dewulf et al., <xref rid="pro70229-bib-0020" ref-type="bibr">2019</xref>; Ran‐Ressler et al., <xref rid="pro70229-bib-0055" ref-type="bibr">2014</xref>; Seyama et al., <xref rid="pro70229-bib-0064" ref-type="bibr">1981</xref>; Wallace et al., <xref rid="pro70229-bib-0070" ref-type="bibr">2018</xref>).</p><fig position="float" fig-type="FIGURE" id="pro70229-fig-0001" orientation="portrait"><label>FIGURE 1</label><caption><p>BCFA metabolism. (a) Fatty acid (FA) biosynthesis. Generation of substrates for fatty acid synthase (FAS) starts from central metabolism, like glycolysis that leads through pyruvate to acetyl‐CoA or β‐oxidation that leads to propionyl‐CoA. The extender (methyl)malonyl‐CoA is synthesized by acetyl‐CoA carboxylase (ACC) or propionyl‐CoA carboxylase (PCC), respectively. During the FA cycle, starter and extender substrates are sequentially transferred to the acyl carrier protein (ACP), which shuttles the substrates and intermediates between the catalytic domains. The elongation reaction is catalyzed by the ketoacyl synthase (KS) domain, producing β‐ketoacyl‐compounds. During the processing steps, the intermediate is reduced by the β‐ketoacyl reductase (KR) to β‐hydroxyacyl‐ACP, dehydrated by the dehydratase (DH) to α,β‐unsaturated acyl‐ACP, and further reduced by the enoyl reductase (ER) to saturated acyl‐ACP. The cycle is repeated until a certain chain length (canonically C16, palmitic acid) is reached, and the product is released by the thioesterase (TE). (b) Origin of branching. Pathway to <italic toggle="yes">iso</italic>‐ and <italic toggle="yes">anteiso</italic>‐branched‐chain fatty acids (BCFAs) based on branched‐chain amino acids metabolism and the extension with malonyl units by FAS shown on the example of L‐valine elongation to <italic toggle="yes">iso</italic>‐BCFA. The pathway to mid‐chain mono‐ and multi‐BCFAs is based on the extension with methylmalonyl units. (c) The elongation reaction proceeds in a double displacement reaction, which is comprised of two sub‐reactions. A transacylation reaction transfers a starter unit to the active site cysteine (C161 in murine FAS), called ping reaction (C1). A subsequent decarboxylative Claisen condensation covalently couples the previously bound starter unit to an extender substrate, called Pong reaction (C2 and C3).</p></caption><graphic xmlns:xlink="http://www.w3.org/1999/xlink" position="anchor" id="jats-graphic-1" orientation="portrait" xlink:href="PRO-34-e70229-g005.jpg"><?image-name PRO-34-e70229-g005.jpg?><?image-size 98175?><?image-md5 e6ced535c40b21fb4e8bdbcfb72823aa?><?image-image-server-status LOAD_COMPLETED?><?image-original-height 689?><?image-original-width 1064?><?image-scaled-height 459?><?image-scaled-width 709?><?image-cloudpmc-urn urn:cdn:blobs/89e7/12267109/e6ced535c40b/PRO-34-e70229-g005.jpg?><?thumb-name PRO-34-e70229-g005.gif?><?thumb-size 12516?><?thumb-md5 c529021d616fdb8589503e494d401f22?><?thumb-image-server-status NEVER_LOAD?><?thumb-scaled-height 80?><?thumb-scaled-width 123?><?thumb-cloudpmc-urn urn:cdn:blobs/89e7/12267109/c529021d616f/PRO-34-e70229-g005.gif?></graphic></fig><p>In general, these BCFAs can be classified into mono‐BCFAs and multi‐BCFAs, among which the most abundant are monomethyl‐branched <italic toggle="yes">iso</italic>‐ and <italic toggle="yes">anteiso</italic>‐FAs, exhibiting a branching at the penultimate and antepenultimate carbon atom (Figure <xref rid="pro70229-fig-0001" ref-type="fig">1b</xref>) (Horning et al., <xref rid="pro70229-bib-0031" ref-type="bibr">1961</xref>; Kaneda, <xref rid="pro70229-bib-0038" ref-type="bibr">1991</xref>). Multimethyl‐ and mid‐chain branched FAs have also been found in metazoans, for example, in the preen gland of birds (Jacob &amp; Poltz, <xref rid="pro70229-bib-0034" ref-type="bibr">1974</xref>), human vernix (Ran‐Ressler et al., <xref rid="pro70229-bib-0056" ref-type="bibr">2008</xref>), sebum (Nicolaides, <xref rid="pro70229-bib-0050" ref-type="bibr">1974</xref>), and adipocytes (Dewulf et al., <xref rid="pro70229-bib-0020" ref-type="bibr">2019</xref>). The biosynthetic pathway to <italic toggle="yes">iso</italic>‐ and <italic toggle="yes">anteiso</italic>‐FAs on one hand and the synthesis of mid‐chain branched and multimethyl branched FAs on the other differ in the origin of the branch. While branching at the penultimate and antepenultimate carbon atom requires a branched starter unit, substituting acetyl‐CoA, branching in the middle of the chain requires the incorporation of a branched malonyl‐CoA (mal‐CoA) derivative (Figure <xref rid="pro70229-fig-0001" ref-type="fig">1b</xref>). It has been shown that the starter units isovaleryl‐CoA, isobutyryl‐CoA, and 2‐methylbutyryl‐CoA, deriving from the degradation of the branched‐chain amino acids (BCAAs) leucine, valine, and isoleucine, respectively, are directly utilized during the synthesis of <italic toggle="yes">iso</italic>‐ and <italic toggle="yes">anteiso</italic>‐BCFA (Wallace et al., <xref rid="pro70229-bib-0070" ref-type="bibr">2018</xref>). The mid‐chain branching, on the other hand, can be introduced by methylmalonyl‐CoA (metmal‐CoA) and ethylmalonyl‐CoA (Dewulf et al., <xref rid="pro70229-bib-0020" ref-type="bibr">2019</xref>). Yet, the molecular details of BCFA biosynthesis by mFAS remain unclear.</p><p>So far, one of the major factors influencing BCFA synthesis seems to be the supply of metmal‐CoA. The cellular levels of metmal‐CoA are subject to different regulatory mechanisms. In metazoans, (<italic toggle="yes">S</italic>)‐metmal‐CoA is synthesized during the catabolism of certain amino acids and odd‐chain FAs, which yields propionyl‐CoA at first (Figure <xref rid="pro70229-fig-0001" ref-type="fig">1a</xref>). This intermediate is carboxylated by the propionyl‐CoA carboxylase (PCC), resulting in (<italic toggle="yes">S</italic>)‐metmal‐CoA, which is further converted by multi‐step catalysis to eventually enter the tricarboxylic acid cycle as succinyl‐CoA. A decreased metmal‐CoA catabolism is associated with pathological conditions (Bikker et al., <xref rid="pro70229-bib-0006" ref-type="bibr">2006</xref>; Narasimhan et al., <xref rid="pro70229-bib-0049" ref-type="bibr">1996</xref>). Hence, the question arises if metazoan cells are indeed capable of accumulating enough extender substrates for BCFA synthesis.</p><p>In actinomycetes, several pathways have been identified that can lead to the accumulation of (<italic toggle="yes">S</italic>)‐metmal‐CoA (Chan et al., <xref rid="pro70229-bib-0017" ref-type="bibr">2008</xref>), of which the carboxylation of propionyl‐CoA is believed to be its predominant origin (Bramwell et al., <xref rid="pro70229-bib-0008" ref-type="bibr">1996</xref>). These organisms are well‐known producers of various methylated polyketides that derive from the catalysis of polyketide synthases (PKSs), a close relative of the FAS. In contrast to bacteria accumulating metmal‐CoA for polyketide biosynthesis, in metazoans no methylated polyketides were identified, thus diminishing any apparent need for metmal‐CoA for the anabolic metabolism. However, recent research on mollusks revealed an animal FAS‐like polyketide synthase (AFPKS), which catalyzes the biosynthesis of multi‐methylated polyketides derived from metmal‐CoA (Torres et al., <xref rid="pro70229-bib-0066" ref-type="bibr">2020</xref>). Although it seems unlikely that metazoan cells accumulate substantial concentrations of metmal‐CoA at all times, specialized cells might be able to utilize this compound for polyketide or BCFA biosynthesis.</p><p>Here, we provide in vitro data for BCFA synthesis by examining the murine FAS as a model enzyme. Specifically, we report mFAS kinetics and product profiles for multimethyl‐ and mid‐chain branched FAs. In our previous study, we were able to determine the kinetic characteristics of the ketoacyl synthase (KS)‐catalyzed elongation reaction of saturated FAs with mal‐acyl carrier protein (ACP) that leads to StCFAs (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>). This study has indicated that the KS domain is the determining domain in substrate discrimination during the natural elongation reaction, which likely arises from unproductive acyl‐ACP binding during the transacylation step (Figure <xref rid="pro70229-fig-0001" ref-type="fig">1c</xref>). The question arises whether the KS might have an influence on extender substrate discrimination as well. We therefore determined the reaction kinetics of the elongation with metmal‐ACP and performed molecular dynamic (MD) simulations to gain a molecular understanding of KS: substrate interactions.</p></sec><sec sec-type="results" id="pro70229-sec-0002"><label>2</label><title>RESULTS</title><sec id="pro70229-sec-0003"><label>2.1</label><title>
+<styled-content style="fixed-case" toggle="no">BCFA</styled-content> production by <styled-content style="fixed-case" toggle="no">mFAS</styled-content>
+</title><p>Naturally, the key role of the mFAS is the production of StCFAs, which is performed at a rate of about three condensations per second (Carlisle‐Moore et al., <xref rid="pro70229-bib-0016" ref-type="bibr">2005</xref>; Rittner et al., <xref rid="pro70229-bib-0058" ref-type="bibr">2019</xref>). However, the specific activity of the mFAS toward the production of BCFAs is two to three orders of magnitude lower compared to the production rates of StCFAs (Buckner et al., <xref rid="pro70229-bib-0011" ref-type="bibr">1978</xref>). The kinetic constants <italic toggle="yes">k</italic>
+<sub>cat</sub> and <italic toggle="yes">K</italic>
+<sub>m</sub> of BCFA synthesis have not been determined yet.</p><p>For the determination of the kinetic constants of the multidomain enzyme, we measured the nicotinamide adenine dinucleotide phosphate (NADPH) consumption of the integrated β‐ketoacyl reductase and enoyl reductase domains as described previously (Rittner et al., <xref rid="pro70229-bib-0058" ref-type="bibr">2019</xref>). During the course of this assay, the native fatty acid synthesis is performed as described in the previous section (Figure <xref rid="pro70229-fig-0001" ref-type="fig">1a</xref>). The titration of acetyl‐CoA in the presence of (<italic toggle="yes">RS</italic>)‐metmal‐CoA shows decreasing turnover at high concentrations, which indicates substrate inhibition (Figures <xref rid="pro70229-fig-0002" ref-type="fig">2a</xref> and <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S1</xref>). In agreement, the <italic toggle="yes">F</italic>‐test confirmed that the substrate inhibition equation (Equation <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S3</xref>) fits the measured activity significantly better than the Michaelis–Menten equation (Equation <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S1</xref>). This phenomenon is expected as the substrates likely compete in the malonyl‐acetyl transferase (MAT) binding pocket, as was seen previously for mal‐CoA (Rittner et al., <xref rid="pro70229-bib-0058" ref-type="bibr">2019</xref>). Interestingly, we observed increasing activity with increasing metmal‐CoA in the absence of starter substrates. This likely derives from decarboxylation of metmal‐CoA (or metmal‐ACP) to propionyl‐CoA (or propionyl‐ACP) and subsequent “self‐priming” (Figures <xref rid="pro70229-fig-0002" ref-type="fig">2b</xref> and <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S2</xref>) leading to odd‐chain FAs, as suggested previously (Buckner et al., <xref rid="pro70229-bib-0011" ref-type="bibr">1978</xref>). Due to the significant overlap of the self‐priming side reaction with the main reaction at high extender concentrations, accurate kinetic characterization of the primary pathway becomes unfeasible. Instead, apparent constants were determined at 100 μM (<italic toggle="yes">RS</italic>)‐metmal‐CoA and varying acetyl‐CoA concentrations (Table <xref rid="pro70229-tbl-0001" ref-type="table">1</xref>, Figure <xref rid="pro70229-fig-0002" ref-type="fig">2a</xref>).</p><fig position="float" fig-type="FIGURE" id="pro70229-fig-0002" orientation="portrait"><label>FIGURE 2</label><caption><p>Metazoan fatty acid synthase (mFAS) kinetics and product output with methylmalonyl‐CoA (metmal‐CoA) as elongation substrate. (a) Initial reaction velocity of mFAS (measured by NADPH fluorescence) during acetyl‐CoA titration. Means were fitted under the assumption of substrate inhibition (Equation <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S3</xref>). Data points reflect means of three biological replicates. Error bars reflect propagated standard deviation. (b) Decarboxylative side reaction from metmal‐CoA to propionyl‐CoA. (c) Products of mFAS with (<italic toggle="yes">R,S</italic>)‐metmal‐CoA and acetyl‐CoA or octanoyl‐CoA. Molecular structures as analyzed by GC–MS and their proposed formation pathway. Acetyl‐derived products are shown in the left box, octanoyl‐derived products are shown in the right box, and self‐priming‐derived product is shown in the lower box. Bar plot represents product distribution of mFAS with octanoyl‐CoA and (<italic toggle="yes">R</italic>,<italic toggle="yes">S</italic>)‐metmal‐CoA. The bars represent peak areas normalized to the peak area of the internal standard, whereas numbers above the bars indicate ratios of the individual products to total products. The products were enzyme‐catalytically synthesized overnight and transformed into fatty acid methyl esters before monitoring in GC–MS. The bars represent means of three biological replicates, with error bars representing the propagated standard deviation.</p></caption><graphic xmlns:xlink="http://www.w3.org/1999/xlink" position="anchor" id="jats-graphic-3" orientation="portrait" xlink:href="PRO-34-e70229-g003.jpg"><?image-name PRO-34-e70229-g003.jpg?><?image-size 108677?><?image-md5 7a08bbe76b5bf053994b15c89143c303?><?image-image-server-status LOAD_COMPLETED?><?image-original-height 958?><?image-original-width 1064?><?image-scaled-height 638?><?image-scaled-width 709?><?image-cloudpmc-urn urn:cdn:blobs/89e7/12267109/7a08bbe76b5b/PRO-34-e70229-g003.jpg?><?thumb-name PRO-34-e70229-g003.gif?><?thumb-size 12911?><?thumb-md5 24a0ff1c26a5c27c12c9b6326f04de1d?><?thumb-image-server-status NEVER_LOAD?><?thumb-scaled-height 90?><?thumb-scaled-width 100?><?thumb-cloudpmc-urn urn:cdn:blobs/89e7/12267109/24a0ff1c26a5/PRO-34-e70229-g003.gif?></graphic></fig><table-wrap position="float" id="pro70229-tbl-0001" content-type="TABLE" orientation="portrait"><label>TABLE 1</label><caption><p>Kinetic values of metazoan fatty acid synthase (mFAS) and ketoacyl synthase (KS). Apparent kinetic constants determined by the NADPH consumption assay (mFAS activity) for acetyl‐CoA and methylmalonyl‐CoA (metmal‐CoA). Apparent kinetic constants determined by the MabA assay (KS activity) for decanoyl‐acyl carrier protein (ACP) and metmal‐ACP. The values are given as mean ± standard error of the parameter estimate.</p></caption><table frame="hsides" rules="groups"><col align="left" span="1"/><col align="left" span="1"/><col align="left" span="1"/><thead valign="bottom"><tr style="border-bottom:solid 1px #000000"><th align="left" valign="bottom" rowspan="1" colspan="1">Enzymatic property</th><th align="left" valign="bottom" rowspan="1" colspan="1">Fatty acid cycle (total mFAS)</th><th align="left" valign="bottom" rowspan="1" colspan="1">Chain elongation (KS single domain)</th></tr></thead><tbody valign="top"><tr><td align="left" valign="top" rowspan="1" colspan="1">Turnover number <italic toggle="yes">k</italic>
+<sub>cat</sub>
+</td><td align="left" valign="top" rowspan="1" colspan="1">0.0176 ± 0.0014 s<sup>−1</sup>/1.1 ± 0.1 min<sup>−1</sup>
+</td><td align="left" valign="top" rowspan="1" colspan="1">0.0116 ± 0.0006 s<sup>−1</sup>/0.70 ± 0.04 min<sup>−1</sup>
+</td></tr><tr><td align="left" valign="top" rowspan="1" colspan="1">Half‐saturation constant <italic toggle="yes">K</italic>
+<sub>m</sub>/<italic toggle="yes">K</italic>′</td><td align="left" valign="top" rowspan="1" colspan="1">69 ± 12 μM</td><td align="left" valign="top" rowspan="1" colspan="1">23.7 ± 1.4 μM</td></tr><tr><td align="left" valign="top" rowspan="1" colspan="1">Hill coefficient <italic toggle="yes">h</italic>
+</td><td align="left" valign="top" rowspan="1" colspan="1">‐</td><td align="left" valign="top" rowspan="1" colspan="1">3.3 ± 0.5</td></tr><tr><td align="left" valign="top" rowspan="1" colspan="1">Inhibition constant <italic toggle="yes">K</italic>
+<sub>
+<italic toggle="yes">i</italic>
+</sub>
+</td><td align="left" valign="top" rowspan="1" colspan="1">2.9 ± 1.2 mM</td><td align="left" valign="top" rowspan="1" colspan="1">270 ± 20 μM</td></tr></tbody></table></table-wrap><p>The <italic toggle="yes">k</italic>
+<sub>cat</sub> of the BCFA biosynthesis is around 170 times lower compared to StCFA synthesis (Carlisle‐Moore et al., <xref rid="pro70229-bib-0016" ref-type="bibr">2005</xref>; Rittner et al., <xref rid="pro70229-bib-0058" ref-type="bibr">2019</xref>). This turnover rate is comparable with that of evolutionarily related PKSs (Aldrich et al., <xref rid="pro70229-bib-0002" ref-type="bibr">2005</xref>; Buyachuihan et al., <xref rid="pro70229-bib-0014" ref-type="bibr">2023</xref>; Moriguchi et al., <xref rid="pro70229-bib-0048" ref-type="bibr">2010</xref>; Robbins et al., <xref rid="pro70229-bib-0061" ref-type="bibr">2016</xref>), which indicates that mFAS is able to produce BCFAs with the same rate as related enzymes produce secondary metabolites. The <italic toggle="yes">K</italic>
+<sub>m</sub> of the mFAS toward acetyl‐CoA in the reaction with metmal‐CoA is around 350 times higher compared with mal‐CoA, leading to <italic toggle="yes">k</italic>
+<sub>cat</sub>/<italic toggle="yes">K</italic>
+<sub>m</sub> with four orders of magnitude difference.</p><p>The products of the mFAS in the presence of acetyl‐CoA and metmal‐CoA (without mal‐CoA supply) were analyzed using gas chromatography‐mass spectrometry (GC–MS) (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S3</xref>). The main product of multi‐BCFA synthesis is 2,4,6,8‐tetramethyl decanoic acid (Figure <xref rid="pro70229-fig-0002" ref-type="fig">2c</xref>), which is consistent with previous reports (Buckner et al., <xref rid="pro70229-bib-0011" ref-type="bibr">1978</xref>). 2,4,6‐Trimethyl octanoic acid and 2,4,6,8,10‐pentamethyl dodecanoic acid are found in smaller amounts. Odd‐chain branched FAs that are synthesized from self‐priming with propionyl units could not be unequivocally determined in our measurement but were identified in small quantities previously (Buckner et al., <xref rid="pro70229-bib-0011" ref-type="bibr">1978</xref>).</p><p>As indicated by previous experiments (Dewulf et al., <xref rid="pro70229-bib-0020" ref-type="bibr">2019</xref>), and the increased elongation rates of medium‐chain FAs with metmal‐CoA (see Section <xref rid="pro70229-sec-0004" ref-type="sec">2.2</xref>), the synthesis of BCFAs in cells likely occurs through a mixed use of mal‐ and metmal‐CoA. Hence, we analyzed the products of the mFAS in the presence of octanoyl‐CoA (mimicking preceded malonyl elongations) and metmal‐CoA, which revealed 2‐methyl decanoic acid and 2,4‐dimethyl dodecanoic acid as main products (Figure <xref rid="pro70229-fig-0002" ref-type="fig">2c</xref>). These findings suggest that, rather than proceeding through the full seven elongation cycles required to produce the canonical palmitic acid, mFAS carries out a reduced number of elongations with metmal‐CoA as an extender substrate. Specifically, acetyl‐CoA is elongated up to five times (mostly four), while octanoyl‐CoA undergoes up to three elongations (mostly one and two), corresponding to four or five total elongation cycles when traced back to acetyl‐CoA as the starter unit. As the chain length control in multidomain FASs is the result of the interplay of the elongating KS catalysis and the terminating thioesterase catalysis (Gajewski, Buelens, et al., <xref rid="pro70229-bib-0024" ref-type="bibr">2017</xref>; Gajewski, Pavlovic, et al., <xref rid="pro70229-bib-0025" ref-type="bibr">2017</xref>; Heil et al., <xref rid="pro70229-bib-0030" ref-type="bibr">2019</xref>), the reason for the reduced chain lengths might lie in the low rate of acyl chain elongation. This means that the elongation reaction is so slow that the probability of “premature” termination is increased. This explanation is corroborated by the analysis of the KS kinetics in the next section. Given that longer products are received with octanoyl‐CoA as the priming substrate, multimethyl branches seem to be less well accommodated in the KS binding pocket than non‐ or mono‐branched intermediates.</p><p>Additionally, we could identify the odd‐chain fatty acid 2,4,6‐trimethyl nonanoic acid, which derives from the priming with propionyl moieties (Figure <xref rid="pro70229-fig-0002" ref-type="fig">2b,c</xref>). This side reaction contributes around 5% to the overall products during the synthesis of multi‐BCFAs with octanoyl‐CoA (Figure <xref rid="pro70229-fig-0002" ref-type="fig">2c</xref>). Comparing BCFAs from acetyl‐ and octanoyl‐CoA, it appears that self‐priming products are more frequently found when octanoyl‐CoA is supplied, although the process should be independent of the starter substrate. We speculate that self‐priming rates might therefore trace back to the readiness of the unoccupied KS to perform decarboxylation. As the final product from octanoyl‐CoA is produced within only two elongation cycles, the system is unloaded more frequently during the synthesis starting from octanoyl‐CoA than during the synthesis from acetyl‐CoA. Decarboxylation and priming with propionyl moieties can occur in these unoccupied KS binding pockets of unloaded systems. The contribution of this side reaction is not evident from product spectra in the canonical even‐numbered StCFA (C16‐ and C18‐FAs) synthesis, as the product of malonyl decarboxylation is the naturally used acetyl starter.</p></sec><sec id="pro70229-sec-0004"><label>2.2</label><title>
+<styled-content style="fixed-case" toggle="no">KS</styled-content>‐catalyzed elongation kinetics</title><p>Given that the turnover number for BCFA production is about 150 times lower than the production of StCFAs, the question arises, which domain is responsible for the discrimination of the methymalonyl extender unit. It was shown that the MAT domain is in principle able to load this alternative extender onto the ACP with similar activities as the commonly used malonyl moiety, proving that the MAT does not mediate substrate specificity (Rittner et al., <xref rid="pro70229-bib-0060" ref-type="bibr">2018</xref>). In our previous study, we were able to determine the kinetic characteristics of the KS‐catalyzed elongation reaction of saturated FAs with mal‐ACP that leads to StCFAs using the enzyme‐coupled β‐ketoacyl reductase from <italic toggle="yes">Mycobacterium tuberculosis (</italic>MabA) assay (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>). The results indicated that the KS domain determines the fidelity of fatty acid biosynthesis by imposing substrate selectivity in the step of transferring the acyl‐moiety from ACP to the KS domain (transacylation step, Figure <xref rid="pro70229-fig-0001" ref-type="fig">1c</xref>). Given the decreased rates in fatty acid biosynthesis with metmal‐CoA, the question arises whether the KS might have an influence on extender substrate discrimination as well.</p><p>Previously, in employing starter substrates of different chain lengths (C2–C10) in the KS elongation assay, we demonstrated that KS activity increases with chain length when mal‐ACP serves as the extender substrate (Figure <xref rid="pro70229-fig-0003" ref-type="fig">3a</xref>). Here, utilizing metmal‐ACP as the extender substrate, we found that this pattern is not replicated. The activity decreases from two to six carbon atoms and shows a steep increase toward substrates with a chain length of eight and 10 carbon atoms (Figure <xref rid="pro70229-fig-0003" ref-type="fig">3b</xref>). Of note, as the combination of both starter and extender substrate influences the elongation pattern, these data indicate that the identity of the starter substrate influences the binding pocket of the extender substrate. Specifically, the chain length profile suggests that there is a higher chance of the mFAS to incorporate methyl branching at the sixth carbon atom of palmitic acid (elongation of C10‐ACP) than on the 10th carbon atom (elongation of C6‐ACP). Due to the absence of in vivo data on cellular BCFA synthesis, it remains unclear to what extent our enzymatic findings reflect physiological conditions. While the BCFA profile of adipocytes was determined previously, the detailed ratio of branch positions could not be determined for technical reasons (Dewulf et al., <xref rid="pro70229-bib-0020" ref-type="bibr">2019</xref>).</p><fig position="float" fig-type="FIGURE" id="pro70229-fig-0003" orientation="portrait"><label>FIGURE 3</label><caption><p>Elongation activities of the ketoacyl synthase (KS) determined by the enzyme‐coupled MabA assay. (a) The specific activity of the KS domain was recorded for acyl‐acyl carrier protein (ACPs) of saturated fatty acids with chain lengths of two to 10 carbon atoms and mal‐ACP as extender substrate. (b) Specific activity of the KS domain for different acyl‐ACPs elongated with metmal‐ACP. (c) Titration curve of the initial reaction velocity at different decanoyl‐ACP concentrations at a constant mal‐ACP concentration. These data were published previously (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>). (d) Titration curve of the initial reaction velocity at different decanoyl‐ACP concentrations at a constant metmal‐ACP concentration. Data of (c) and (d) were fitted with Equation (<xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S4</xref>) using OriginLab. Bars and data points represent the means of three biological replicates, and errors represent the propagated error of the standard deviation.</p></caption><graphic xmlns:xlink="http://www.w3.org/1999/xlink" position="anchor" id="jats-graphic-5" orientation="portrait" xlink:href="PRO-34-e70229-g004.jpg"><?image-name PRO-34-e70229-g004.jpg?><?image-size 127993?><?image-md5 37ce78979b4c1933b339f416c1d3387c?><?image-image-server-status LOAD_COMPLETED?><?image-original-height 1152?><?image-original-width 1006?><?image-scaled-height 767?><?image-scaled-width 670?><?image-cloudpmc-urn urn:cdn:blobs/89e7/12267109/37ce78979b4c/PRO-34-e70229-g004.jpg?><?thumb-name PRO-34-e70229-g004.gif?><?thumb-size 14958?><?thumb-md5 94d33d0db94c066716f68d2134c678cd?><?thumb-image-server-status NEVER_LOAD?><?thumb-scaled-height 115?><?thumb-scaled-width 100?><?thumb-cloudpmc-urn urn:cdn:blobs/89e7/12267109/94d33d0db94c/PRO-34-e70229-g004.gif?></graphic></fig><p>By comparing specific activity for the elongation of C8 and C10 with mal‐ and metmal‐ACP, respectively, the incorporation of branching (BCFA synthesis) is approximately 30 times slower than the canonical elongation to the non‐branched StCFAs.</p><p>To receive extended and quantitative information on the elongation with metmal‐CoA versus mal‐CoA, we aimed at comparing Michaelis–Menten kinetics for elongation of decanoyl‐ACP with both extender substrates (Figure <xref rid="pro70229-fig-0003" ref-type="fig">3c</xref>‐<xref rid="pro70229-fig-0003" ref-type="fig">d</xref>). Data on the elongation of decanoyl‐ACP with mal‐ACP were previously reported by us (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S4</xref>) (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>). In the titration of decanoyl‐ACP with metmal‐ACP, we observed a sigmoidal rise of the reaction velocity, which indicates enzyme cooperativity as previously seen (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>; Rittner et al., <xref rid="pro70229-bib-0059" ref-type="bibr">2020</xref>; Schultz et al., <xref rid="pro70229-bib-0063" ref-type="bibr">2025</xref>). At higher substrate concentrations the reaction velocity drops, which was also observed previously for mFAS (Rittner et al., <xref rid="pro70229-bib-0058" ref-type="bibr">2019</xref>). This pattern is not sufficiently well explained by either an equation that takes cooperativity into account (Equation <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S2</xref>) or by an equation that takes solely substrate inhibition into account (Equation <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S3</xref>), but is well represented by a combined model (Figures <xref rid="pro70229-fig-0003" ref-type="fig">3d</xref> and <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S5</xref>, Equation <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S4</xref>).</p><p>The apparent <italic toggle="yes">k</italic>
+<sub>cat</sub> of the titration with metmal‐ACP is 276 times lower compared with the <italic toggle="yes">k</italic>
+<sub>cat</sub> of the C10‐ACP/mal‐ACP reaction, which again manifests the high preference of the KS for mal‐ACP. The comparison of <italic toggle="yes">k</italic>
+<sub>cat</sub> for the FA cycle with acetyl‐CoA as starter, representing the overall activity of mFAS, and the single elongation with C10‐ACP, which reflects the optimal activity of the KS domain alone (1.1 vs. 0.7 min<sup>−1</sup>, Table <xref rid="pro70229-tbl-0001" ref-type="table">1</xref>), suggests that indeed the KS specificity is limiting BCFA synthesis. As the elongation assay includes saturated starter substrates, which are known to be transacylated with high rates (first reaction step, Figure <xref rid="pro70229-fig-0001" ref-type="fig">1c</xref>) (Insull &amp; Ahrens, <xref rid="pro70229-bib-0032" ref-type="bibr">1959</xref>), the activity impairment of the KS originates from the decarboxylative condensation (second/third reaction step, Figure <xref rid="pro70229-fig-0001" ref-type="fig">1c</xref>).</p><p>The half‐saturation constant <italic toggle="yes">K</italic>′<sub>C10</sub> is about two times higher for the reaction with mal‐ACP. The resulting enzymatic efficiency ratio of the reaction with mal‐ACP and metmal‐ACP is calculated as <mml:math xmlns:mml="http://www.w3.org/1998/Math/MathML" id="jats-math-1" display="inline" overflow="scroll"><mml:mrow><mml:mrow><mml:msub><mml:mi>k</mml:mi><mml:mi>cat</mml:mi></mml:msub><mml:mo>/</mml:mo><mml:msubsup><mml:mi>K</mml:mi><mml:mrow><mml:mi mathvariant="normal">C</mml:mi><mml:mn>10</mml:mn></mml:mrow><mml:mo>′</mml:mo></mml:msubsup><mml:mfenced open="(" close=")"><mml:mi>mal</mml:mi></mml:mfenced><mml:mo>/</mml:mo><mml:msub><mml:mi>k</mml:mi><mml:mi>cat</mml:mi></mml:msub><mml:mo>/</mml:mo><mml:msubsup><mml:mi>K</mml:mi><mml:mrow><mml:mi mathvariant="normal">C</mml:mi><mml:mn>10</mml:mn></mml:mrow><mml:mo>′</mml:mo></mml:msubsup><mml:mfenced open="(" close=")"><mml:mtext>metmal</mml:mtext></mml:mfenced><mml:mo>=</mml:mo><mml:mn>108</mml:mn></mml:mrow></mml:mrow></mml:math>. The discrimination against metmal‐ACP is therefore higher than the previously determined discrimination against crotonyl‐ACP, an intermediate of the FA cycle (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>). According to the Transition State Theory (Laidler &amp; King, <xref rid="pro70229-bib-0042" ref-type="bibr">1983</xref>), the transition state energy difference that leads to a difference in specificity is ΔΔ<italic toggle="yes">G</italic> = 14 kJ mol<sup>−1</sup>, which corresponds to a moderate non‐covalent interaction. The apparent Hill coefficient h is consistent with previously reported values (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>). The inhibition constant <italic toggle="yes">K</italic>
+<sub>
+<italic toggle="yes">i</italic>
+</sub> = 270 μM indicates moderate competition of the starter and extender substrate in the binding pocket of the KS.</p><p>As the MAT does not efficiently select the extender substrate and hence cannot account for the product fidelity of mFAS (Rittner et al., <xref rid="pro70229-bib-0060" ref-type="bibr">2018</xref>), the KS is presented almost equally with mal‐ACP or metmal‐ACP. This means BCFA synthesis in vivo is directly related to KS preference of mal‐ACP over metmal‐ACP and highly depends on the availability of extender substrates. Indeed, it was shown that the increase of metmal‐CoA and decrease of mal‐CoA promote the synthesis of BCFAs (Buckner et al., <xref rid="pro70229-bib-0011" ref-type="bibr">1978</xref>; Buckner &amp; Kolattukudy, <xref rid="pro70229-bib-0010" ref-type="bibr">1975</xref>; Dewulf et al., <xref rid="pro70229-bib-0020" ref-type="bibr">2019</xref>; Kim &amp; Kolattukudy, <xref rid="pro70229-bib-0040" ref-type="bibr">1978</xref>). Thus, the KS dictates the product fidelity regarding correct extender substrate selection, as previously shown for starter and intermediate substrates (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2024</xref>). The same rule might apply to polyketide synthesis by AFPKSs, which show metmal‐CoA specificity that is not mediated by their AT domain (Schubert et al., <xref rid="pro70229-bib-0062" ref-type="bibr">2025</xref>). This is a remarkable difference to PKS, for which it was shown that the AT domain strictly selects for the correct extender substrate (Khosla et al., <xref rid="pro70229-bib-0039" ref-type="bibr">1999</xref>).</p></sec><sec id="pro70229-sec-0005"><label>2.3</label><title>Molecular dynamic simulations</title><p>To gain a better understanding of the molecular details of the methylmalonyl discrimination, we performed MD simulations with the octanoyl‐bound KS domain (PDB: <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/6ROP/pdb" ext-link-type="uri">6ROP</ext-link>) (Rittner et al., <xref rid="pro70229-bib-0059" ref-type="bibr">2020</xref>) and three possible extender substrates: mal‐phosphopantetheine (Ppant), (<italic toggle="yes">S</italic>)‐metmal‐Ppant, and (<italic toggle="yes">R</italic>)‐metmal‐Ppant. As the decarboxylation is the irreversible step in substrate elongation, we suggest that extender substrate binding and decarboxylation, but not the carbon–carbon‐bond‐forming condensation (Figure <xref rid="pro70229-fig-0001" ref-type="fig">1c</xref>) dictate extender substrate specificity. Thus, MD simulations on the substrate:KS binding before the decarboxylation can give insight into the specificity of the KS for the extender substrate.</p><p>We used SwissDock to generate an initial substrate conformation for further MD refinement (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S6</xref>) (Bugnon et al., <xref rid="pro70229-bib-0013" ref-type="bibr">2024</xref>; Eberhardt et al., <xref rid="pro70229-bib-0022" ref-type="bibr">2021</xref>). Interestingly, we did not receive any docked structure that reflects previous proposals, which suggest that the thioester oxygen is coordinated by either the equivalent to His331 or both conserved histidine residues (Heath &amp; Rock, <xref rid="pro70229-bib-0033" ref-type="bibr">2002</xref>; Lee &amp; Engels, <xref rid="pro70229-bib-0043" ref-type="bibr">2013</xref>; Paiva et al., <xref rid="pro70229-bib-0051" ref-type="bibr">2021</xref>). The generated docking structures were evaluated by comparing them to the crystal structure of the substrate analog nitroacetyl pantetheinamide in the KS‐like decarboxylase GfsA KS<sup>Q</sup> domain from <italic toggle="yes">Streptomyces graminofaciens</italic> (PDB: <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/7VEF/pdb" ext-link-type="uri">7VEF</ext-link>, Figure <xref rid="pro70229-fig-0004" ref-type="fig">4a</xref>) (Chisuga et al., <xref rid="pro70229-bib-0019" ref-type="bibr">2022</xref>). The following MD simulations were carried out in five replicas of 100 ns, which showed a stable protein backbone (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S7</xref>). The substrate, on the other hand, showed large conformational variability, which led us to sort all conformations of the five trajectories by <italic toggle="yes">K</italic>‐means clustering (Brandman et al., <xref rid="pro70229-bib-0009" ref-type="bibr">2011</xref>; Pedregosa et al., <xref rid="pro70229-bib-0052" ref-type="bibr">2011</xref>; Stamatelou, <xref rid="pro70229-bib-0065" ref-type="bibr">2020</xref>) to determine the most probable conformational states (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S8</xref>).</p><fig position="float" fig-type="FIGURE" id="pro70229-fig-0004" orientation="portrait"><label>FIGURE 4</label><caption><p>Center structures from <italic toggle="yes">K</italic>‐means clustering of all molecular dynamic trajectories. (a) Crystal structure of ketoacyl synthase (KS)‐like carboxylase GfsA KS<sup>Q</sup> (PDB: <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/7VEF/pdb" ext-link-type="uri">7VEF</ext-link>) (Chisuga et al., <xref rid="pro70229-bib-0019" ref-type="bibr">2022</xref>). (b–d) Representative conformation (center structures) of mal‐Ppant:octanoyl‐KS, (<italic toggle="yes">S</italic>)‐metmal‐Ppant:octanoyl‐KS and (<italic toggle="yes">R</italic>)‐metmal‐Ppant:octanoyl‐KS. Catalytically relevant residues are labeled and shown in sticks. H‐bonds are shown in pink dashed lines. The image was generated with ChimeraX (Meng et al., <xref rid="pro70229-bib-0044" ref-type="bibr">2023</xref>).</p></caption><graphic xmlns:xlink="http://www.w3.org/1999/xlink" position="anchor" id="jats-graphic-7" orientation="portrait" xlink:href="PRO-34-e70229-g001.jpg"><?image-name PRO-34-e70229-g001.jpg?><?image-size 155446?><?image-md5 82bcc7d978b9e1fb4568ff4c797a96c4?><?image-image-server-status LOAD_COMPLETED?><?image-original-height 896?><?image-original-width 1064?><?image-scaled-height 597?><?image-scaled-width 709?><?image-cloudpmc-urn urn:cdn:blobs/89e7/12267109/82bcc7d978b9/PRO-34-e70229-g001.jpg?><?thumb-name PRO-34-e70229-g001.gif?><?thumb-size 18003?><?thumb-md5 d239e32f8df3ed80a239fa5ce8a725bc?><?thumb-image-server-status NEVER_LOAD?><?thumb-scaled-height 84?><?thumb-scaled-width 100?><?thumb-cloudpmc-urn urn:cdn:blobs/89e7/12267109/d239e32f8df3/PRO-34-e70229-g001.gif?></graphic></fig><p>The center structure of each cluster was evaluated by consulting essential features that are integral to the current mechanistic understanding of the decarboxylative condensation reaction (Figure <xref rid="pro70229-fig-0004" ref-type="fig">4a</xref>), which integrates recent insight received on the KS<sup>Q</sup>‐mediated decarboxylation reaction: (Chisuga et al., <xref rid="pro70229-bib-0019" ref-type="bibr">2022</xref>; Paiva et al., <xref rid="pro70229-bib-0051" ref-type="bibr">2021</xref>) (i) The hydrogen bonds of conserved threonines (Thr295 and Thr297) and the thioester oxygen, as well as hydrogen bonds of histidines (His293 and His331) and the carboxyl group of metmal‐ACP are established, respectively. (ii) The optimal angle in the transition state of decarboxylation is about 90° between the thioester C‐O bond and the cleavable Cα‐Cβ bond (Bach &amp; Canepa, <xref rid="pro70229-bib-0004" ref-type="bibr">1996</xref>). (iii) The distance between the C2 atom of the (methyl)malonyl‐substrate and the C1 atom of the acyl substrate is relevant for the nucleophilic attack/condensation reaction.</p><p>Both the dihedral angle (ii) and substrate distance (iii) have served as criteria to explain different reactivities. However, comparing the three structures (mal‐, (<italic toggle="yes">S</italic>)‐metmal‐ and (<italic toggle="yes">R</italic>)‐metmal‐Ppant:octanoyl‐KS), we did not find considerable differences in angle or distance that could account for the variations in reactivity observed in the elongation reactions (Figure <xref rid="pro70229-fig-0003" ref-type="fig">3b</xref>, Tables <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S1–S3</xref>). Hence, we inspected MD trajectories in criterion (i), the H‐bonds/oxyanion holes of Thr295 and Thr297 as well as His293 and His331 (Table <xref rid="pro70229-tbl-0002" ref-type="table">2</xref>). Here, we observed that especially the hydrogen bond probability of the conserved threonines to the thioester oxygen is high for mal‐Ppant but low for (<italic toggle="yes">S</italic>)‐ and (<italic toggle="yes">R</italic>)‐metmal‐Ppant. The hydrogen bond probability is not considerably different between (<italic toggle="yes">S</italic>)‐ and (<italic toggle="yes">R</italic>)‐metmal‐Ppant, suggesting the same reactivity, which is consistent with previous reports of the non‐specific elongation with metmal‐CoA (the stereochemical progression of the putative reaction pathway is discussed in Supporting Information <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S1</xref>) (Kim &amp; Kolattukudy, <xref rid="pro70229-bib-0041" ref-type="bibr">1980</xref>).</p><table-wrap position="float" id="pro70229-tbl-0002" content-type="TABLE" orientation="portrait"><label>TABLE 2</label><caption><p>Hydrogen bond probabilities of oxyanion hole residues during five 100 ns trajectories of mal‐ and metmal‐Ppant:KS.</p></caption><table frame="hsides" rules="groups"><col align="left" span="1"/><col align="left" span="1"/><col align="left" span="1"/><col align="left" span="1"/><col align="left" span="1"/><thead valign="bottom"><tr style="border-bottom:solid 1px #000000"><th rowspan="3" align="left" valign="bottom" colspan="1"/><th colspan="4" align="left" valign="bottom" rowspan="1">H‐bond probability (%)</th></tr><tr style="border-bottom:solid 1px #000000"><th colspan="2" align="left" valign="bottom" rowspan="1">Carboxyl group with His</th><th colspan="2" align="left" valign="bottom" rowspan="1">Thioester oxygen with Thr</th></tr><tr style="border-bottom:solid 1px #000000"><th align="left" valign="bottom" rowspan="1" colspan="1">His293</th><th align="left" valign="bottom" rowspan="1" colspan="1">His331</th><th align="left" valign="bottom" rowspan="1" colspan="1">Thr295</th><th align="left" valign="bottom" rowspan="1" colspan="1">Thr297</th></tr></thead><tbody valign="top"><tr><td align="left" valign="top" rowspan="1" colspan="1">mal‐Ppant</td><td align="char" char="." valign="top" rowspan="1" colspan="1">62.7</td><td align="char" char="." valign="top" rowspan="1" colspan="1">50.5</td><td align="char" char="." valign="top" rowspan="1" colspan="1">35.4</td><td align="char" char="." valign="top" rowspan="1" colspan="1">1.3</td></tr><tr><td align="left" valign="top" rowspan="1" colspan="1">(<italic toggle="yes">S</italic>)‐metmal‐Ppant</td><td align="char" char="." valign="top" rowspan="1" colspan="1">33.1</td><td align="char" char="." valign="top" rowspan="1" colspan="1">33.0</td><td align="char" char="." valign="top" rowspan="1" colspan="1">0.2</td><td align="char" char="." valign="top" rowspan="1" colspan="1">0.0</td></tr><tr><td align="left" valign="top" rowspan="1" colspan="1">(<italic toggle="yes">R</italic>)‐metmal‐Ppant</td><td align="char" char="." valign="top" rowspan="1" colspan="1">66.2</td><td align="char" char="." valign="top" rowspan="1" colspan="1">23.9</td><td align="char" char="." valign="top" rowspan="1" colspan="1">0.0</td><td align="char" char="." valign="top" rowspan="1" colspan="1">0.9</td></tr></tbody></table></table-wrap><p>To get further insight into the reactivity of the substrates, we selected the center structure with the most appropriate H‐bonds to the histidine and threonine residues, which are referred to in the downstream analysis (Figures <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S9–S11</xref> and <xref rid="pro70229-fig-0004" ref-type="fig">4b–d</xref>). It should be mentioned that the chosen center structures show the acyl group adopting the correct conformation for the condensation reaction, in which the carbonyl group is coordinated in the oxyanion hole of the Cys161 and Phe395 backbone amides. Interestingly, the residue Lys326 sometimes substituted the residue His293 in the carboxyl group coordinating role in the (<italic toggle="yes">S</italic>)‐metmal‐Ppant:KS simulation (Figure <xref rid="pro70229-fig-0004" ref-type="fig">4c</xref>).</p><p>We questioned why methylmalonyl substrates adopt a slightly different conformation compared to the malonyl conformation. Replacing the pro(<italic toggle="yes">S</italic>) and pro(<italic toggle="yes">R</italic>) H‐atom of the malonyl's C2‐atom without further optimization revealed potential gatekeeper residues. It appears the methyl group of (<italic toggle="yes">S</italic>)‐metmal‐Ppant would clash with the residues of Tyr222 and Met205, while the methyl group of (<italic toggle="yes">R</italic>)‐metmal‐Ppant would clash with the residues of Phe395 and Met205 (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S12</xref>). We note that Phe395 was identified previously as a potential gatekeeping residue to discriminate against FA cycle intermediates (Rittner et al., <xref rid="pro70229-bib-0059" ref-type="bibr">2020</xref>). The comparison of mal‐ and metmal‐processing homologous systems does not establish a clear correlation between their specificity and these putative gatekeeper residues (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S13</xref>).</p><p> .</p></sec><sec id="pro70229-sec-0006"><label>2.4</label><title>Mechanistic proposal</title><p>Previously discussed decarboxylative condensation mechanisms of KS are not sufficient to explain extender substrate discrimination based on our MD simulations (Paiva et al., <xref rid="pro70229-bib-0051" ref-type="bibr">2021</xref>). As recent crystallographic studies have provided new insights to extender substrate binding and its decarboxylation reaction in KS(‐like) enzymes (Chisuga et al., <xref rid="pro70229-bib-0019" ref-type="bibr">2022</xref>), we extended the hitherto mechanistic proposals of the decarboxylative condensation reaction (Figure <xref rid="pro70229-fig-0005" ref-type="fig">5</xref>).</p><fig position="float" fig-type="FIGURE" id="pro70229-fig-0005" orientation="portrait"><label>FIGURE 5</label><caption><p>Mechanistic proposal of the decarboxylative condensation reaction. <italic toggle="yes">State 1</italic> represents the binding of the extender substrate. <italic toggle="yes">State 2</italic> shows the decarboxylation reaction. <italic toggle="yes">State 3</italic> bridges the decarboxylation and condensation by allowing a rearrangement of the enolate intermediate. <italic toggle="yes">State 4</italic> shows the condensation mechanism. <italic toggle="yes">State 5</italic> shows the tetrahedral transition state. <italic toggle="yes">State 6</italic> represents the product binding.</p></caption><graphic xmlns:xlink="http://www.w3.org/1999/xlink" position="anchor" id="jats-graphic-9" orientation="portrait" xlink:href="PRO-34-e70229-g002.jpg"><?image-name PRO-34-e70229-g002.jpg?><?image-size 91342?><?image-md5 eab5b40e8e452151b7947ee821fb36ff?><?image-image-server-status LOAD_COMPLETED?><?image-original-height 656?><?image-original-width 1064?><?image-scaled-height 437?><?image-scaled-width 709?><?image-cloudpmc-urn urn:cdn:blobs/89e7/12267109/eab5b40e8e45/PRO-34-e70229-g002.jpg?><?thumb-name PRO-34-e70229-g002.gif?><?thumb-size 11468?><?thumb-md5 6b3e5769bf3a95d8d4bf7329035f0f78?><?thumb-image-server-status NEVER_LOAD?><?thumb-scaled-height 80?><?thumb-scaled-width 129?><?thumb-cloudpmc-urn urn:cdn:blobs/89e7/12267109/6b3e5769bf3a/PRO-34-e70229-g002.gif?></graphic></fig><p>The extended model of a six‐step decarboxylative condensation mechanism proceeds to the transacylation of a starter substrate to the active site Cys161.</p><sec id="pro70229-sec-0007"><label>2.4.1</label><title>
+State 1
+</title><p>Two conserved threonine residues (Thr295 and Thr297) as well as the conserved histidine residues (His293 and His331) form two oxyanion holes, which stabilize (partial) negative charges during the catalysis. Threonine residues stabilize the thioester oxygen, whereas histidine residues coordinate the carboxyl group. This state reflects the crystal structure of the ketosynthase‐like decarboxylase KS<sup>Q</sup> from <italic toggle="yes">S. graminofaciens</italic> (PDB: <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/7VEF/pdb" ext-link-type="uri">7VEF</ext-link>) (Chisuga et al., <xref rid="pro70229-bib-0019" ref-type="bibr">2022</xref>).</p></sec><sec id="pro70229-sec-0008"><label>2.4.2</label><title>
+State 2
+</title><p>During the decarboxylation, water attacks the carboxyl group to form bicarbonate. The fate of the resulting proton is elusive, but it has been suggested that it is not accepted by any of the histidine residues (Lee &amp; Engels, <xref rid="pro70229-bib-0043" ref-type="bibr">2013</xref>). The thioester oxygen, coordinated in the oxyanion hole of the threonine residues, acts as an electron sink during the decarboxylation. This state reflects that bicarbonate release during the decarboxylation reaction of the rat FAS was determined and a direct formation of bicarbonate during the decarboxylation reaction was proposed (Witkowski et al., <xref rid="pro70229-bib-0071" ref-type="bibr">2002</xref>). The role of threonine residues agrees with the mutational studies, which revealed their catalytic importance (Chen et al., <xref rid="pro70229-bib-0018" ref-type="bibr">2022</xref>; Chisuga et al., <xref rid="pro70229-bib-0019" ref-type="bibr">2022</xref>).</p></sec><sec id="pro70229-sec-0009"><label>2.4.3</label><title>
+State 3
+</title><p>The resulting negative charge on the thioester oxygen is stabilized by the oxyanion hole of the threonine residues. As the oxyanion hole of the histidine residues is not occupied, the substrate may reach further into the binding pocket of the KS. This state pictures an intermediate stage between the decarboxylation and the condensation. It is important to note that the enolate shift trajectory and timepoint are open to debate, as the movement of the highly reactive intermediate seems unconventional.</p></sec><sec id="pro70229-sec-0010"><label>2.4.4</label><title>
+State 4
+</title><p>The negative charge of the thioester oxygen is now stabilized by the oxyanion hole of the histidine residues. Alongside the entry of the KS, polar amino acids are thought to guide the prosthetic Ppant group. The oxygen of the amide group in the Ppant is now stabilized by the oxyanion hole of the threonine residues; the reactive enolate intermediate is in proximity to the Cys161‐bound acyl group. The thioester oxygen of the Cys161‐bound acyl group is coordinated in the third oxyanion hole, originating in the coordination of the amide backbones of Cys161 and Phe395. The catalytic role of this oxyanion hole, which also plays a vital role in the transacylation step, is frequently discussed in literature (Heath &amp; Rock, <xref rid="pro70229-bib-0033" ref-type="bibr">2002</xref>; Paiva et al., <xref rid="pro70229-bib-0051" ref-type="bibr">2021</xref>; Witkowski et al., <xref rid="pro70229-bib-0071" ref-type="bibr">2002</xref>). The coordination of the oxyanion holes complies with several crystal structures that capture the KS‐substrate interaction in a close‐to‐catalytic state of the condensation, including, for example, the PKS II ishigamide KS and the FAS II FabB complex (PDB: <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/6KXF/pdb" ext-link-type="uri">6KXF</ext-link>, <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/5KOF/pdb" ext-link-type="uri">5KOF</ext-link>) (Chen et al., <xref rid="pro70229-bib-0018" ref-type="bibr">2022</xref>; Du et al., <xref rid="pro70229-bib-0021" ref-type="bibr">2020</xref>; Milligan et al., <xref rid="pro70229-bib-0046" ref-type="bibr">2019</xref>), as well as the bacterial KSs FabB and FabF with bound cerulenin (Moche et al., <xref rid="pro70229-bib-0047" ref-type="bibr">1999</xref>; Price et al., <xref rid="pro70229-bib-0054" ref-type="bibr">2001</xref>).</p></sec><sec id="pro70229-sec-0011"><label>2.4.5</label><title>
+State 5
+</title><p>The thioester oxygen of the acyl‐Cys161 acts as an electron sink during the nucleophilic attack (condensation) and the resulting negative charge is stabilized by the oxyanion hole. The thioester linkage to Cys161 is cleaved, resulting in the ACP‐bound intermediate. The thiol of Cys161 may or may not be reprotonated at that stage.</p></sec><sec id="pro70229-sec-0012"><label>2.4.6</label><title>
+State 6
+</title><p>The release‐pathway of the final product (β‐ketoacyl compound) can be guided by the oxyanion holes coordinating the polar oxygens.</p></sec></sec></sec><sec sec-type="conclusions" id="pro70229-sec-0013"><label>3</label><title>CONCLUSION</title><p>The turnover number of BCFA synthesis by mFAS is 150 times lower than the turnover number of StCFA synthesis, demonstrating the preference for mal‐CoA over metmal‐CoA. The low rate is most likely dictated by the KS domain, which shows a slow elongation of FAs with methylmalonyl units. These low elongation rates channel the growing branched acyl chain toward hydrolytic fatty acid release by the thioesterase domain, resulting in reduced product length. The KS rate highly depends on the chain length of the acyl substrate, which indicates that (i) the decarboxylative condensation is influenced by the preceding transacylation and that (ii) the KS might dictate the methylation pattern of the product. The structural analysis of our MD simulations underpins a new mechanistic model in which “oxyanion holes” of threonine and histidine sequentially stabilize intermediate states of decarboxylation and condensation – an arrangement disrupted by the methyl substitution in metmal‐ACP that clashes with potential gatekeeping residues.</p><p>We suggest that the engineering of the KS domain can enhance the synthesis of methylated FAs by mFAS, opening new possibilities in using this multienzyme as a biotechnological tool. Additionally, the kinetic data and molecular details of the substrate interaction might contribute to an inhibitor design in the future.</p></sec><sec sec-type="materials-and-methods" id="pro70229-sec-0014"><label>4</label><title>MATERIALS AND METHODS</title><sec id="pro70229-sec-0015"><label>4.1</label><title>Octanoyl‐<styled-content style="fixed-case" toggle="no">CoA</styled-content> synthesis</title><p>The synthesis of octanoyl‐CoA was performed as described previously (Peter et al., <xref rid="pro70229-bib-0053" ref-type="bibr">2015</xref>; Valenzano et al., <xref rid="pro70229-bib-0067" ref-type="bibr">2010</xref>).</p><p>In an inert argon atmosphere, 58 μL octanoic acid (0.37 mmol, 6 eq.) was dissolved in 2 mL tetrahydrofuran and cooled to 0°C. Fifty microliters triethylamine (0.37 mmol, 6 eq.) and 28 μL ethylchloroformiate (0.37 mmol, 6 eq.) were added to the solution and stirred for 45 min at 0°C. The reaction mixture was transferred to a 2 mL microcentrifuge tube and centrifuged for 5 min at 20,000 × <italic toggle="yes">g</italic>. The supernatant was transferred to a solution of 50 mg CoA (61 μmol, 1 eq.) dissolved in 2 mL 0.1 M sodium hydrogen carbonate solution. The mixture was stirred for 1 h at room temperature. The reaction mixture was divided, transferred into two 50 mL tubes with 25 mL of cold acetone (−20°C) and centrifuged for 10 min at 10,000 × <italic toggle="yes">g</italic>. After removal of the supernatant, the pellets were transferred to a 1.5 mL microcentrifuge tube and incubated for 15 min at −20°C. The pellet was again centrifuged for 5 min at 20,000 × <italic toggle="yes">g</italic> and dried under reduced pressure. The raw product was obtained as a white solid and stored at −20°C. Since high‐performance liquid chromatography (HPLC) analysis showed a high purity of the synthesized octanoyl‐CoA, no further purification was done (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S14</xref>).</p></sec><sec id="pro70229-sec-0016"><label>4.2</label><title>Preparation of acyl‐<styled-content style="fixed-case" toggle="no">ACPs</styled-content>
+</title><p>The functionalized ACPs, acyl‐ACP and metmal‐ACP, served as substrates for the KS‐catalyzed elongation reaction and were used during the MabA assay as described in the section “KS Activity Assay.” The preparation was performed as described previously (Gusenda et al., <xref rid="pro70229-bib-0027" ref-type="bibr">2025</xref>). In short, unfunctionalized apo‐ACP was catalytically acylated by Sfp and the respective acyl‐CoA. The resulting acyl‐ACP was purified via affinity chromatography using the Strep‐Tactin® XT resin (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S15</xref>).</p></sec><sec id="pro70229-sec-0017"><label>4.3</label><title>Preparation of <styled-content style="fixed-case" toggle="no">mFAS</styled-content>
+</title><p>The plasmid containing the full length mFAS construct was transformed into electrically competent <italic toggle="yes">Escherichia coli</italic> BAP1 cells. The transformed cells were plated on an lysogeny broth (LB) agar plate (100 μg mL<sup>−1</sup> ampicillin, 1% [w/v] glucose) and grown overnight at 37°C. To prepare pre‐cultures, three to six colonies were picked and grown overnight at 37°C and 130 rpm in 20 mL LB medium (100 μg mL<sup>−1</sup> ampicillin, 1% (w/v) glucose). Pre‐cultures were used to inoculate 1 L terrific broth (TB) medium (100 μg mL<sup>−1</sup> ampicillin) and grown at 37°C and 130 rpm until they reached an optical density (OD<sub>600</sub>) of 0.6–0.8. The cultures were cooled for 20 min at 4°C, induced with 250 μM isopropyl β‐D‐1‐thiogalactopyranoside (IPTG) and then grown for another 14–16 h at 20°C and 130 rpm. Cells were harvested by centrifugation (4000 × <italic toggle="yes">g</italic> at 4°C for 20 min). The supernatant was discarded and the cell pellets were resuspended in 35 mL lysis buffer (200 mM KCl, 30 mM imidazole, 50 mM potassium phosphate, 10% [v/v] glycerol, 1 mM ethylenediaminetetraacetic acid (EDTA), pH 7.0) and a small amount of DNase I (Sigma Aldrich). The cells were disrupted by the French Pressure Cell Press (Amico) and the resulting suspension was centrifuged (50,000 × <italic toggle="yes">g</italic> at 4°C for 45 min). The supernatant was collected, mixed with 2 mM MgCl<sub>2</sub> and transferred to Ni‐NTA‐columns. The columns were washed with 5 column volumes (CV) His‐wash buffer (lysis buffer without EDTA), before the bound protein was eluted with 5 CV His‐elution buffer (200 mM KCl, 300 mM imidazole, 50 mM potassium phosphate, 10% [v/v] glycerol, pH 7.0) and collected. The eluate was transferred to Strep‐Tactin® columns and washed with 5 CV Strep‐wash buffer (250 mM potassium phosphate, 1 mM EDTA, 10% [v/v] glycerol, pH 7.0). The bound protein was then eluted with 5 CV Strep‐elution buffer (Strep‐wash buffer with 40 mM biotin) and collected. To monitor the quality of purification, an sodium dodecyl sulfate–polyacrylamide gel electrophoresis (SDS‐PAGE) was performed with samples of every wash and elution step (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S16</xref>). After concentration to 5–10 mg mL<sup>−1</sup>, the proteins were frozen in liquid nitrogen and stored at −80°C. For further polishing, the proteins were thawed at 37°C for 1 h to enhance dimerization, before being purified via size‐exclusion chromatography with a Superdex 200 GL 10/300 column and Strep‐wash buffer (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S17</xref>). Fractions with dimeric protein were pooled and concentrated to 15–20 mg mL<sup>−1</sup>. Proteins were aliquoted, frozen in liquid nitrogen and stored at −80°C.</p></sec><sec id="pro70229-sec-0018"><label>4.4</label><title>Preparation of <styled-content style="fixed-case" toggle="no">KS</styled-content>‐<styled-content style="fixed-case" toggle="no">MAT<sup>0</sup>
+</styled-content>
+</title><p>For the determination of the KS‐catalyzed elongation reaction activity, we expressed the KS‐MAT<sup>S581A</sup> didomain, with a functional MAT knockout, as the isolated KS domain cannot be produced via recombinant expression in <italic toggle="yes">E. coli</italic>. The protein was expressed in <italic toggle="yes">E. coli</italic> Bl21 gold, purified via affinity chromatography and size‐exclusion chromatography following the same protocol as for the mFAS preparation. All details on protein expression and purification were described previously (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2024</xref>).</p></sec><sec id="pro70229-sec-0019"><label>4.5</label><title>
+<styled-content style="fixed-case" toggle="no">mFAS</styled-content> activity assay</title><p>The mFAS activity was measured fluorometrically via NADPH consumption with the <italic toggle="yes">CLARIOstar® Plus Microplate Reader</italic> in 384‐well microplates (Greiner). The assay components were prepared as fourfold stock solutions in activity assay buffer (50 mM potassium phosphate, 10% glycerol [v/v], 5% polyethylene glycol (PEG) 400 [v/v], 1 mM dithiothreitol (DTT), pH 7.0). Stock solutions were pipetted immediately before the measurement to a final assay volume of 20 μL. The final assay solution consisted of 50 μM NADPH, 10–1000 μM acetyl‐CoA, 100 μM metmal‐CoA, and 10 μM mFAS (with 0.03 mg mL<sup>−1</sup> bovine serum albumin (BSA) for protein stabilization). Addition of metmal‐CoA initiated the enzymatic reaction; the background was monitored through a solution without acetyl‐CoA. The microplate reader was set to measure for 10 min at 25°C with an excitation wavelength of 348–320 nm, emission wavelength of 476–420 nm, gain of 1450, focal height of 12.2, and 70 flashes. Measurements were performed in biological triplicates and analyzed using NADPH calibration at varying concentrations (Figure <xref rid="pro70229-supitem-0001" ref-type="supplementary-material">S18</xref>).</p></sec><sec id="pro70229-sec-0020"><label>4.6</label><title>
+<styled-content style="fixed-case" toggle="no">KS</styled-content> activity assay</title><p>The activity of the KS was determined with the enzyme‐coupled MabA assay, as reported previously (Gusenda et al., <xref rid="pro70229-bib-0028" ref-type="bibr">2025</xref>). In short, the assay mixture, including 5 μM KS‐MAT<sup>S581A</sup>, 270 μM metmal‐ACP, 0–210 μM acyl‐ACP, 50 μM NADPH, and 5 μM MabA, was prepared in 20 μL of assay buffer (50 mM sodium phosphate, 10% glycerol, pH 7.0) (384‐well plate). The β‐ketoacyl reductase MabA was included in the assay mixture, which reduces the product of the KS reaction (ketoacyl‐ACP) under consumption of NADPH. The fluorescence of NADPH was monitored to follow the elongation reaction of the respective acyl‐ACP with methylmalonyl extender units.</p></sec><sec id="pro70229-sec-0021"><label>4.7</label><title>In vitro <styled-content style="fixed-case" toggle="no">FA</styled-content> production assay</title><p>The assay was performed in 200 μL assay volume with a similar procedure to the mFAS activity assay. Fourfold stock solutions were prepared with activity assay buffer to final concentrations of 1500 μM NADPH, 1000 μM starter substrate (acetyl‐CoA or C8‐CoA), 500 μM metmal‐CoA, and 10 μM mFAS (with 0.03 mg mL<sup>−1</sup> BSA for protein stabilization). The background was monitored through a solution without CoA‐substrates. After mixing the reaction components, the mixture was incubated overnight at room temperature. As an internal standard, 2 μL heptanoic acid (2 g L<sup>−1</sup> in methanol/CHCl<sub>3</sub> 3:1) were added after the incubation phase.</p><p>The assay was performed in technical duplicates and biological triplicates.</p></sec><sec id="pro70229-sec-0022"><label>4.8</label><title>
+<styled-content style="fixed-case" toggle="no">FA</styled-content> extraction and derivatization</title><p>In vitro synthesized FAs were measured via GC–MS to identify the products of the mFAS. To prepare FAs for the measurement, FAs were converted to FA methyl esters (FAMEs), based on a procedure described previously (Bligh &amp; Dyer, <xref rid="pro70229-bib-0007" ref-type="bibr">1959</xref>).</p><p>For this, the assay solution was firstly acidified with 50 μL of 8% HCl in methanol and then mixed with 125 μL MeOH/CHCl<sub>3</sub> (1:1). The solution was thoroughly shaken to extract FAs into the non‐polar phase. To separate the phases, the solution was centrifuged for 10 min at 3000 × <italic toggle="yes">g</italic>. The non‐polar lower phase was transferred to a 1.5 mL microcentrifuge tube and the solvent was evaporated under low pressure for 15 min. The remains were dissolved in 20 μL toluene and transferred to a Duran glass tube containing 500 μL MeOH and 200 μL 8% HCl in methanol. The solution was sealed, thoroughly shaken, and incubated for 3 h at 100°C to allow methylation. After the incubation, the reaction mixture was cooled on ice for 10 min before the addition of 300 μL H<sub>2</sub>O and 100 μL hexane. The mixture was shaken thoroughly to extract FAMEs into the non‐polar phase. After phase separation, the upper phase was transferred into a GC vial with micro inlet and measured via GC–MS.</p></sec><sec id="pro70229-sec-0023"><label>4.9</label><title>
+<styled-content style="fixed-case" toggle="no">GC</styled-content>–<styled-content style="fixed-case" toggle="no">MS</styled-content> measurement</title><p>FAMEs were measured with the Agilent 7890B gas chromatograph equipped with a HP‐5 ms Ultra Inert capillary column (30 m × 0.25 mm, film thickness: 0.25 μm) and an Agilent 5977B MS detector. The injector temperature was set to 200°C and the detector temperature to 250°C. The temperature program was set as follows: heating to 50°C for 5 min, increasing by 10°C min<sup>−1</sup> to 120°C, holding for 5 min; increasing by 15°C min<sup>−1</sup> to 220°C, holding for 10 min.</p></sec><sec id="pro70229-sec-0024"><label>4.10</label><title>
+<styled-content style="fixed-case" toggle="no">GC</styled-content>–<styled-content style="fixed-case" toggle="no">MS</styled-content> data analysis</title><p>The programs OpenChrom, Agilent MassHunter Qualitative Analysis, and NIST MS Search were used to analyze FAME peaks and identify products.</p><p>To compensate for product losses during FA extraction and derivatization, the signals were normalized to the signal of the internal standard. The analysis of the data revealed various new peaks above the background. Therefore, a threshold was set to include new signals in the analysis only if they reached at least 5% of the normalized standard peak area. To represent product distribution, the ratios of individual products to total products were calculated.</p></sec><sec id="pro70229-sec-0025"><label>4.11</label><title>Docking</title><p>The docking of substrate and enzyme was performed on the SwissDock web server (Bugnon et al., <xref rid="pro70229-bib-0013" ref-type="bibr">2024</xref>) and the AutoDock Vina kernel was selected. The structural data of the dimeric KS was obtained from the PDB database (PDB: <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/6ROP/pdb" ext-link-type="uri">6ROP</ext-link>), and only the KS domain (Positions 1–406) was selected as the target structure for subsequent studies. The coordinates of the box center were located at (94, 94, and 75) and the box size was set to (18) to ensure that the active pocket was completely covered. The sampling exhaustivity was set to the default value of 4.</p><p>To select a reasonable conformation from the docking results as the starting point of the MD simulation, the hydrogen bonds between the (methyl)malonyl group and His293, Thr295, Thr297, and His331 were used as the core evaluation indicators. Further, the consistency of the coordinates of the (methyl)malonyl group and the substrate analog in the crystal structure (PDB: <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://doi.org/10.2210/7VEF/pdb" ext-link-type="uri">7VEF</ext-link>) was considered.</p></sec><sec id="pro70229-sec-0026"><label>4.12</label><title>
+<styled-content style="fixed-case" toggle="no">MD</styled-content> simulation</title><p>MD simulations were conducted with GROMACS (version 2022.3) (Abraham et al., <xref rid="pro70229-bib-0001" ref-type="bibr">2015</xref>) using the Amber99SB‐ildn force field and the TIP3P water model. For the non‐standard residue octanoyl‐Cys161, the force field parameters were optimized by Acpype web tools (Kagami et al., <xref rid="pro70229-bib-0037" ref-type="bibr">2023</xref>). The amino and carboxyl groups at both ends of independent Cys were saturated with acetyl (ACE) and <italic toggle="yes">N</italic>‐methylformamide (NME) groups, respectively, to fit the peptide bond environment. The <italic toggle="yes">bcc</italic> method was chosen to generate the charge of octanoyl‐Cys161. The multiplicity and net charge of the octanoyl‐Cys161 are 1 and 0, respectively. The atom type of <italic toggle="yes">gaff</italic> is used to specify the atoms in the octanoyl‐Cys161. The force field parameters of substrates were optimized by Acpype web tools. The <italic toggle="yes">bcc</italic> method was chosen to generate the charge of substrates. The atom type of <italic toggle="yes">gaff</italic> is used to specify the atoms in the system. The multiplicity and met charge of substrates are 1 and −3, respectively.</p><p>The enzyme was centered in a cubic box with 1 nm between the solute and the box. The system was neutralized with NaCl. Energy minimization was performed applying the steepest descent algorithm until a maximum force of 1000<sup>−1</sup> kJ mol<sup>−1</sup> nm<sup>−1</sup> on any atom was reached. The system was equilibrated by a 1 ns constant particles, volume, temperature (NVT) run at 310 K, followed by a 1 ns constant particles, pressure, temperature (NPT) run at 1 atm and 310 K. Pressure and temperature were controlled using the Velocity‐rescale and Parrinello‐Rahman algorithms. All systems were simulated for 100 ns. Five parallel trajectories were simulated. The five trajectories were processed identically before energy minimization, and each trajectory was subjected to energy minimization and subsequent steps separately.</p></sec><sec id="pro70229-sec-0027"><label>4.13</label><title>Trajectory analysis</title><p>Trajectories and clustering were performed in Python. MDAnalysis (Michaud‐Agrawal et al., <xref rid="pro70229-bib-0045" ref-type="bibr">2011</xref>) and scikit‐learn (Pedregosa et al., <xref rid="pro70229-bib-0052" ref-type="bibr">2011</xref>) packages were used to process the data. The enzyme‐substrate complexes in all trajectories were aligned to the same one‐frame structure as a reference to ensure consistent coordinates during clustering. The clustering analysis selects the coordinates of the malonyl part and the sulfur atom of the substrate. The <italic toggle="yes">K</italic>‐means clustering method was used for clustering. The clustering results were projected to a three‐dimensional principal component analysis. The number of clusters was increased from 3 until all obvious independent point sets in the three‐dimensional projection were divided into different clusters.</p></sec></sec><sec id="pro70229-sec-0032"><title>AUTHOR CONTRIBUTIONS</title><p>
+<bold>Christian Gusenda:</bold> Conceptualization; investigation; writing – original draft; visualization; writing – review and editing; formal analysis; supervision. <bold>Kim Ochs:</bold> Investigation; writing – original draft; visualization; writing – review and editing; formal analysis. <bold>Ziheng Cui:</bold> Investigation; formal analysis; writing – original draft; visualization. <bold>Damian L. Ludig:</bold> Formal analysis; supervision; visualization; writing – review and editing. <bold>Martin Grininger:</bold> Conceptualization; supervision; writing – review and editing; funding acquisition.</p></sec><sec sec-type="COI-statement" id="pro70229-sec-0029"><title>CONFLICT OF INTEREST STATEMENT</title><p>The authors have no conflict of interest to declare.</p></sec><sec sec-type="supplementary-material"><title>Supporting information</title><supplementary-material id="pro70229-supitem-0001" position="float" content-type="local-data" orientation="portrait"><caption><p>
+<bold>Data S1.</bold> Supporting Information.</p></caption><media xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="PRO-34-e70229-s001.zip" position="float" orientation="portrait"><?suppdata-name PRO-34-e70229-s001.zip?><?suppdata-size 5341552?><?suppdata-md5 3b51659c2b2f43d7be19a04771979076?><?suppdata-image-server-status NEVER_LOAD?><?suppdata-mime-type application?><?suppdata-mime-sub-type zip?><?suppdata-cloudpmc-urn urn:app:89e7/12267109/3b51659c2b2f/PRO-34-e70229-s001.zip?></media></supplementary-material></sec></body><back><ack id="pro70229-sec-0028"><title>ACKNOWLEDGMENTS</title><p>Support for this work was received from Verband der Chemischen Industrie with a Kekulé Scholarship awarded to Christian Gusenda, Sino‐German (CSC‐DAAD) Postdoc Scholarship Program (No. 57718047) awarded to Ziheng Cui, as well as from the German Research Foundation (DFG grant GR3854/10‐1 to Martin Grininger). Open Access funding enabled and organized by Projekt DEAL.</p></ack><sec sec-type="data-availability" id="pro70229-sec-0031"><title>DATA AVAILABILITY STATEMENT</title><p>The data that support the findings of this study are available from the corresponding author upon reasonable request.</p></sec><ref-list id="pro70229-bibl-0001" content-type="cited-references"><title>REFERENCES</title><ref id="pro70229-bib-0001"><mixed-citation publication-type="journal" id="pro70229-cit-0001">
+<string-name name-style="western">
+<surname>Abraham</surname>
+<given-names>MJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Murtola</surname>
+<given-names>T</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schulz</surname>
+<given-names>R</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Páll</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Smith</surname>
+<given-names>JC</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Hess</surname>
+<given-names>B</given-names>
+</string-name>, et al. <article-title>GROMACS: high performance molecular simulations through multi‐level parallelism from laptops to supercomputers</article-title>. <source>SoftwareX</source>. <year>2015</year>;<volume>1–2</volume>:<fpage>19</fpage>–<lpage>25</lpage>.</mixed-citation></ref><ref id="pro70229-bib-0002"><mixed-citation publication-type="journal" id="pro70229-cit-0002">
+<string-name name-style="western">
+<surname>Aldrich</surname>
+<given-names>CC</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Beck</surname>
+<given-names>BJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Fecik</surname>
+<given-names>RA</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Sherman</surname>
+<given-names>DH</given-names>
+</string-name>. <article-title>Biochemical investigation of pikromycin biosynthesis employing native penta‐ and hexaketide chain elongation intermediates</article-title>. <source>J Am Chem Soc</source>. <year>2005</year>;<volume>127</volume>:<fpage>8441</fpage>–<lpage>8452</lpage>.<pub-id pub-id-type="pmid">15941278</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/ja042592h</pub-id></mixed-citation></ref><ref id="pro70229-bib-0003"><mixed-citation publication-type="journal" id="pro70229-cit-0003">
+<string-name name-style="western">
+<surname>Andrews</surname>
+<given-names>JS</given-names>
+</string-name>. <article-title>Human tear film lipids: I. Composition of the principal non‐polar component</article-title>. <source>Exp Eye Res</source>. <year>1970</year>;<volume>10</volume>:<fpage>223</fpage>–<lpage>227</lpage>.<pub-id pub-id-type="pmid">5484765</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1016/s0014-4835(70)80032-x</pub-id></mixed-citation></ref><ref id="pro70229-bib-0004"><mixed-citation publication-type="journal" id="pro70229-cit-0004">
+<string-name name-style="western">
+<surname>Bach</surname>
+<given-names>RD</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Canepa</surname>
+<given-names>C</given-names>
+</string-name>. <article-title>Electronic factors influencing the decarboxylation of β‐keto acids. A model enzyme study</article-title>. <source>J Org Chem</source>. <year>1996</year>;<volume>61</volume>:<fpage>6346</fpage>–<lpage>6353</lpage>.<pub-id pub-id-type="pmid">11667476</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/jo960356m</pub-id></mixed-citation></ref><ref id="pro70229-bib-0005"><mixed-citation publication-type="journal" id="pro70229-cit-0005">
+<string-name name-style="western">
+<surname>Bai</surname>
+<given-names>W</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Geng</surname>
+<given-names>W</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Wang</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Zhang</surname>
+<given-names>F</given-names>
+</string-name>. <article-title>Biosynthesis, regulation, and engineering of microbially produced branched biofuels</article-title>. <source>Biotechnol Biofuels</source>. <year>2019</year>;<volume>12</volume>:<fpage>84</fpage>.<pub-id pub-id-type="pmid">31011367</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1186/s13068-019-1424-9</pub-id><pub-id pub-id-type="pmcid">PMC6461809</pub-id></mixed-citation></ref><ref id="pro70229-bib-0006"><mixed-citation publication-type="journal" id="pro70229-cit-0006">
+<string-name name-style="western">
+<surname>Bikker</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Bakker</surname>
+<given-names>HD</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Abeling</surname>
+<given-names>NGGM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Poll‐The</surname>
+<given-names>BT</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kleijer</surname>
+<given-names>WJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Rosenblatt</surname>
+<given-names>DS</given-names>
+</string-name>, et al. <article-title>A homozygous nonsense mutation in the methylmalonyl‐CoA epimerase gene (MCEE) results in mild methylmalonic aciduria</article-title>. <source>Hum Mutat</source>. <year>2006</year>;<volume>27</volume>:<fpage>640</fpage>–<lpage>643</lpage>.<pub-id pub-id-type="pmid">16752391</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/humu.20373</pub-id></mixed-citation></ref><ref id="pro70229-bib-0007"><mixed-citation publication-type="journal" id="pro70229-cit-0007">
+<string-name name-style="western">
+<surname>Bligh</surname>
+<given-names>EG</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Dyer</surname>
+<given-names>WJ</given-names>
+</string-name>. <article-title>A rapid method of total lipid extraction and purification</article-title>. <source>Can J Biochem Physiol</source>. <year>1959</year>;<volume>37</volume>:<fpage>911</fpage>–<lpage>917</lpage>.<pub-id pub-id-type="pmid">13671378</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1139/o59-099</pub-id></mixed-citation></ref><ref id="pro70229-bib-0008"><mixed-citation publication-type="journal" id="pro70229-cit-0008">
+<string-name name-style="western">
+<surname>Bramwell</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Hunter</surname>
+<given-names>LS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Coggins</surname>
+<given-names>JR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Nimmo</surname>
+<given-names>HG</given-names>
+</string-name>. <article-title>Propionyl‐CoA carboxylase from <italic toggle="yes">Streptomyces coelicolor</italic> A3(2): cloning of the gene encoding the biotinl containing subunit</article-title>. <source>Microbiology</source>. <year>1996</year>;<volume>142</volume>:<fpage>649</fpage>–<lpage>655</lpage>.<pub-id pub-id-type="pmid">8868440</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1099/13500872-142-3-649</pub-id></mixed-citation></ref><ref id="pro70229-bib-0009"><mixed-citation publication-type="journal" id="pro70229-cit-0009">
+<string-name name-style="western">
+<surname>Brandman</surname>
+<given-names>R</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lampe</surname>
+<given-names>JN</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Brandman</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>de Montellano</surname>
+<given-names>PRO</given-names>
+</string-name>. <article-title>Active‐site residues move independently from the rest of the protein in a 200 ns molecular dynamics simulation of cytochrome P450 CYP119</article-title>. <source>Arch Biochem Biophys</source>. <year>2011</year>;<volume>509</volume>:<fpage>127</fpage>–<lpage>132</lpage>.<pub-id pub-id-type="pmid">21356195</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1016/j.abb.2011.02.020</pub-id><pub-id pub-id-type="pmcid">PMC3085956</pub-id></mixed-citation></ref><ref id="pro70229-bib-0010"><mixed-citation publication-type="journal" id="pro70229-cit-0010">
+<string-name name-style="western">
+<surname>Buckner</surname>
+<given-names>JS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kolattukudy</surname>
+<given-names>PE</given-names>
+</string-name>. <article-title>Lipid biosynthesis in the sebaceous glands. Synthesis of multibranched fatty acids from methylmalonyl‐coenzyme a in cell‐free preparations from the uropygial gland of goose</article-title>. <source>Biochemistry</source>. <year>1975</year>;<volume>14</volume>:<fpage>1774</fpage>–<lpage>1782</lpage>.<pub-id pub-id-type="pmid">235967</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/bi00679a033</pub-id></mixed-citation></ref><ref id="pro70229-bib-0011"><mixed-citation publication-type="journal" id="pro70229-cit-0011">
+<string-name name-style="western">
+<surname>Buckner</surname>
+<given-names>JS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kolattukudy</surname>
+<given-names>PE</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Rogers</surname>
+<given-names>L</given-names>
+</string-name>. <article-title>Synthesis of multimethyl‐branched fatty acids by avian and mammalian fatty acid synthetase and its regulation by malonyl‐CoA decarboxylase in the uropygial gland</article-title>. <source>Arch Biochem Biophys</source>. <year>1978</year>;<volume>186</volume>:<fpage>152</fpage>–<lpage>163</lpage>.<pub-id pub-id-type="pmid">629531</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1016/0003-9861(78)90474-5</pub-id></mixed-citation></ref><ref id="pro70229-bib-0012"><mixed-citation publication-type="journal" id="pro70229-cit-0012">
+<string-name name-style="western">
+<surname>Budin</surname>
+<given-names>I</given-names>
+</string-name>, <string-name name-style="western">
+<surname>de Rond</surname>
+<given-names>T</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Chen</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Chan</surname>
+<given-names>LJG</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Petzold</surname>
+<given-names>CJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Keasling</surname>
+<given-names>JD</given-names>
+</string-name>. <article-title>Viscous control of cellular respiration by membrane lipid composition</article-title>. <source>Science</source>. <year>2018</year>;<volume>362</volume>:<fpage>1186</fpage>–<lpage>1189</lpage>.<pub-id pub-id-type="pmid">30361388</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1126/science.aat7925</pub-id></mixed-citation></ref><ref id="pro70229-bib-0013"><mixed-citation publication-type="journal" id="pro70229-cit-0013">
+<string-name name-style="western">
+<surname>Bugnon</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Röhrig</surname>
+<given-names>UF</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Goullieux</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Perez</surname>
+<given-names>MAS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Daina</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Michielin</surname>
+<given-names>O</given-names>
+</string-name>, et al. <article-title>SwissDock 2024: major enhancements for small‐molecule docking with attracting cavities and AutoDock Vina</article-title>. <source>Nucleic Acids Res</source>. <year>2024</year>;<volume>52</volume>:<fpage>W324</fpage>–<lpage>W332</lpage>.<pub-id pub-id-type="pmid">38686803</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1093/nar/gkae300</pub-id><pub-id pub-id-type="pmcid">PMC11223881</pub-id></mixed-citation></ref><ref id="pro70229-bib-0014"><mixed-citation publication-type="journal" id="pro70229-cit-0014">
+<string-name name-style="western">
+<surname>Buyachuihan</surname>
+<given-names>L</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Zhao</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schelhas</surname>
+<given-names>C</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>Docking domain engineering in a modular polyketide synthase and its impact on structure and function</article-title>. <source>ACS Chem Biol</source>. <year>2023</year>;<volume>18</volume>:<fpage>1500</fpage>–<lpage>1509</lpage>.<pub-id pub-id-type="pmid">37403433</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/acschembio.3c00074</pub-id></mixed-citation></ref><ref id="pro70229-bib-0015"><mixed-citation publication-type="journal" id="pro70229-cit-0015">
+<string-name name-style="western">
+<surname>Calder</surname>
+<given-names>PC</given-names>
+</string-name>. <article-title>Functional roles of fatty acids and their effects on human health</article-title>. <source>J Parenter Enteral Nutr</source>. <year>2015</year>;<volume>39</volume>:<fpage>18S</fpage>–<lpage>32S</lpage>.<pub-id pub-id-type="doi" assigning-authority="pmc">10.1177/0148607115595980</pub-id><pub-id pub-id-type="pmid">26177664</pub-id></mixed-citation></ref><ref id="pro70229-bib-0016"><mixed-citation publication-type="journal" id="pro70229-cit-0016">
+<string-name name-style="western">
+<surname>Carlisle‐Moore</surname>
+<given-names>L</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Gordon</surname>
+<given-names>CR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Machutta</surname>
+<given-names>CA</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Miller</surname>
+<given-names>WT</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Tonge</surname>
+<given-names>PJ</given-names>
+</string-name>. <article-title>Substrate recognition by the human fatty‐acid synthase</article-title>. <source>J Biol Chem</source>. <year>2005</year>;<volume>280</volume>:<fpage>42612</fpage>–<lpage>42618</lpage>.<pub-id pub-id-type="pmid">16215233</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1074/jbc.M507082200</pub-id><pub-id pub-id-type="pmcid">PMC2442872</pub-id></mixed-citation></ref><ref id="pro70229-bib-0017"><mixed-citation publication-type="journal" id="pro70229-cit-0017">
+<string-name name-style="western">
+<surname>Chan</surname>
+<given-names>YA</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Podevels</surname>
+<given-names>AM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kevany</surname>
+<given-names>BM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Thomas</surname>
+<given-names>MG</given-names>
+</string-name>. <article-title>Biosynthesis of polyketide synthase extender units</article-title>. <source>Nat Prod Rep</source>. <year>2008</year>;<volume>26</volume>:<fpage>90</fpage>–<lpage>114</lpage>.<pub-id pub-id-type="doi" assigning-authority="pmc">10.1039/b801658p</pub-id><pub-id pub-id-type="pmcid">PMC2766543</pub-id><pub-id pub-id-type="pmid">19374124</pub-id></mixed-citation></ref><ref id="pro70229-bib-0018"><mixed-citation publication-type="journal" id="pro70229-cit-0018">
+<string-name name-style="western">
+<surname>Chen</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Jiang</surname>
+<given-names>Z</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Burkart</surname>
+<given-names>MD</given-names>
+</string-name>. <article-title>Enzymology of standalone elongating ketosynthases</article-title>. <source>Chem Sci</source>. <year>2022</year>;<volume>13</volume>:<fpage>4225</fpage>–<lpage>4238</lpage>.<pub-id pub-id-type="pmid">35509474</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1039/d1sc07256k</pub-id><pub-id pub-id-type="pmcid">PMC9006962</pub-id></mixed-citation></ref><ref id="pro70229-bib-0019"><mixed-citation publication-type="journal" id="pro70229-cit-0019">
+<string-name name-style="western">
+<surname>Chisuga</surname>
+<given-names>T</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Nagai</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Miyanaga</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Goto</surname>
+<given-names>E</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kishikawa</surname>
+<given-names>K</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kudo</surname>
+<given-names>F</given-names>
+</string-name>, et al. <article-title>Structural insight into the reaction mechanism of ketosynthase‐like decarboxylase in a loading module of modular polyketide synthases</article-title>. <source>ACS Chem Biol</source>. <year>2022</year>;<volume>17</volume>:<fpage>198</fpage>–<lpage>206</lpage>.<pub-id pub-id-type="pmid">34985877</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/acschembio.1c00856</pub-id></mixed-citation></ref><ref id="pro70229-bib-0020"><mixed-citation publication-type="journal" id="pro70229-cit-0020">
+<string-name name-style="western">
+<surname>Dewulf</surname>
+<given-names>JP</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Gerin</surname>
+<given-names>I</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Rider</surname>
+<given-names>MH</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Veiga‐da‐Cunha</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Van Schaftingen</surname>
+<given-names>E</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Bommer</surname>
+<given-names>GT</given-names>
+</string-name>. <article-title>The synthesis of branched‐chain fatty acids is limited by enzymatic decarboxylation of ethyl‐ and methylmalonyl‐CoA</article-title>. <source>Biochem J</source>. <year>2019</year>;<volume>476</volume>:<fpage>2427</fpage>–<lpage>2447</lpage>.<pub-id pub-id-type="pmid">31416829</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1042/BCJ20190500</pub-id><pub-id pub-id-type="pmcid">PMC6717113</pub-id></mixed-citation></ref><ref id="pro70229-bib-0021"><mixed-citation publication-type="journal" id="pro70229-cit-0021">
+<string-name name-style="western">
+<surname>Du</surname>
+<given-names>D</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Katsuyama</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Horiuchi</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Fushinobu</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Chen</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Davis</surname>
+<given-names>TD</given-names>
+</string-name>, et al. <article-title>Structural basis for selectivity in a highly reducing type II polyketide synthase</article-title>. <source>Nat Chem Biol</source>. <year>2020</year>;<volume>16</volume>:<fpage>776</fpage>–<lpage>782</lpage>.<pub-id pub-id-type="pmid">32367018</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/s41589-020-0530-0</pub-id><pub-id pub-id-type="pmcid">PMC7556716</pub-id></mixed-citation></ref><ref id="pro70229-bib-0022"><mixed-citation publication-type="journal" id="pro70229-cit-0022">
+<string-name name-style="western">
+<surname>Eberhardt</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Santos‐Martins</surname>
+<given-names>D</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Tillack</surname>
+<given-names>AF</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Forli</surname>
+<given-names>S</given-names>
+</string-name>. <article-title>AutoDock Vina 1.2.0: new docking methods, expanded force field, and python bindings</article-title>. <source>J Chem Inf Model</source>. <year>2021</year>;<volume>61</volume>:<fpage>3891</fpage>–<lpage>3898</lpage>.<pub-id pub-id-type="pmid">34278794</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/acs.jcim.1c00203</pub-id><pub-id pub-id-type="pmcid">PMC10683950</pub-id></mixed-citation></ref><ref id="pro70229-bib-0023"><mixed-citation publication-type="journal" id="pro70229-cit-0023">
+<string-name name-style="western">
+<surname>Fan</surname>
+<given-names>X</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Yuan</surname>
+<given-names>X</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Huang</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Wang</surname>
+<given-names>C</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Jiang</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Zhang</surname>
+<given-names>X</given-names>
+</string-name>, et al. <article-title>Goat milk powder supplemented with branched‐chain fatty acid: influence on quality and microstructure</article-title>. <source>J Sci Food Agric</source>. <year>2023</year>;<volume>103</volume>:<fpage>2631</fpage>–<lpage>2640</lpage>.<pub-id pub-id-type="pmid">36494899</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/jsfa.12379</pub-id></mixed-citation></ref><ref id="pro70229-bib-0024"><mixed-citation publication-type="journal" id="pro70229-cit-0024">
+<string-name name-style="western">
+<surname>Gajewski</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Buelens</surname>
+<given-names>F</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Serdjukow</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Janßen</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Cortina</surname>
+<given-names>N</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grubmüller</surname>
+<given-names>H</given-names>
+</string-name>, et al. <article-title>Engineering fatty acid synthases for directed polyketide production</article-title>. <source>Nat Chem Biol</source>. <year>2017</year>;<volume>13</volume>:<fpage>363</fpage>–<lpage>365</lpage>.<pub-id pub-id-type="pmid">28218912</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/nchembio.2314</pub-id></mixed-citation></ref><ref id="pro70229-bib-0025"><mixed-citation publication-type="journal" id="pro70229-cit-0025">
+<string-name name-style="western">
+<surname>Gajewski</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Pavlovic</surname>
+<given-names>R</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Fischer</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Boles</surname>
+<given-names>E</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>Engineering fungal de novo fatty acid synthesis for short chain fatty acid production</article-title>. <source>Nat Commun</source>. <year>2017</year>;<volume>8</volume>:<elocation-id>14650</elocation-id>.<pub-id pub-id-type="pmid">28281527</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/ncomms14650</pub-id><pub-id pub-id-type="pmcid">PMC5353594</pub-id></mixed-citation></ref><ref id="pro70229-bib-0026"><mixed-citation publication-type="journal" id="pro70229-cit-0026">
+<string-name name-style="western">
+<surname>Gozdzik</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Magkos</surname>
+<given-names>F</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Sledzinski</surname>
+<given-names>T</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Mika</surname>
+<given-names>A</given-names>
+</string-name>. <article-title>Monomethyl branched‐chain fatty acids: health effects and biological mechanisms</article-title>. <source>Prog Lipid Res</source>. <year>2023</year>;<volume>90</volume>:<elocation-id>101226</elocation-id>.<pub-id pub-id-type="pmid">37094753</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1016/j.plipres.2023.101226</pub-id></mixed-citation></ref><ref id="pro70229-bib-0027"><mixed-citation publication-type="journal" id="pro70229-cit-0027">
+<string-name name-style="western">
+<surname>Gusenda</surname>
+<given-names>C</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Berlage</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Burkhart</surname>
+<given-names>I</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Chagot</surname>
+<given-names>B</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Weissman</surname>
+<given-names>KJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schwalbe</surname>
+<given-names>H</given-names>
+</string-name>, et al. <article-title>Protocol for the purification, analysis, and handling of acyl carrier proteins from type I fatty acid and polyketide synthases</article-title>. <source>STAR Protoc</source>. <year>2025</year>;<volume>6</volume>:<elocation-id>103762</elocation-id>.<pub-id pub-id-type="pmid">40220306</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1016/j.xpro.2025.103762</pub-id><pub-id pub-id-type="pmcid">PMC12018539</pub-id></mixed-citation></ref><ref id="pro70229-bib-0028"><mixed-citation publication-type="journal" id="pro70229-cit-0028">
+<string-name name-style="western">
+<surname>Gusenda</surname>
+<given-names>C</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Calixto</surname>
+<given-names>AR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Da Silva</surname>
+<given-names>JR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Fernandes</surname>
+<given-names>PA</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>The kinetics of carbon‐carbon bond formation in metazoan fatty acid synthase and its impact on product fidelity</article-title>. <source>Angew Chem Int Ed Engl</source>. <year>2025</year>;<volume>64</volume>:<elocation-id>e202412195</elocation-id>.<pub-id pub-id-type="pmid">39526922</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/anie.202412195</pub-id><pub-id pub-id-type="pmcid">PMC11720392</pub-id></mixed-citation></ref><ref id="pro70229-bib-0029"><mixed-citation publication-type="journal" id="pro70229-cit-0029">
+<string-name name-style="western">
+<surname>Harvey</surname>
+<given-names>DJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Tiffany</surname>
+<given-names>JM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Duerden</surname>
+<given-names>JM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Pandher</surname>
+<given-names>KS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Mengher</surname>
+<given-names>LS</given-names>
+</string-name>. <article-title>Identification by combined gas chromatography‐mass spectrometry of constituent long‐chain fatty acids and alcohols from the meibomian glands of the rat and a comparison with human meibomian lipids</article-title>. <source>J Chromatogr B Biomed Sci Appl</source>. <year>1987</year>;<volume>414</volume>:<fpage>253</fpage>–<lpage>263</lpage>.<pub-id pub-id-type="doi" assigning-authority="pmc">10.1016/0378-4347(87)80051-8</pub-id><pub-id pub-id-type="pmid">3571395</pub-id></mixed-citation></ref><ref id="pro70229-bib-0030"><mixed-citation publication-type="journal" id="pro70229-cit-0030">
+<string-name name-style="western">
+<surname>Heil</surname>
+<given-names>CS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Wehrheim</surname>
+<given-names>SS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Paithankar</surname>
+<given-names>KS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>Fatty acid biosynthesis: chain‐length regulation and control</article-title>. <source>Chembiochem</source>. <year>2019</year>;<volume>20</volume>:<fpage>2298</fpage>–<lpage>2321</lpage>.<pub-id pub-id-type="pmid">30908841</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/cbic.201800809</pub-id></mixed-citation></ref><ref id="pro70229-bib-0031"><mixed-citation publication-type="journal" id="pro70229-cit-0031">
+<string-name name-style="western">
+<surname>Horning</surname>
+<given-names>MG</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Martin</surname>
+<given-names>DB</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Karmen</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Vagelos</surname>
+<given-names>PR</given-names>
+</string-name>. <article-title>Fatty acid synthesis in adipose tissue: II. Enzymatic synthesis of branched chain and odd‐numbered fatty acids</article-title>. <source>J Biol Chem</source>. <year>1961</year>;<volume>236</volume>:<fpage>669</fpage>–<lpage>672</lpage>.<pub-id pub-id-type="pmid">13715907</pub-id>
+</mixed-citation></ref><ref id="pro70229-bib-0032"><mixed-citation publication-type="journal" id="pro70229-cit-0032">
+<string-name name-style="western">
+<surname>Insull</surname>
+<given-names>W</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Ahrens</surname>
+<given-names>EH</given-names>
+</string-name>. <article-title>The fatty acids of human milk from mothers on diets taken ad libitum</article-title>. <source>Biochem J</source>. <year>1959</year>;<volume>72</volume>:<fpage>27</fpage>–<lpage>33</lpage>.<pub-id pub-id-type="pmid">13651131</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1042/bj0720027</pub-id><pub-id pub-id-type="pmcid">PMC1196876</pub-id></mixed-citation></ref><ref id="pro70229-bib-0033"><mixed-citation publication-type="journal" id="pro70229-cit-0033">
+<string-name name-style="western">
+<surname>J. Heath</surname>
+<given-names>R</given-names>
+</string-name>, <string-name name-style="western">
+<surname>O. Rock</surname>
+<given-names>C</given-names>
+</string-name>. <article-title>The Claisen condensation in biology</article-title>. <source>Nat Prod Rep</source>. <year>2002</year>;<volume>19</volume>:<fpage>581</fpage>–<lpage>596</lpage>.<pub-id pub-id-type="pmid">12430724</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1039/b110221b</pub-id></mixed-citation></ref><ref id="pro70229-bib-0034"><mixed-citation publication-type="journal" id="pro70229-cit-0034">
+<string-name name-style="western">
+<surname>Jacob</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Poltz</surname>
+<given-names>J</given-names>
+</string-name>. <article-title>Chemical composition of uropygial gland secretions of owls</article-title>. <source>J Lipid Res</source>. <year>1974</year>;<volume>15</volume>:<fpage>243</fpage>–<lpage>248</lpage>.<pub-id pub-id-type="pmid">4827914</pub-id>
+</mixed-citation></ref><ref id="pro70229-bib-0035"><mixed-citation publication-type="journal" id="pro70229-cit-0035">
+<string-name name-style="western">
+<surname>James</surname>
+<given-names>AT</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lovelock</surname>
+<given-names>JE</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Webb</surname>
+<given-names>JPW</given-names>
+</string-name>. <article-title>The lipids of whole blood. 1. Lipid biosynthesis in human blood in vitro</article-title>. <source>Biochem J</source>. <year>1959</year>;<volume>73</volume>:<fpage>106</fpage>–<lpage>115</lpage>.<pub-id pub-id-type="pmid">14406583</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1042/bj0730106</pub-id><pub-id pub-id-type="pmcid">PMC1197019</pub-id></mixed-citation></ref><ref id="pro70229-bib-0036"><mixed-citation publication-type="journal" id="pro70229-cit-0036">
+<string-name name-style="western">
+<surname>James</surname>
+<given-names>AT</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Wheatley</surname>
+<given-names>VR</given-names>
+</string-name>. <article-title>Studies of sebum. 6. The determination of the component fatty acids of human forearm sebum by gas–liquid chromatography</article-title>. <source>Biochem J</source>. <year>1956</year>;<volume>63</volume>:<fpage>269</fpage>–<lpage>273</lpage>.<pub-id pub-id-type="pmid">13328821</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1042/bj0630269</pub-id><pub-id pub-id-type="pmcid">PMC1216037</pub-id></mixed-citation></ref><ref id="pro70229-bib-0037"><mixed-citation publication-type="journal" id="pro70229-cit-0037">
+<string-name name-style="western">
+<surname>Kagami</surname>
+<given-names>L</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Wilter</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Diaz</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Vranken</surname>
+<given-names>W</given-names>
+</string-name>. <article-title>The ACPYPE web server for small‐molecule MD topology generation</article-title>. <source>Bioinformatics</source>. <year>2023</year>;<volume>39</volume>:<elocation-id>btad350</elocation-id>.<pub-id pub-id-type="pmid">37252824</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1093/bioinformatics/btad350</pub-id><pub-id pub-id-type="pmcid">PMC10264366</pub-id></mixed-citation></ref><ref id="pro70229-bib-0038"><mixed-citation publication-type="journal" id="pro70229-cit-0038">
+<string-name name-style="western">
+<surname>Kaneda</surname>
+<given-names>T</given-names>
+</string-name>. <article-title>Iso‐ and anteiso‐fatty acids in bacteria: biosynthesis, function, and taxonomic significance</article-title>. <source>Microbiol Rev</source>. <year>1991</year>;<volume>55</volume>:<fpage>288</fpage>–<lpage>302</lpage>.<pub-id pub-id-type="pmid">1886522</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1128/mr.55.2.288-302.1991</pub-id><pub-id pub-id-type="pmcid">PMC372815</pub-id></mixed-citation></ref><ref id="pro70229-bib-0039"><mixed-citation publication-type="journal" id="pro70229-cit-0039">
+<string-name name-style="western">
+<surname>Khosla</surname>
+<given-names>C</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Gokhale</surname>
+<given-names>RS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Jacobsen</surname>
+<given-names>JR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Cane</surname>
+<given-names>DE</given-names>
+</string-name>. <article-title>Tolerance and specificity of polyketide synthases</article-title>. <source>Annu Rev Biochem</source>. <year>1999</year>;<volume>68</volume>:<fpage>219</fpage>–<lpage>253</lpage>.<pub-id pub-id-type="pmid">10872449</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1146/annurev.biochem.68.1.219</pub-id></mixed-citation></ref><ref id="pro70229-bib-0040"><mixed-citation publication-type="journal" id="pro70229-cit-0040">
+<string-name name-style="western">
+<surname>Kim</surname>
+<given-names>YS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kolattukudy</surname>
+<given-names>PE</given-names>
+</string-name>. <article-title>Malonyl‐CoA decarboxylase from the uropygial gland of waterfowl: purification, properties, immunological comparison, and role in regulating the synthesis of multimethyl‐branched fatty acids</article-title>. <source>Arch Biochem Biophys</source>. <year>1978</year>;<volume>190</volume>:<fpage>585</fpage>–<lpage>597</lpage>.<pub-id pub-id-type="pmid">102255</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1016/0003-9861(78)90314-4</pub-id></mixed-citation></ref><ref id="pro70229-bib-0041"><mixed-citation publication-type="journal" id="pro70229-cit-0041">
+<string-name name-style="western">
+<surname>Kim</surname>
+<given-names>YS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kolattukudy</surname>
+<given-names>PE</given-names>
+</string-name>. <article-title>Stereospecificity of malonyl‐CoA decarboxylase, acetyl‐CoA carboxylase, and fatty acid synthetase from the uropygial gland of goose</article-title>. <source>J Biol Chem</source>. <year>1980</year>;<volume>255</volume>:<fpage>686</fpage>–<lpage>689</lpage>.<pub-id pub-id-type="pmid">6101330</pub-id>
+</mixed-citation></ref><ref id="pro70229-bib-0042"><mixed-citation publication-type="journal" id="pro70229-cit-0042">
+<string-name name-style="western">
+<surname>Laidler</surname>
+<given-names>KJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>King</surname>
+<given-names>MC</given-names>
+</string-name>. <article-title>Development of transition‐state theory</article-title>. <source>J Phys Chem</source>. <year>1983</year>;<volume>87</volume>:<fpage>2657</fpage>–<lpage>2664</lpage>.</mixed-citation></ref><ref id="pro70229-bib-0043"><mixed-citation publication-type="journal" id="pro70229-cit-0043">
+<string-name name-style="western">
+<surname>Lee</surname>
+<given-names>W</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Engels</surname>
+<given-names>B</given-names>
+</string-name>. <article-title>Clarification on the decarboxylation mechanism in KasA based on the protonation state of key residues in the acyl‐enzyme state</article-title>. <source>J Phys Chem B</source>. <year>2013</year>;<volume>117</volume>:<fpage>8095</fpage>–<lpage>8104</lpage>.<pub-id pub-id-type="pmid">23768199</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/jp403067m</pub-id></mixed-citation></ref><ref id="pro70229-bib-0044"><mixed-citation publication-type="journal" id="pro70229-cit-0044">
+<string-name name-style="western">
+<surname>Meng</surname>
+<given-names>EC</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Goddard</surname>
+<given-names>TD</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Pettersen</surname>
+<given-names>EF</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Couch</surname>
+<given-names>GS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Pearson</surname>
+<given-names>ZJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Morris</surname>
+<given-names>JH</given-names>
+</string-name>, et al. <article-title>UCSF ChimeraX: tools for structure building and analysis</article-title>. <source>Protein Sci</source>. <year>2023</year>;<volume>32</volume>:<elocation-id>e4792</elocation-id>.<pub-id pub-id-type="pmid">37774136</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/pro.4792</pub-id><pub-id pub-id-type="pmcid">PMC10588335</pub-id></mixed-citation></ref><ref id="pro70229-bib-0045"><mixed-citation publication-type="journal" id="pro70229-cit-0045">
+<string-name name-style="western">
+<surname>Michaud‐Agrawal</surname>
+<given-names>N</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Denning</surname>
+<given-names>EJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Woolf</surname>
+<given-names>TB</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Beckstein</surname>
+<given-names>O</given-names>
+</string-name>. <article-title>MDAnalysis: a toolkit for the analysis of molecular dynamics simulations</article-title>. <source>J Comput Chem</source>. <year>2011</year>;<volume>32</volume>:<fpage>2319</fpage>–<lpage>2327</lpage>.<pub-id pub-id-type="pmid">21500218</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/jcc.21787</pub-id><pub-id pub-id-type="pmcid">PMC3144279</pub-id></mixed-citation></ref><ref id="pro70229-bib-0046"><mixed-citation publication-type="journal" id="pro70229-cit-0046">
+<string-name name-style="western">
+<surname>Milligan</surname>
+<given-names>JC</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lee</surname>
+<given-names>DJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Jackson</surname>
+<given-names>DR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schaub</surname>
+<given-names>AJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Beld</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Barajas</surname>
+<given-names>JF</given-names>
+</string-name>, et al. <article-title>Molecular basis for interactions between an acyl carrier protein and a ketosynthase</article-title>. <source>Nat Chem Biol</source>. <year>2019</year>;<volume>15</volume>:<fpage>669</fpage>–<lpage>671</lpage>.<pub-id pub-id-type="pmid">31209348</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/s41589-019-0301-y</pub-id><pub-id pub-id-type="pmcid">PMC7323458</pub-id></mixed-citation></ref><ref id="pro70229-bib-0047"><mixed-citation publication-type="journal" id="pro70229-cit-0047">
+<string-name name-style="western">
+<surname>Moche</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schneider</surname>
+<given-names>G</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Edwards</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Dehesh</surname>
+<given-names>K</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lindqvist</surname>
+<given-names>Y</given-names>
+</string-name>. <article-title>Structure of the complex between the antibiotic cerulenin and its target, β‐ketoacyl‐acyl carrier protein synthase</article-title>. <source>J Biol Chem</source>. <year>1999</year>;<volume>274</volume>:<fpage>6031</fpage>–<lpage>6034</lpage>.<pub-id pub-id-type="pmid">10037680</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1074/jbc.274.10.6031</pub-id></mixed-citation></ref><ref id="pro70229-bib-0048"><mixed-citation publication-type="journal" id="pro70229-cit-0048">
+<string-name name-style="western">
+<surname>Moriguchi</surname>
+<given-names>T</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kezuka</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Nonaka</surname>
+<given-names>T</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Ebizuka</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Fujii</surname>
+<given-names>I</given-names>
+</string-name>. <article-title>Hidden function of catalytic domain in 6‐methylsalicylic acid synthase for product release</article-title>. <source>J Biol Chem</source>. <year>2010</year>;<volume>285</volume>:<fpage>15637</fpage>–<lpage>15643</lpage>.<pub-id pub-id-type="pmid">20304931</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1074/jbc.M110.107391</pub-id><pub-id pub-id-type="pmcid">PMC2865267</pub-id></mixed-citation></ref><ref id="pro70229-bib-0049"><mixed-citation publication-type="journal" id="pro70229-cit-0049">
+<string-name name-style="western">
+<surname>Narasimhan</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Sklar</surname>
+<given-names>R</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Murrell</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Swanson</surname>
+<given-names>RA</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Sharp</surname>
+<given-names>FR</given-names>
+</string-name>. <article-title>Methylmalonyl‐CoA mutase induction by cerebral ischemia and neurotoxicity of the mitochondrial toxin methylmalonic acid</article-title>. <source>J Neurosci</source>. <year>1996</year>;<volume>16</volume>:<fpage>7336</fpage>–<lpage>7346</lpage>.<pub-id pub-id-type="pmid">8929440</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1523/JNEUROSCI.16-22-07336.1996</pub-id><pub-id pub-id-type="pmcid">PMC6578931</pub-id></mixed-citation></ref><ref id="pro70229-bib-0050"><mixed-citation publication-type="journal" id="pro70229-cit-0050">
+<string-name name-style="western">
+<surname>Nicolaides</surname>
+<given-names>N</given-names>
+</string-name>. <article-title>Skin lipids: their biochemical uniqueness</article-title>. <source>Science</source>. <year>1974</year>;<volume>186</volume>:<fpage>19</fpage>–<lpage>26</lpage>.<pub-id pub-id-type="pmid">4607408</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1126/science.186.4158.19</pub-id></mixed-citation></ref><ref id="pro70229-bib-0051"><mixed-citation publication-type="journal" id="pro70229-cit-0051">
+<string-name name-style="western">
+<surname>Paiva</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Medina</surname>
+<given-names>FE</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Viegas</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Ferreira</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Neves</surname>
+<given-names>RPP</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Sousa</surname>
+<given-names>JPM</given-names>
+</string-name>, et al. <article-title>Animal fatty acid synthase: a chemical nanofactory</article-title>. <source>Chem Rev</source>. <year>2021</year>;<volume>121</volume>:<fpage>9502</fpage>–<lpage>9553</lpage>.<pub-id pub-id-type="pmid">34156235</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/acs.chemrev.1c00147</pub-id></mixed-citation></ref><ref id="pro70229-bib-0052"><mixed-citation publication-type="journal" id="pro70229-cit-0052">
+<string-name name-style="western">
+<surname>Pedregosa</surname>
+<given-names>F</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Varoquaux</surname>
+<given-names>G</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Gramfort</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Michel</surname>
+<given-names>V</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Thirion</surname>
+<given-names>B</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grisel</surname>
+<given-names>O</given-names>
+</string-name>, et al. <article-title>Scikit‐learn: machine learning in python</article-title>. <source>J Mach Learn Res</source>. <year>2011</year>;<volume>12</volume>:<fpage>2825</fpage>–<lpage>2830</lpage>.</mixed-citation></ref><ref id="pro70229-bib-0053"><mixed-citation publication-type="journal" id="pro70229-cit-0053">
+<string-name name-style="western">
+<surname>Peter</surname>
+<given-names>DM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schada von Borzyskowski</surname>
+<given-names>L</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kiefer</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Christen</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Vorholt</surname>
+<given-names>JA</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Erb</surname>
+<given-names>TJ</given-names>
+</string-name>. <article-title>Screening and engineering the synthetic potential of carboxylating reductases from central metabolism and polyketide biosynthesis</article-title>. <source>Angew Chem Int Ed</source>. <year>2015</year>;<volume>54</volume>:<fpage>13457</fpage>–<lpage>13461</lpage>.<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/anie.201505282</pub-id><pub-id pub-id-type="pmid">26383129</pub-id></mixed-citation></ref><ref id="pro70229-bib-0054"><mixed-citation publication-type="journal" id="pro70229-cit-0054">
+<string-name name-style="western">
+<surname>Price</surname>
+<given-names>AC</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Choi</surname>
+<given-names>K‐H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Heath</surname>
+<given-names>RJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Li</surname>
+<given-names>Z</given-names>
+</string-name>, <string-name name-style="western">
+<surname>White</surname>
+<given-names>SW</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Rock</surname>
+<given-names>CO</given-names>
+</string-name>. <article-title>Inhibition of β‐ketoacyl‐acyl carrier protein synthases by thiolactomycin and cerulenin: structure and mechanism</article-title>. <source>J Biol Chem</source>. <year>2001</year>;<volume>276</volume>:<fpage>6551</fpage>–<lpage>6559</lpage>.<pub-id pub-id-type="pmid">11050088</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1074/jbc.M007101200</pub-id></mixed-citation></ref><ref id="pro70229-bib-0055"><mixed-citation publication-type="journal" id="pro70229-cit-0055">
+<string-name name-style="western">
+<surname>Ran‐Ressler</surname>
+<given-names>RR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Bae</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lawrence</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Wang</surname>
+<given-names>DH</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Brenna</surname>
+<given-names>JT</given-names>
+</string-name>. <article-title>Branched‐chain fatty acid content of foods and estimated intake in the USA</article-title>. <source>Br J Nutr</source>. <year>2014</year>;<volume>112</volume>:<fpage>565</fpage>–<lpage>572</lpage>.<pub-id pub-id-type="pmid">24830474</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1017/S0007114514001081</pub-id><pub-id pub-id-type="pmcid">PMC4381348</pub-id></mixed-citation></ref><ref id="pro70229-bib-0056"><mixed-citation publication-type="journal" id="pro70229-cit-0056">
+<string-name name-style="western">
+<surname>Ran‐Ressler</surname>
+<given-names>RR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Devapatla</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lawrence</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Brenna</surname>
+<given-names>JT</given-names>
+</string-name>. <article-title>Branched chain fatty acids are constituents of the normal healthy newborn gastrointestinal tract</article-title>. <source>Pediatr Res</source>. <year>2008</year>;<volume>64</volume>:<fpage>605</fpage>–<lpage>609</lpage>.<pub-id pub-id-type="pmid">18614964</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1203/PDR.0b013e318184d2e6</pub-id><pub-id pub-id-type="pmcid">PMC2662770</pub-id></mixed-citation></ref><ref id="pro70229-bib-0057"><mixed-citation publication-type="journal" id="pro70229-cit-0057">
+<string-name name-style="western">
+<surname>Ran‐Ressler</surname>
+<given-names>RR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Khailova</surname>
+<given-names>L</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Arganbright</surname>
+<given-names>KM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Adkins‐Rieck</surname>
+<given-names>CK</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Jouni</surname>
+<given-names>ZE</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Koren</surname>
+<given-names>O</given-names>
+</string-name>, et al. <article-title>Branched chain fatty acids reduce the incidence of necrotizing enterocolitis and alter gastrointestinal microbial ecology in a neonatal rat model</article-title>. <source>PLoS One</source>. <year>2011</year>;<volume>6</volume>:<elocation-id>e29032</elocation-id>.<pub-id pub-id-type="pmid">22194981</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1371/journal.pone.0029032</pub-id><pub-id pub-id-type="pmcid">PMC3237582</pub-id></mixed-citation></ref><ref id="pro70229-bib-0058"><mixed-citation publication-type="journal" id="pro70229-cit-0058">
+<string-name name-style="western">
+<surname>Rittner</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Paithankar</surname>
+<given-names>KS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Drexler</surname>
+<given-names>DJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Himmler</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>Probing the modularity of megasynthases by rational engineering of a fatty acid synthase type I</article-title>. <source>Protein Sci</source>. <year>2019</year>;<volume>28</volume>:<fpage>414</fpage>–<lpage>428</lpage>.<pub-id pub-id-type="pmid">30394635</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/pro.3550</pub-id><pub-id pub-id-type="pmcid">PMC6319764</pub-id></mixed-citation></ref><ref id="pro70229-bib-0059"><mixed-citation publication-type="journal" id="pro70229-cit-0059">
+<string-name name-style="western">
+<surname>Rittner</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Paithankar</surname>
+<given-names>KS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Himmler</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>Type I fatty acid synthase trapped in the octanoyl‐bound state</article-title>. <source>Protein Sci</source>. <year>2020</year>;<volume>29</volume>:<fpage>589</fpage>–<lpage>605</lpage>.<pub-id pub-id-type="pmid">31811668</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/pro.3797</pub-id><pub-id pub-id-type="pmcid">PMC6954729</pub-id></mixed-citation></ref><ref id="pro70229-bib-0060"><mixed-citation publication-type="journal" id="pro70229-cit-0060">
+<string-name name-style="western">
+<surname>Rittner</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Paithankar</surname>
+<given-names>KS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Huu</surname>
+<given-names>KV</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Grininger</surname>
+<given-names>M</given-names>
+</string-name>. <article-title>Characterization of the polyspecific transferase of murine type I fatty acid synthase (FAS) and implications for polyketide synthase (PKS) engineering</article-title>. <source>ACS Chem Biol</source>. <year>2018</year>;<volume>13</volume>:<fpage>723</fpage>–<lpage>732</lpage>.<pub-id pub-id-type="pmid">29328619</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/acschembio.7b00718</pub-id></mixed-citation></ref><ref id="pro70229-bib-0061"><mixed-citation publication-type="journal" id="pro70229-cit-0061">
+<string-name name-style="western">
+<surname>Robbins</surname>
+<given-names>T</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kapilivsky</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Cane</surname>
+<given-names>DE</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Khosla</surname>
+<given-names>C</given-names>
+</string-name>. <article-title>Roles of conserved active site residues in the ketosynthase domain of an assembly line polyketide synthase</article-title>. <source>Biochemistry</source>. <year>2016</year>;<volume>55</volume>:<fpage>4476</fpage>–<lpage>4484</lpage>.<pub-id pub-id-type="pmid">27441852</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/acs.biochem.6b00639</pub-id><pub-id pub-id-type="pmcid">PMC5055053</pub-id></mixed-citation></ref><ref id="pro70229-bib-0062"><mixed-citation publication-type="journal" id="pro70229-cit-0062">
+<string-name name-style="western">
+<surname>Schubert</surname>
+<given-names>HL</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Li</surname>
+<given-names>F</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Hill</surname>
+<given-names>CP</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schmidt</surname>
+<given-names>EW</given-names>
+</string-name>. <article-title>The structure of full‐length AFPK supports the ACP linker in a role that regulates iterative polyketide and fatty acid assembly</article-title>. <source>Proc Natl Acad Sci U S A</source>. <year>2025</year>;<volume>122</volume>:<elocation-id>e2419884122</elocation-id>.<pub-id pub-id-type="pmid">39913209</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1073/pnas.2419884122</pub-id><pub-id pub-id-type="pmcid">PMC11831141</pub-id></mixed-citation></ref><ref id="pro70229-bib-0063"><mixed-citation publication-type="journal" id="pro70229-cit-0063">
+<string-name name-style="western">
+<surname>Schultz</surname>
+<given-names>K</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Costa‐Pinheiro</surname>
+<given-names>P</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Gardner</surname>
+<given-names>L</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Pinheiro</surname>
+<given-names>LV</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Ramirez‐Solis</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Gardner</surname>
+<given-names>SM</given-names>
+</string-name>, et al. <article-title>Snapshots of acyl carrier protein shuttling in human fatty acid synthase</article-title>. <source>Nature</source>. <year>2025</year>;<volume>641</volume>:<fpage>1</fpage>–<lpage>9</lpage>.<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/s41586-025-08587-x</pub-id><pub-id pub-id-type="pmcid">PMC12058525</pub-id><pub-id pub-id-type="pmid">39979457</pub-id></mixed-citation></ref><ref id="pro70229-bib-0064"><mixed-citation publication-type="journal" id="pro70229-cit-0064">
+<string-name name-style="western">
+<surname>Seyama</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Otsuka</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Kawaguchi</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Yamakawa</surname>
+<given-names>T</given-names>
+</string-name>. <article-title>Fatty acid synthetase from the Harderian gland of guinea pig: biosynthesis of methyl‐branched fatty acids</article-title>. <source>J Biochem</source>. <year>1981</year>;<volume>90</volume>:<fpage>789</fpage>–<lpage>798</lpage>.<pub-id pub-id-type="pmid">7309701</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1093/oxfordjournals.jbchem.a133535</pub-id></mixed-citation></ref><ref id="pro70229-bib-0065"><mixed-citation publication-type="miscellaneous" id="pro70229-cit-0065">
+<string-name name-style="western">
+<surname>Stamatelou</surname>
+<given-names>I‐C</given-names>
+</string-name>. <article-title>Clustering approaches for extracting structural determinants of enzyme active sites</article-title>. <year>2020</year>. Accessed March 10, 2025. <ext-link xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-426221" ext-link-type="uri">https://urn.kb.se/resolve?urn=urn:nbn:se:uu:diva-426221</ext-link>
+</mixed-citation></ref><ref id="pro70229-bib-0066"><mixed-citation publication-type="journal" id="pro70229-cit-0066">
+<string-name name-style="western">
+<surname>Torres</surname>
+<given-names>JP</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lin</surname>
+<given-names>Z</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Winter</surname>
+<given-names>JM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Krug</surname>
+<given-names>PJ</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Schmidt</surname>
+<given-names>EW</given-names>
+</string-name>. <article-title>Animal biosynthesis of complex polyketides in a photosynthetic partnership</article-title>. <source>Nat Commun</source>. <year>2020</year>;<volume>11</volume>:<fpage>2882</fpage>.<pub-id pub-id-type="pmid">32513940</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/s41467-020-16376-5</pub-id><pub-id pub-id-type="pmcid">PMC7280274</pub-id></mixed-citation></ref><ref id="pro70229-bib-0067"><mixed-citation publication-type="journal" id="pro70229-cit-0067">
+<string-name name-style="western">
+<surname>Valenzano</surname>
+<given-names>CR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>You</surname>
+<given-names>Y‐O</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Garg</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Keatinge‐Clay</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Khosla</surname>
+<given-names>C</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Cane</surname>
+<given-names>DE</given-names>
+</string-name>. <article-title>Stereospecificity of the dehydratase domain of the erythromycin polyketide synthase</article-title>. <source>J Am Chem Soc</source>. <year>2010</year>;<volume>132</volume>:<fpage>14697</fpage>–<lpage>14699</lpage>.<pub-id pub-id-type="pmid">20925342</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/ja107344h</pub-id><pub-id pub-id-type="pmcid">PMC2959128</pub-id></mixed-citation></ref><ref id="pro70229-bib-0068"><mixed-citation publication-type="journal" id="pro70229-cit-0068">
+<string-name name-style="western">
+<surname>van Meer</surname>
+<given-names>G</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Voelker</surname>
+<given-names>DR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Feigenson</surname>
+<given-names>GW</given-names>
+</string-name>. <article-title>Membrane lipids: where they are and how they behave</article-title>. <source>Nat Rev Mol Cell Biol</source>. <year>2008</year>;<volume>9</volume>:<fpage>112</fpage>–<lpage>124</lpage>.<pub-id pub-id-type="pmid">18216768</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/nrm2330</pub-id><pub-id pub-id-type="pmcid">PMC2642958</pub-id></mixed-citation></ref><ref id="pro70229-bib-0069"><mixed-citation publication-type="journal" id="pro70229-cit-0069">
+<string-name name-style="western">
+<surname>Wagner</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Luther</surname>
+<given-names>R</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Mang</surname>
+<given-names>T</given-names>
+</string-name>. <article-title>Lubricant base fluids based on renewable raw materials: their catalytic manufacture and modification</article-title>. <source>Appl Catal Gen</source>. <year>2001</year>;<volume>221</volume>:<fpage>429</fpage>–<lpage>442</lpage>.</mixed-citation></ref><ref id="pro70229-bib-0070"><mixed-citation publication-type="journal" id="pro70229-cit-0070">
+<string-name name-style="western">
+<surname>Wallace</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Green</surname>
+<given-names>CR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Roberts</surname>
+<given-names>LS</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Lee</surname>
+<given-names>YM</given-names>
+</string-name>, <string-name name-style="western">
+<surname>McCarville</surname>
+<given-names>JL</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Sanchez‐Gurmaches</surname>
+<given-names>J</given-names>
+</string-name>, et al. <article-title>Enzyme promiscuity drives branched‐chain fatty acid synthesis in adipose tissues</article-title>. <source>Nat Chem Biol</source>. <year>2018</year>;<volume>14</volume>:<fpage>1021</fpage>–<lpage>1031</lpage>.<pub-id pub-id-type="pmid">30327559</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1038/s41589-018-0132-2</pub-id><pub-id pub-id-type="pmcid">PMC6245668</pub-id></mixed-citation></ref><ref id="pro70229-bib-0071"><mixed-citation publication-type="journal" id="pro70229-cit-0071">
+<string-name name-style="western">
+<surname>Witkowski</surname>
+<given-names>A</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Joshi</surname>
+<given-names>AK</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Smith</surname>
+<given-names>S</given-names>
+</string-name>. <article-title>Mechanism of the β‐ketoacyl synthase reaction catalyzed by the animal fatty acid synthase</article-title>. <source>Biochemistry</source>. <year>2002</year>;<volume>41</volume>:<fpage>10877</fpage>–<lpage>10887</lpage>.<pub-id pub-id-type="pmid">12196027</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1021/bi0259047</pub-id></mixed-citation></ref><ref id="pro70229-bib-0072"><mixed-citation publication-type="journal" id="pro70229-cit-0072">
+<string-name name-style="western">
+<surname>Wongtangtintharn</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Oku</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Iwasaki</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Toda</surname>
+<given-names>T</given-names>
+</string-name>. <article-title>Effect of branched‐chain fatty acids on fatty acid biosynthesis of human breast cancer cells</article-title>. <source>J Nutr Sci Vitaminol</source>. <year>2004</year>;<volume>50</volume>:<fpage>137</fpage>–<lpage>143</lpage>.<pub-id pub-id-type="pmid">15242018</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.3177/jnsv.50.137</pub-id></mixed-citation></ref><ref id="pro70229-bib-0073"><mixed-citation publication-type="journal" id="pro70229-cit-0073">
+<string-name name-style="western">
+<surname>Yang</surname>
+<given-names>Z</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Liu</surname>
+<given-names>S</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Chen</surname>
+<given-names>X</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Chen</surname>
+<given-names>H</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Huang</surname>
+<given-names>M</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Zheng</surname>
+<given-names>J</given-names>
+</string-name>. <article-title>Induction of apoptotic cell death and in vivo growth inhibition of human cancer cells by a saturated branched‐chain fatty acid, 13‐methyltetradecanoic acid</article-title>. <source>Cancer Res</source>. <year>2000</year>;<volume>60</volume>:<fpage>505</fpage>–<lpage>509</lpage>.<pub-id pub-id-type="pmid">10676625</pub-id>
+</mixed-citation></ref><ref id="pro70229-bib-0074"><mixed-citation publication-type="journal" id="pro70229-cit-0074">
+<string-name name-style="western">
+<surname>Zhou</surname>
+<given-names>Y</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Wu</surname>
+<given-names>J</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Monto</surname>
+<given-names>AR</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Yuan</surname>
+<given-names>L</given-names>
+</string-name>, <string-name name-style="western">
+<surname>Gao</surname>
+<given-names>R</given-names>
+</string-name>. <article-title>Elevated levels of branched chain fatty acids in low‐salt fish sauce by co‐fermentation: flavor improvement and metabolism analysis</article-title>. <source>J Sci Food Agric</source>. <year>2025</year>;<volume>105</volume>:<fpage>305</fpage>–<lpage>314</lpage>.<pub-id pub-id-type="pmid">39166735</pub-id>
+<pub-id pub-id-type="doi" assigning-authority="pmc">10.1002/jsfa.13829</pub-id></mixed-citation></ref></ref-list></back></article>
