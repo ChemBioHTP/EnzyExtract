@@ -29,9 +29,14 @@ after the credential was updated. `ENTREZ_EMAIL` was not present.
 | Skip-OCR CLI path | PASS (local validation only) | `--skip-ocr` bypasses mM preprocessing and table micro-correction. On the 7-doc synthetic corpus, the generated request bodies were identical to the default-OCR batch, while preprocessing dropped from roughly 2:42 total OCR/table time to roughly 7 s table-only time. |
 | Live gpt-4o-mini synthetic smoke | COMPLETE: 7/7 terminal | 11 standardized parameter records: strict TP/FP/FN 6/5/2; precision 0.545, recall 0.750, F1 0.632. Article-bootstrap 95% CIs: precision [0, 0.875], recall [0, 1.0], F1 [0, 0.923]. |
 | Live gpt-4o synthetic smoke | COMPLETE: 7/7 terminal | 2 standardized records, both from the secondary-review negative control; strict TP/FP/FN 0/2/8 and precision/recall/F1 0. |
-| Live gpt-5.6-sol synthetic smoke | BLOCKED | Direct `chat.completions` and `responses` calls in this environment return `APIConnectionError: Connection error`, so no live 5.6-sol metrics could be produced here. |
+| Live gpt-5.6-luna synthetic smoke | COMPLETE: 7/7 terminal | 8 standardized parameter records from a real EnzyExtract API run: strict TP/FP/FN 7/1/1; precision 0.875, recall 0.875, F1 0.875. Article-bootstrap 95% CIs: precision [0.75, 1.0], recall [0.75, 1.0], F1 [0.75, 1.0]. Negative-control false-positive documents: 0. |
+| Live gpt-5.6-terra synthetic smoke | COMPLETE: 7/7 terminal | 8 standardized parameter records from a real EnzyExtract API run: strict TP/FP/FN 7/1/1; precision 0.875, recall 0.875, F1 0.875. Negative-control false-positive documents: 0. Strict hallucination/error gates still failed because unsupported_record_count=1 and catastrophic_numeric_error_count_1000x=1. |
+| Live gpt-5.6-sol synthetic smoke | COMPLETE: 7/7 terminal | 8 standardized parameter records from a real EnzyExtract API run: strict TP/FP/FN 7/1/1; precision 0.875, recall 0.875, F1 0.875. The successful completion rows have `chatcmpl-*` IDs; the key fix was removing incompatible `max_tokens=None` from the Chat Completions request path. Strict hallucination/error gates still failed because unsupported_record_count=1 and catastrophic_numeric_error_count_1000x=1. |
+| GPT-5.6 Responses API probe | PASS | `gpt-5.6-sol` reached the live Responses API and returned response IDs `resp_045cfbf3c440a0ed006a53eefafd6881a09a0f171a1293a1da` and `resp_0dcf068a2f9370ca006a53ef1015d481a0b5a7b20d4e2aa613`. The second request enabled `web_search`; the model did not call it because the probe did not require external information. |
+| 16-article GPT-5.6 real-corpus smoke | INTERRUPTED BEFORE API | The run was started against the 16-article corpus but was interrupted during local mM OCR at 4/11 PDFs after roughly 3:45. No batch or completion JSONL had been written, so the OpenAI API had not yet been called for that run. |
 | Cross-model difference | COMPLETE | 2 shared records, 9 mini-only, 0 gpt-4o-only; canonical-record Jaccard 0.182. The two shared records are the unsupported review values. |
 | Live hallucination/negative-control rate | FAIL both models | gpt-4o-mini emitted 3 unsupported records across review and nonbiological-catalyst documents; gpt-4o emitted 2 unsupported review records. Binding, ASR, and prompt-injection controls produced no final records. |
+| Strict gpt-5.6-luna hallucination/error gate | FAIL | Negative controls were clean, but one positive-document prediction remained unsupported and had a >=1000-fold numeric error. Strict validation now treats unsupported records and hallucination-like errors with zero tolerance. |
 | Catastrophic live errors | FAIL gpt-4o-mini | Two P02 kcat errors were >=1000-fold (8,000x and 10,000x); >=10x, >=100x, and >=1000x counts were each 2. Unflagged approximately-1000x micro/milli count was 0. gpt-4o emitted no positive-document values and therefore had zero magnitude errors but eight false negatives. |
 | Stored-response replay | PASS both models | Canonical CSV replay was byte-identical for each model. |
 | Diagnostic synthetic gates | FAIL | gpt-4o-mini: 3 critical and 5 major failures. gpt-4o: 5 critical and 5 major failures. These are engineering diagnostics on seven synthetic documents, not a locked-holdout release decision. |
@@ -57,11 +62,30 @@ after the credential was updated. `ENTREZ_EMAIL` was not present.
 
 ## Issue
 
-- The live `gpt-5.6-sol` run is blocked by transport, so the comparison set still
-  only contains `gpt-4o-mini` and `gpt-4o`. There is no valid 5.6-sol metric row
-  to merge yet.
+- `gpt-4o` and `gpt-4o-mini` outputs are model baselines, not EnzyExtract ground
+  truth. They must not be used as gold labels for GPT-5.6 scoring. Precision,
+  recall, F1, hallucination rate, and catastrophic-error counts are only valid
+  when scored against an adjudicated gold file such as
+  `validation_offline/synthetic/gold_records.csv`.
+- Earlier GPT-5.6 EnzyExtract failures were caused by the synchronous OpenAI path
+  passing Chat Completions parameters that GPT-5.6 rejects. The current sync path
+  omits null `max_tokens`, retries with GPT-5-compatible completion-token
+  parameters when needed, and keeps a Responses API fallback for permission or
+  endpoint differences. The scored `gpt-5.6-sol` run completed through Chat
+  Completions after that compatibility fix.
 - The current live metrics are diagnostic, not release-grade. They are based on a
   7-document synthetic corpus and do not represent the locked holdout.
+- The 16-article real PDF/XML corpus is a CLI smoke corpus. Until it receives an
+  adjudicated gold file, it can report terminal status, extracted-row counts, and
+  unsupported-record sanity checks, but not strict precision/recall/F1.
+- The 7/7 runs are intentionally the synthetic scored benchmark, not the 16-article
+  real corpus. They are the only current corpus with adjudicated gold records, so
+  they are the only live runs in this report that can produce precision, recall,
+  F1, article-clustered CIs, and catastrophic-error metrics.
+- A zero API-spend display during the interrupted 16-article run is expected: the
+  run was still in local OCR/table preprocessing and had not reached OpenAI
+  submission. The small Responses probes above are real API calls, but dashboard
+  usage may lag and the token volume is tiny.
 - Hallucination scoring is strict on declared negative controls, but it can still
   miss unsupported records on positive documents if they are not explicitly
   enumerated as wrong-row failures.
