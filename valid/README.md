@@ -6,7 +6,7 @@ pipeline reproduced a published model's results.
 
 ## Task layout
 
-- `../tests/valid/` — fast parser, dispatcher, and script contract tests. These use
+- `../test/valid/` — fast parser, dispatcher, and script contract tests. These use
   mocks and must not call an LLM or external service.
 - `run_e2e_smoke.sh` — manually invoked live CLI smoke test. It needs `OPENAI_API_KEY`,
   an Entrez email address, a PDF corpus, and reachable external services. It is not CI.
@@ -31,7 +31,7 @@ same path explicitly. The smoke script encodes this contract.
 Install the project and pytest in a supported Python environment, then run:
 
 ```bash
-pytest tests/valid
+pytest test/valid
 python -m enzyextract --help
 python -m enzyextract --enzy-root validation_runs/xml-smoke xml \
   --xml-root valid/corpus/articles/xml

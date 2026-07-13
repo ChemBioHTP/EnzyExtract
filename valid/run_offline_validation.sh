@@ -5,7 +5,7 @@ PYTHON="${PYTHON:-python}"
 SUITE_DIR="${VALIDATION_SUITE_DIR:-$(cd "$(dirname "$0")/../.." && pwd)/EnzyExtract_Validation_Suite_v2}"
 OUT_DIR="${1:-validation_offline}"
 
-"$PYTHON" -m pytest -q tests/valid
+"$PYTHON" -m pytest -q test/valid
 "$PYTHON" -m pytest -q "$SUITE_DIR/tests"
 "$PYTHON" "$SUITE_DIR/scripts/generate_synthetic_corpus.py" --output-dir "$OUT_DIR/synthetic"
 "$PYTHON" "$SUITE_DIR/scripts/validate_gold_csv.py" "$OUT_DIR/synthetic/gold_records.csv" \
