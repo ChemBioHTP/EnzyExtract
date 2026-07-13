@@ -94,7 +94,10 @@ def test_extractor_config_receives_private_env_file(monkeypatch):
     args = SimpleNamespace(
         reocr_model_path="model.pth", llm_name="openai/gpt-4o-mini",
         env_file="secrets/openai.env", enzy_root="run",
+        skip_ocr=True, skip_tables=True,
     )
     cli._build_extractor(args)
     assert captured["config"].env_file == "secrets/openai.env"
     assert captured["config"].llm_name == "openai/gpt-4o-mini"
+    assert captured["config"].skip_ocr is True
+    assert captured["config"].skip_tables is True

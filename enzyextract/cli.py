@@ -38,9 +38,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Private dotenv file containing provider credentials (default: .env)",
     )
     parser.add_argument(
-        "--skip-ocr",
+        "--no-ocr", "--skip-ocr",
+        dest="skip_ocr",
         action="store_true",
         help="Skip mM OCR preprocessing and table-level micro correction",
+    )
+    parser.add_argument(
+        "--no-tables",
+        dest="skip_tables",
+        action="store_true",
+        help="Skip table extraction preprocessing",
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -166,6 +173,7 @@ def _build_extractor(args: argparse.Namespace) -> EnzyExtract:
         llm_name=args.llm_name,
         env_file=args.env_file,
         skip_ocr=getattr(args, "skip_ocr", False),
+        skip_tables=getattr(args, "skip_tables", False),
     )
     extractor = EnzyExtract(
         enzy_root=args.enzy_root,

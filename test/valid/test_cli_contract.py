@@ -17,6 +17,10 @@ def test_documented_workflow_parses():
     assert attach.sequences_dir == ".enzy-smoke/sequences"
     assert parse(["xml", "--xml-root", "xmls"]).xml_root == "xmls"
     assert parse(["--env-file", "secrets/openai.env", "download"]).env_file == "secrets/openai.env"
+    submit = parse(["--no-ocr", "--no-tables", "submit", "--pdf-root", "pdfs"])
+    assert submit.skip_ocr is True
+    assert submit.skip_tables is True
+    assert parse(["--skip-ocr", "submit", "--pdf-root", "pdfs"]).skip_ocr is True
 
 
 def test_required_arguments_fail_at_parse_time():

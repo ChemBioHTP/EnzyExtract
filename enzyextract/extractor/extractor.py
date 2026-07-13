@@ -29,6 +29,9 @@ class EnzyExtractConfig:
     skip_ocr: bool = False
     """Skip mM OCR preprocessing and table correction during PDF submission."""
 
+    skip_tables: bool = False
+    """Skip table extraction preprocessing during PDF submission."""
+
 
 class IntermediateFileManager:
     """
@@ -120,7 +123,6 @@ class EnzyExtract:
         :param pdf_root: Path to the folder of PDFs to process.
         """        
         from enzyextract.pre.reocr.m_mu_reocr import script_scan_mM
-        from enzyextract.pre.table.scan_tables import process_pdfs
 
         micros_path = None
         if self.config.skip_ocr:
@@ -134,12 +136,16 @@ class EnzyExtract:
             )
             micros_path = self.fm.mM_parquet
 
-        print("Starting tables...")
-        process_pdfs(
-            pdf_root=pdf_root,
-            write_dir=self.fm.tables_dir,
-            micros_path=micros_path,
-        )
+        if self.config.skip_tables:
+            print("Skipping table preprocessing")
+        else:
+            from enzyextract.pre.table.scan_tables import process_pdfs
+            print("Starting tables...")
+            process_pdfs(
+                pdf_root=pdf_root,
+                write_dir=self.fm.tables_dir,
+                micros_path=micros_path,
+            )
 
         self.scan_papers_and_save(
             pdfs_folder=pdf_root,
@@ -197,11 +203,12 @@ class EnzyExtract:
         elif mode == "batch":
             confirmation = "yes"
         micro_path = None if self.config.skip_ocr else self.fm.mM_parquet
+        tables_from = None if self.config.skip_tables else self.fm.tables_markdown_dir
         return step1_main(
             namespace=namespace,
             pdf_root=pdf_root,
             micro_path=micro_path,
-            tables_from=self.fm.tables_markdown_dir,
+            tables_from=tables_from,
             dest_folder=self.fm.batches_dir,
             corresp_folder=self.fm.corresp_dir,
             log_location=self.fm.llm_log_tsv,
