@@ -11,6 +11,38 @@ The requested conda environment was `/home/ranx/.conda/envs/py3` (Python 3.10.12
 The repository `.env` contains a working `OPENAI_API_KEY`; authentication succeeded
 after the credential was updated. `ENTREZ_EMAIL` was not present.
 
+## Pipeline execution order
+
+This validation used five ordered pipelines. Four produced completed validation
+evidence; the optional sequence-enrichment pipeline was not run live because an
+Entrez email was unavailable.
+
+1. **Fast local contract tests**: run `pytest test/valid` to validate CLI parsing,
+   command dispatch, error decoding, XML preprocessing, and validation utilities
+   without network or LLM calls. Result: 16 tests passed.
+2. **Offline synthetic-artifact validation**: run `bash valid/run_offline_validation.sh`.
+   It runs the repository tests and validation-suite tests, generates seven labelled
+   synthetic PDFs, validates the eight-record adjudicated gold CSV, and freezes and
+   schema-validates a run manifest. Result: completed.
+3. **Sixteen-article input smoke pipeline**: build the fixed corpus, then preprocess
+   its PDF and XML branches. The corpus has **16 articles: 11 PDF inputs** (10 JATS
+   renderings and 1 native publisher PDF) **and 5 JATS XML inputs**. PDF inputs use
+   `submit`; XML inputs use `xml`. Result: all 16 inputs reached a recorded terminal
+   preprocessing state. The full article manifest is
+   `valid/corpus/articles/corpus_manifest.csv`.
+4. **Live synthetic extraction and scoring**: for each model, run `submit --mode
+   interactive`, confirm live completion JSONL, run `download`, then score against
+   the adjudicated synthetic gold CSV and apply strict hallucination/error gates.
+   Result: the scored outputs and metrics are listed below and stored under
+   `validation_runs/live*/scoring/` and `validation_runs/live5-gpt56-luna/scoring/`.
+5. **Optional sequence enrichment**: after a downloaded kinetics CSV exists, run
+   `sequences` and then `attach`. Result: not run live because `ENTREZ_EMAIL` was
+   unavailable; mocked CLI and dispatcher tests passed.
+
+The exact environment requirements and copyable CLI commands for these pipelines
+are in `valid/valid_requiremnt.txt`. This report is the authoritative location for
+the article count, terminal states, metrics, limitations, and artifact paths.
+
 ## Results
 
 | Endpoint | Result | Evidence / limitation |
