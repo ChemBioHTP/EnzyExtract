@@ -1,0 +1,109 @@
+EnzyExtract validation requirements and run commands
+=====================================================
+
+Validated pipeline count: 5
+
+1. Fast local contract tests
+2. Offline synthetic-artifact validation
+3. Sixteen-article PDF/XML input smoke pipeline
+4. Live synthetic extraction and scoring
+5. Optional sequence enrichment and attachment
+
+Pipelines 1-4 produced validation evidence. Pipeline 5 was not run live because
+ENTREZ_EMAIL was unavailable. The 16-article smoke corpus contains 11 PDF inputs
+and 5 JATS XML inputs. Results, metrics, terminal states, and artifact locations
+are recorded in valid/RESULTS.md.
+
+Environment requirements
+------------------------
+
+- Python 3.10.12 was used for the recorded validation runs.
+- Install the project and its declared dependencies from the repository root:
+
+    /home/ranx/.conda/envs/py3/bin/python -m pip install -e . pytest
+
+- A readable OCR checkpoint is required for normal PDF preprocessing:
+
+    data/models/resnet18-remicro-iter3.pth
+
+- Live OpenAI extraction requires OPENAI_API_KEY in a private dotenv file. Keep
+  this file untracked; do not put a key in commands, reports, or fixtures.
+- The sequence pipeline additionally requires a valid NCBI contact address in
+  ENTREZ_EMAIL.
+- The XML pipeline accepts JATS/XML input and does not require an OpenAI key.
+
+CLI command order for the PDF extraction pipeline
+-------------------------------------------------
+
+Set the paths for the corpus, run location, private credential file, and namespace:
+
+    PYTHON=/home/ranx/.conda/envs/py3/bin/python
+    PDF_ROOT=valid/corpus/articles/pdf
+    ENZY_ROOT=validation_runs/pdf-smoke
+    ENV_FILE=$HOME/.config/enzyextract/openai.env
+    NAMESPACE=validation-16-v1
+
+1. Preprocess PDFs and submit or create the model run:
+
+    $PYTHON -m enzyextract --enzy-root "$ENZY_ROOT" --env-file "$ENV_FILE" submit \
+      --pdf-root "$PDF_ROOT" --namespace "$NAMESPACE" --mode confirm \
+      --reocr-model-path data/models/resnet18-remicro-iter3.pth
+
+   Use --mode interactive for a synchronous live run, or --mode batch when using
+   the provider batch workflow. Add --skip-ocr before submit only for the explicit
+   skip-OCR validation path.
+
+2. Download completed model results into a CSV:
+
+    $PYTHON -m enzyextract --enzy-root "$ENZY_ROOT" --env-file "$ENV_FILE" download \
+      --namespace "$NAMESPACE" --output-csv kinetics.csv
+
+3. Validate the downloaded CSV structure and values:
+
+    $PYTHON valid/validate_csv.py kinetics.csv --report kinetics_validation_report.json
+
+4. Optional: fetch sequences from PDF accessions. This needs ENTREZ_EMAIL:
+
+    $PYTHON -m enzyextract --enzy-root "$ENZY_ROOT" sequences \
+      --pdf-root "$PDF_ROOT" --entrez-email "$ENTREZ_EMAIL"
+
+5. Optional: attach fetched sequences to the downloaded kinetics records:
+
+    $PYTHON -m enzyextract --enzy-root "$ENZY_ROOT" attach \
+      --download-csv kinetics.csv --sequences-dir "$ENZY_ROOT/sequences" \
+      --output-csv final.csv
+
+6. Optional: validate the final enriched CSV:
+
+    $PYTHON valid/validate_csv.py final.csv --report final_validation_report.json
+
+CLI command for the XML branch
+------------------------------
+
+    $PYTHON -m enzyextract --enzy-root validation_runs/xml-smoke xml \
+      --xml-root valid/corpus/articles/xml
+
+Validation wrappers
+-------------------
+
+Run fast local tests:
+
+    $PYTHON -m pytest -q test/valid
+
+Run the offline synthetic-artifact pipeline. Set VALIDATION_SUITE_DIR when the
+companion EnzyExtract_Validation_Suite_v2 checkout is not adjacent to this repo:
+
+    PYTHON=$PYTHON bash valid/run_offline_validation.sh validation_offline
+
+Run live GPT-5 synthetic validation and scoring against the seven-document,
+eight-record adjudicated corpus:
+
+    $PYTHON valid/poc/run_gpt5_live_validation.py \
+      --corpus-dir validation_offline/synthetic \
+      --gold validation_offline/synthetic/gold_records.csv \
+      --manifest validation_offline/synthetic/corpus_manifest.csv \
+      --run-root validation_runs/gpt5-poc \
+      --model openai/gpt-5.6-luna
+
+Do not interpret the 16-article real-corpus smoke run as precision, recall, or F1
+evidence until that corpus has an adjudicated gold file.

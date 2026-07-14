@@ -64,6 +64,7 @@ def script_scan_papers(pdf_folder, alias, *, recursive=True):
 
 @export('data/scans/xml.parquet')
 def scan_xmls_by_folder(xml_folder, recursive=False):
+    xml_folder = os.fspath(xml_folder)
     # round up all the XMLs
     xmls = []
     if not recursive:
@@ -99,7 +100,7 @@ def scan_xmls_by_folder(xml_folder, recursive=False):
         # raw_txts.append(raw_txt)
 
         # extract tables
-        tables = soup.find_all('ce:table')
+        tables = soup.find_all(['ce:table', 'table'])
         # give each table directly, as raw xml
         docs = []
         for table in tables:

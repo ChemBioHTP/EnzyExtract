@@ -66,7 +66,6 @@ class CharacterDataset(Dataset):
                 if img_name.endswith(('.png', '.jpg', '.jpeg')):
                     self.images.append(os.path.join(other_folder, img_name))
                     self.labels.append(2)
-    
     def __len__(self):
         return len(self.images)
     
@@ -542,7 +541,9 @@ def resnet_reocr_milli(img: PILImage, mu_score=True, model_path=None) -> str:
     global resnet, torch_device
     if resnet is None:
 
-        model = resnet18(weights=ResNet18_Weights.DEFAULT)
+        # The supplied checkpoint contains the complete model state.  Requesting
+        # ImageNet weights here is redundant and breaks offline CLI operation.
+        model = resnet18(weights=None)
         num_ftrs = model.fc.in_features
         model.fc = torch.nn.Linear(num_ftrs, 3)
         model.load_state_dict(torch.load(model_path, weights_only=True))
@@ -666,6 +667,3 @@ def script_federated_inference(
                 df.write_parquet(f'{write_dir}/mMall.parquet')
     print("Done")
     pass
-
-
-    

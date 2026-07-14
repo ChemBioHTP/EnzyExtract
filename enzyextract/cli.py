@@ -32,6 +32,23 @@ def build_parser() -> argparse.ArgumentParser:
         default=".enzy",
         help="Working directory for intermediate files (default: .enzy)",
     )
+    parser.add_argument(
+        "--env-file",
+        default=".env",
+        help="Private dotenv file containing provider credentials (default: .env)",
+    )
+    parser.add_argument(
+        "--no-ocr", "--skip-ocr",
+        dest="skip_ocr",
+        action="store_true",
+        help="Skip mM OCR preprocessing and table-level micro correction",
+    )
+    parser.add_argument(
+        "--no-tables",
+        dest="skip_tables",
+        action="store_true",
+        help="Skip table extraction preprocessing",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # --- submit ---
@@ -64,6 +81,16 @@ def build_parser() -> argparse.ArgumentParser:
         default="interactive",
         choices=["interactive", "batch", "confirm"],
         help="Submission mode: 'interactive' runs serially, 'batch' creates OpenAI batch files, 'confirm' requires manual confirmation",
+    )
+
+    xml_parser = subparsers.add_parser(
+        "xml",
+        help="Preprocess JATS/XML full text into an EnzyExtract parquet scan",
+    )
+    xml_parser.add_argument(
+        "--xml-root",
+        required=True,
+        help="Directory containing XML full-text files",
     )
 
     # --- download ---
@@ -144,6 +171,9 @@ def _build_extractor(args: argparse.Namespace) -> EnzyExtract:
     config = EnzyExtractConfig(
         reocr_model_path=reocr_model_path,
         llm_name=args.llm_name,
+        env_file=args.env_file,
+        skip_ocr=getattr(args, "skip_ocr", False),
+        skip_tables=getattr(args, "skip_tables", False),
     )
     extractor = EnzyExtract(
         enzy_root=args.enzy_root,
@@ -173,6 +203,14 @@ def cmd_download_results(args: argparse.Namespace) -> None:
     print(f"Done. Result: {len(df)} rows, {len(df.columns)} columns")
 
 
+def cmd_preprocess_xml(args: argparse.Namespace) -> None:
+    """Handle the XML preprocessing subcommand."""
+    extractor = _build_extractor(args)
+    print(f"Preprocessing XML full text (xml_root={args.xml_root})...")
+    df = extractor.step_0_preprocess_xml(xml_root=args.xml_root)
+    print(f"Done. Result: {len(df)} rows, {len(df.columns)} columns")
+
+
 def cmd_fetch_sequences(args: argparse.Namespace) -> None:
     """Handle the 'sequences' subcommand."""
     extractor = _build_extractor(args)
@@ -193,6 +231,7 @@ def cmd_attach_sequences(args: argparse.Namespace) -> None:
     print(f"Attaching sequences (download_csv={args.download_csv})...")
     df = extractor.step_5_attach_sequences(
         download_csv=args.download_csv,
+        sequences_dir=args.sequences_dir,
         output_csv=args.output_csv,
         use_llm=args.use_llm,
     )
@@ -201,6 +240,7 @@ def cmd_attach_sequences(args: argparse.Namespace) -> None:
 
 COMMAND_DISPATCH = {
     "submit": cmd_submit_pdfs,
+    "xml": cmd_preprocess_xml,
     "download": cmd_download_results,
     "sequences": cmd_fetch_sequences,
     "attach": cmd_attach_sequences,

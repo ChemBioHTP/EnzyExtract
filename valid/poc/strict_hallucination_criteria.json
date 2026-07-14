@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "note": "Strict live-smoke gates for GPT-5 family validation. Hallucination and unsupported records are zero-tolerance in this diagnostic setting.",
+  "gates": [
+    {
+      "metric": "document_level.negative_control_false_positive_documents",
+      "operator": "==",
+      "threshold": 0,
+      "severity": "critical"
+    },
+    {
+      "metric": "safety.unsupported_record_count",
+      "operator": "==",
+      "threshold": 0,
+      "severity": "critical"
+    },
+    {
+      "metric": "safety.micro_milli_unflagged_error_count",
+      "operator": "==",
+      "threshold": 0,
+      "severity": "critical"
+    },
+    {
+      "metric": "safety.catastrophic_numeric_error_count_1000x",
+      "operator": "==",
+      "threshold": 0,
+      "severity": "critical"
+    }
+  ]
+}

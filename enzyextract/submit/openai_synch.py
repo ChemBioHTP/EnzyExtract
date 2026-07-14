@@ -3,8 +3,117 @@ import os
 from pathlib import Path
 import time
 import polars as pl
+from openai import BadRequestError, AuthenticationError
 from enzyextract.submit.openai_management import get_openai_client, process_env
 from enzyextract.pipeline.llm_log import read_log, write_log, llm_log_schema
+
+
+def _chat_completion_create(client, body: dict):
+    kwargs = {
+        "model": body.get("model"),
+        "messages": body.get("messages", []),
+    }
+    max_tokens = body.get("max_tokens")
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+    try:
+        return client.chat.completions.create(**kwargs)
+    except BadRequestError as exc:
+        if "max_tokens" not in str(exc):
+            raise
+        retry_kwargs = dict(kwargs)
+        retry_kwargs.pop("max_tokens", None)
+        if max_tokens is not None:
+            retry_kwargs["max_completion_tokens"] = max_tokens
+        return client.chat.completions.create(**retry_kwargs)
+
+
+def _messages_to_responses_args(body: dict) -> dict:
+    messages = body.get("messages", [])
+    instructions = "\n\n".join(
+        str(message.get("content", ""))
+        for message in messages
+        if message.get("role") == "system" and message.get("content")
+    )
+    input_messages = [
+        {"role": message.get("role", "user"), "content": str(message.get("content", ""))}
+        for message in messages
+        if message.get("role") != "system"
+    ]
+    kwargs = {
+        "model": body.get("model"),
+        "input": input_messages or "",
+    }
+    if instructions:
+        kwargs["instructions"] = instructions
+    max_tokens = body.get("max_tokens")
+    if max_tokens is not None:
+        kwargs["max_output_tokens"] = max(16, int(max_tokens))
+    return kwargs
+
+
+def _responses_create_as_chat_completion(client, body: dict):
+    response = client.responses.create(**_messages_to_responses_args(body))
+    usage = getattr(response, "usage", None)
+    input_tokens = getattr(usage, "input_tokens", 0) if usage else 0
+    output_tokens = getattr(usage, "output_tokens", 0) if usage else 0
+    return {
+        "id": response.id,
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": response.model,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": getattr(response, "output_text", ""),
+                },
+                "logprobs": None,
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {
+            "prompt_tokens": input_tokens,
+            "completion_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens,
+        },
+        "system_fingerprint": None,
+    }
+
+
+def _create_completion_body(client, body: dict) -> dict:
+    try:
+        response = _chat_completion_create(client, body)
+    except AuthenticationError as exc:
+        if "insufficient permissions" not in str(exc).lower():
+            raise
+        return _responses_create_as_chat_completion(client, body)
+    return {
+        "id": response.id,
+        "object": "chat.completion",
+        "created": int(time.time()),
+        "model": response.model,
+        "choices": [
+            {
+                "index": 0,
+                "message": {
+                    "role": choice.message.role,
+                    "content": choice.message.content
+                },
+                "logprobs": None,
+                "finish_reason": choice.finish_reason
+            }
+            for choice in response.choices
+        ],
+        "usage": {
+            "prompt_tokens": response.usage.prompt_tokens,
+            "completion_tokens": response.usage.completion_tokens,
+            "total_tokens": response.usage.total_tokens
+        },
+        "system_fingerprint": response.system_fingerprint
+    }
+
 
 def process_batch_synchronously(batch_fpath: str, enzy_root: str) -> str:
     """
@@ -38,12 +147,7 @@ def process_batch_synchronously(batch_fpath: str, enzy_root: str) -> str:
             custom_id = req.get('custom_id')
             body = req.get('body', {})
             
-            # Make synchronous API call
-            response = client.chat.completions.create(
-                model=body.get('model'),
-                messages=body.get('messages', []),
-                max_tokens=body.get('max_tokens', None)
-            )
+            response_body = _create_completion_body(client, body)
             
             # Format response
             formatted_response = {
@@ -52,30 +156,7 @@ def process_batch_synchronously(batch_fpath: str, enzy_root: str) -> str:
                 "response": {
                     "status_code": 200,
                     "request_id": f"req_{int(time.time() * 1000)}",
-                    "body": {
-                        "id": response.id,
-                        "object": "chat.completion",
-                        "created": int(time.time()),
-                        "model": response.model,
-                        "choices": [
-                            {
-                                "index": 0,
-                                "message": {
-                                    "role": choice.message.role,
-                                    "content": choice.message.content
-                                },
-                                "logprobs": None,
-                                "finish_reason": choice.finish_reason
-                            }
-                            for choice in response.choices
-                        ],
-                        "usage": {
-                            "prompt_tokens": response.usage.prompt_tokens,
-                            "completion_tokens": response.usage.completion_tokens,
-                            "total_tokens": response.usage.total_tokens
-                        },
-                        "system_fingerprint": response.system_fingerprint
-                    },
+                    "body": response_body,
                     "error": None
                 }
             }
@@ -87,7 +168,7 @@ def process_batch_synchronously(batch_fpath: str, enzy_root: str) -> str:
                 "id": f"batch_req_{int(time.time() * 1000)}",
                 "custom_id": custom_id,
                 "response": {
-                    "status_code": 500,
+                    "status_code": int(getattr(e, "status_code", 500)),
                     "request_id": f"req_{int(time.time() * 1000)}",
                     "body": None,
                     "error": str(e)

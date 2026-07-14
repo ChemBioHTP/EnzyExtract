@@ -41,17 +41,22 @@ def generate_valid_parquet(fpath,
     decoded_df = jsonl_to_decoded_df(fpath, llm_provider=llm_provider, corresp_df=corresp_df)
     streamed_content = (
         decoded_df
-        .select('custom_id', 'content', 'finish_reason', 'pmid')
+        .select('custom_id', 'content', 'finish_reason', 'pmid', 'status_code', 'error')
         # .select('custom_id', 'content', 'finish_reason', 'pmid', 'all_txt')
         .iter_rows()
     )
 
     # streamed_content = streamed_content
     
-    for custom_id, content, finish_reason, pmid in streamed_content:
+    response_errors = 0
+    for custom_id, content, finish_reason, pmid, status_code, error in streamed_content:
         # pmid = str(pmid_from_usual_cid(custom_id))
         # pmid = custom_id.rsplit('_', 1)[-1]
         
+        if content is None:
+            response_errors += 1
+            print(f"Model response failed for {pmid}: HTTP {status_code}; {error}")
+            continue
         content = content.replace('\nextras:\n', '\ndata:\n') # blunder
         if finish_reason == 'length':
             print("Too long:", pmid)
@@ -84,6 +89,11 @@ def generate_valid_parquet(fpath,
     stats['total_ingested'] = total_ingested
     stats['valid_pmids'] = len(valid_pmids)
     
+    if not valids:
+        raise RuntimeError(
+            f"No valid model records were decoded; {response_errors} response error(s) "
+            f"among {decoded_df.height} terminal response(s)."
+        )
     valid_df = clean_columns_for_valid(pd.concat(valids)) # bad units for km and kcat are rejected here
     valid_df = valid_df.astype({'pmid': 'str'})
     

@@ -23,6 +23,15 @@ class EnzyExtractConfig:
     llm_name: str = "openai/gpt-4o"
     """Name of the LLM to use. Currently, only OpenAI models are supported."""
 
+    env_file: Union[str, Path] = ".env"
+    """Private dotenv file containing API credentials (default: .env)."""
+
+    skip_ocr: bool = False
+    """Skip mM OCR preprocessing and table correction during PDF submission."""
+
+    skip_tables: bool = False
+    """Skip table extraction preprocessing during PDF submission."""
+
 
 class IntermediateFileManager:
     """
@@ -114,21 +123,29 @@ class EnzyExtract:
         :param pdf_root: Path to the folder of PDFs to process.
         """        
         from enzyextract.pre.reocr.m_mu_reocr import script_scan_mM
-        from enzyextract.pre.table.scan_tables import process_pdfs
 
-        print("Starting mM...")
-        script_scan_mM(
-            pdf_root=pdf_root, 
-            write_dir=self.fm.mM_dir, 
-            model_path=self.config.reocr_model_path
-        )
+        micros_path = None
+        if self.config.skip_ocr:
+            print("Skipping mM OCR preprocessing")
+        else:
+            print("Starting mM...")
+            script_scan_mM(
+                pdf_root=pdf_root,
+                write_dir=self.fm.mM_dir,
+                model_path=self.config.reocr_model_path,
+            )
+            micros_path = self.fm.mM_parquet
 
-        print("Starting tables...")
-        process_pdfs(
-            pdf_root=pdf_root,
-            write_dir=self.fm.tables_dir,
-            micros_path=self.fm.mM_parquet
-        )
+        if self.config.skip_tables:
+            print("Skipping table preprocessing")
+        else:
+            from enzyextract.pre.table.scan_tables import process_pdfs
+            print("Starting tables...")
+            process_pdfs(
+                pdf_root=pdf_root,
+                write_dir=self.fm.tables_dir,
+                micros_path=micros_path,
+            )
 
         self.scan_papers_and_save(
             pdfs_folder=pdf_root,
@@ -144,11 +161,9 @@ class EnzyExtract:
         from enzyextract.pre.scans.scan_to_parquet import scan_xmls_by_folder
 
         print(f"Compressing XMLs to {self.fm.xml_scans_dir}/xml.parquet")
-        df = scan_xmls_by_folder(
-            xmls_folder=xml_root,
-            recursive=False,
-        )
+        df = scan_xmls_by_folder(xml_folder=xml_root, recursive=False)
         df.write_parquet(f'{self.fm.xml_scans_dir}/xml.parquet')
+        return df
 
     def step_1_ask_llm(
         self,
@@ -171,7 +186,7 @@ class EnzyExtract:
         from enzyextract.pipeline.step1_run_tableboth import step1_main
 
 
-        process_env('.env')
+        process_env(self.config.env_file)
 
         llm_provider = 'openai'
         _, suggested_prompt, structured = glean_model_name('baba-standard')
@@ -187,11 +202,13 @@ class EnzyExtract:
             confirmation = "local"
         elif mode == "batch":
             confirmation = "yes"
+        micro_path = None if self.config.skip_ocr else self.fm.mM_parquet
+        tables_from = None if self.config.skip_tables else self.fm.tables_markdown_dir
         return step1_main(
             namespace=namespace,
             pdf_root=pdf_root,
-            micro_path=self.fm.mM_parquet,
-            tables_from=self.fm.tables_markdown_dir,
+            micro_path=micro_path,
+            tables_from=tables_from,
             dest_folder=self.fm.batches_dir,
             corresp_folder=self.fm.corresp_dir,
             log_location=self.fm.llm_log_tsv,
@@ -210,7 +227,7 @@ class EnzyExtract:
         """
         Execute LLM batches serially, without the Batch API.
         """
-        process_env('.env')
+        process_env(self.config.env_file)
         from enzyextract.pipeline.step3_llm_to_df import namespace_with_version
 
         _, _, row = namespace_with_version(
@@ -230,7 +247,7 @@ class EnzyExtract:
         """
         from enzyextract.pipeline.step2_download import download
 
-        process_env('.env')
+        process_env(self.config.env_file)
         download(
             log_location=self.fm.llm_log_tsv,
             dest_folder=self.fm.completions_dir,
