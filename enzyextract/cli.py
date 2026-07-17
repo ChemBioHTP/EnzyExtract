@@ -38,14 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Private dotenv file containing provider credentials (default: .env)",
     )
     parser.add_argument(
-        "--no-ocr", "--skip-ocr",
-        dest="skip_ocr",
+        "--skip-ocr",
         action="store_true",
         help="Skip mM OCR preprocessing and table-level micro correction",
     )
     parser.add_argument(
-        "--no-tables",
-        dest="skip_tables",
+        "--skip-tables",
         action="store_true",
         help="Skip table extraction preprocessing",
     )
