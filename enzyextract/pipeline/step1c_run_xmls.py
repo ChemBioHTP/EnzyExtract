@@ -17,8 +17,6 @@ from enzyextract.pre.xml.xml_cals import parse_cals_table
 def step1c_create_xml_batch(
     *, 
     pdf_root: str, # read XMLs from (REPURPOSE)
-    tables_from: Optional[str], # read tables from (IGNORE)
-    micro_path: str, # read micro corrections from (IGNORE)
     manifest_view: Optional[pl.DataFrame], # use specific pmids
 
     namespace: str, # ids
@@ -26,23 +24,25 @@ def step1c_create_xml_batch(
     model_name: str, # model settings
     prompt: str, # prompt settings
     structured: bool = False, # whether to use structured prompt or not
-    
-    _check_nonzero_tables=False, # validate that tables exist (IGNORE)
-    _check_nonzero_reocr=False, # validate that micro corrections exist (IGNORE)
+    **kwargs
+    # absorb extra arguments, such as:
+    # tables_from, micro_path, _check_nonzero_tables, _check_nonzero_reocr
 ): 
     xml_root = pdf_root  # repurpose pdf_root to read XMLs
     
-    target_pmids = acceptable_pmids = pmids_from_directory(xml_root)
+    target_pmids = pmids_from_directory(xml_root, recursive=True, filetype='.xml')
 
-    # Option 1: build manifest from PDFs
+    # Option 1: build manifest from XMLs
     if manifest_view is None:
         manifest_view = build_manifest(xml_root, file_ext='xml')
+
+    manifest_view = manifest_view.filter(
+        pl.col('pmid').is_in(target_pmids)
+    )
 
     batch = []
     correspondences = []
     for fileroot, filename, pmid in tqdm(manifest_view.iter_rows(), total=manifest_view.height):
-        assert pmid in target_pmids
-        
         filepath = fileroot + '/' + filename
         try:
             docs = process_xml(filepath, original_tables=None)
@@ -92,6 +92,7 @@ def step1c_xml_main(
     pdf_root: str, # read from
     model_name: str, # model settings
     prompt: str, 
+    confirmation: Optional[str] = None,
 
     log_location: str,
     dest_folder: str, # write to
@@ -110,6 +111,7 @@ def step1c_xml_main(
 
         model_name=model_name,
         prompt=prompt,
+        confirmation=confirmation,
         log_location=log_location,
         dest_folder=dest_folder,
         corresp_folder=corresp_folder,

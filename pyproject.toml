@@ -28,6 +28,7 @@ dependencies = [
   "gmft_pymupdf @ git+https://github.com/conjuncts/gmft_pymupdf",
   "torchvision",
   "bs4",
+  "lxml",
   "transformers<5.4.0",
   "pyarrow",
   "rapidfuzz",
@@ -42,3 +43,5 @@ enzyextract = "enzyextract.cli:main"
 build-backend = "flit_core.buildapi"
 requires = ["flit_core >=3.2,<4"]
 
+[tool.ruff.lint]
+exclude = ["*.ipynb"]

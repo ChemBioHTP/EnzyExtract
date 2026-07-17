@@ -293,6 +293,87 @@ class EnzyExtract:
         if mode == "interactive" and status:
             self.step_2_process_batch_serially(namespace=namespace)
 
+    # ──────────────────────────────────────────────
+    # XML submission pipeline
+    # ──────────────────────────────────────────────
+
+    def step_1_ask_llm_xml(
+        self,
+        namespace="default-namespace",
+        *,
+        xml_root,
+        version: Optional[str]=None,
+        mode: Literal["interactive", "batch", "confirm"]=None
+    ):
+        """
+        Make calls to LLMs in batches from XML full-text sources.
+
+        :param namespace: Namespace for the LLM batch. Must be a valid file name (no colons, etc.).
+        :param xml_root: Path to the folder of XML files to process.
+        :param version: Optional version, such as "v1", to distinguish new versions of a namespace.
+            If not provided, a version will be assigned automatically.
+        :param mode: Mode for the LLM batch. Can be "interactive", "batch", or "confirm".
+
+        """
+        from enzyextract.pipeline.step1c_run_xmls import step1c_xml_main
+
+        process_env(self.config.env_file)
+
+        llm_provider = 'openai'
+        _, suggested_prompt, structured = glean_model_name('baba-standard')
+        model_name = self.config.llm_name.removeprefix("openai/")
+
+        if any(
+            ch in namespace for ch in [":", "/", "\\", "*", "?", "\"", "<", ">", "|"]
+        ):
+            raise ValueError(f"Namespace '{namespace}' must be a valid file name (no colons, etc.)")
+
+        confirmation = None
+        if mode == "interactive":
+            confirmation = "local"
+        elif mode == "batch":
+            confirmation = "yes"
+        # mode == "confirm" (or None) -> None -> step1_main will ask interactively
+
+        return step1c_xml_main(
+            namespace=namespace,
+            pdf_root=xml_root,
+            model_name=model_name,
+            prompt=suggested_prompt,
+            confirmation=confirmation,
+            log_location=self.fm.llm_log_tsv,
+            dest_folder=self.fm.batches_dir,
+            corresp_folder=self.fm.corresp_dir,
+            structured=structured,
+            llm_provider=llm_provider,
+            version=version,
+            save_as_jsonl=True,
+        )
+
+    def submit_xmls(
+        self,
+        xml_root,
+        namespace="default-namespace",
+        *,
+        version: Optional[str]=None,
+        mode: Literal["interactive", "batch", "confirm"]="confirm"
+    ):
+        """
+        Preprocess XMLs and ask the LLM.
+
+        :param xml_root: Path to the folder of XML files to process.
+        :param namespace: Namespace for the LLM batch. Must be a valid file name (no colons, etc.).
+        :param version: Optional version, such as "v1", to distinguish new versions of a namespace.
+            If not provided, a version will be assigned automatically.
+        :param mode: Mode for the LLM batch. Can be "interactive", "batch", or "confirm".
+        """
+
+        self.step_0_preprocess_xml(xml_root=xml_root)
+        status = self.step_1_ask_llm_xml(namespace=namespace, xml_root=xml_root, version=version, mode=mode)
+
+        if mode == "interactive" and status:
+            self.step_2_process_batch_serially(namespace=namespace)
+
 
     def download_results(self, namespace="default-namespace", *, output_csv: Optional[str]=None) -> "pl.DataFrame":
         """

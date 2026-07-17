@@ -280,6 +280,7 @@ def step1_main(
     
     chunk_size = 1000,
     save_as_jsonl=True,
+    create_batch=None,
 ):
     """
     Runs the main pipeline for PDFs, sending a batch to OpenAI.
@@ -287,6 +288,9 @@ def step1_main(
     See experiments/example/pipeline/ex_step1_run_tableboth.py for an example of how to call this function.
     """
     process_env('.env')
+
+    if create_batch is None:
+        create_batch = step1_create_batch
 
     _should_exist = False # expect that the namespace has not been used before
 
@@ -353,7 +357,7 @@ def step1_main(
 
     if reuse_pref in [ReusePreference.OVERWRITE, ReusePreference.REUSE_AS_NEEDED]:
         # Overwrite (recalculate the files)
-        batch, correspondences = step1_create_batch(
+        batch, correspondences = create_batch(
             pdf_root=pdf_root,
             tables_from=tables_from,
             micro_path=micro_path,

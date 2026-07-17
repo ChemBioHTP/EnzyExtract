@@ -2,7 +2,7 @@
 Command-line interface for EnzyExtract.
 
 Usage:
-    enzyextract submit              Preprocess PDFs and submit LLM batch
+    enzyextract submit              Preprocess PDFs or XMLs and submit LLM batch
     enzyextract download            Download batch results and convert to DataFrame
     enzyextract sequences           Scan PDFs for accession IDs & fetch sequences
     enzyextract attach              Attach sequences to GPT-extracted data
@@ -52,7 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
     # --- submit ---
     submit_parser = subparsers.add_parser(
         "submit",
-        help="Preprocess PDFs and create LLM batch files",
+        help="Preprocess PDFs or XMLs and create LLM batch files",
     )
     submit_parser.add_argument(
         "--reocr-model-path",
@@ -61,8 +61,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     submit_parser.add_argument(
         "--pdf-root",
-        required=True,
+        default=None,
         help="Directory containing PDF files to process",
+    )
+    submit_parser.add_argument(
+        "--xml-root",
+        default=None,
+        help="Directory containing XML full-text files to process",
     )
     submit_parser.add_argument(
         "--namespace",
@@ -180,16 +185,31 @@ def _build_extractor(args: argparse.Namespace) -> EnzyExtract:
     return extractor
 
 
-def cmd_submit_pdfs(args: argparse.Namespace) -> None:
+def cmd_submit(args: argparse.Namespace) -> None:
     """Handle the 'submit' subcommand."""
     extractor = _build_extractor(args)
-    print(f"Submitting PDFs (namespace={args.namespace}, mode={args.mode})...")
-    extractor.submit_pdfs(
-        pdf_root=args.pdf_root,
-        namespace=args.namespace,
-        version=args.version,
-        mode=args.mode,
-    )
+
+    if args.xml_root:
+        print(f"Submitting XMLs (namespace={args.namespace}, mode={args.mode})...")
+        extractor.submit_xmls(
+            xml_root=args.xml_root,
+            namespace=args.namespace,
+            version=args.version,
+            mode=args.mode,
+        )
+    elif args.pdf_root:
+        print(f"Submitting PDFs (namespace={args.namespace}, mode={args.mode})...")
+        extractor.submit_pdfs(
+            pdf_root=args.pdf_root,
+            namespace=args.namespace,
+            version=args.version,
+            mode=args.mode,
+        )
+    else:
+        print("Error: Either --pdf-root or --xml-root must be provided.")
+        print("Usage: enzyextract submit --pdf-root <path> | --xml-root <path> [options]")
+        import sys
+        sys.exit(1)
     print("Done.")
 
 
@@ -237,7 +257,7 @@ def cmd_attach_sequences(args: argparse.Namespace) -> None:
 
 
 COMMAND_DISPATCH = {
-    "submit": cmd_submit_pdfs,
+    "submit": cmd_submit,
     "xml": cmd_preprocess_xml,
     "download": cmd_download_results,
     "sequences": cmd_fetch_sequences,
