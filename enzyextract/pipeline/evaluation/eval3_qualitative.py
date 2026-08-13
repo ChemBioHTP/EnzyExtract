@@ -35,7 +35,7 @@ def preview_differences_in():
 
     against = 'brenda' # =2
 
-    working = 'rumble' # =1
+    working = 'reviewed' # =1
 
     readme = f'data/metrics/{against}/{against}_{working}.parquet'
     print("Reading", readme)

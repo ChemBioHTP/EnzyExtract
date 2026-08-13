@@ -576,7 +576,7 @@ def script_enzyme_name_to_ec():
     Generate a mapping from enzyme name to EC number
     These parquet files are created:
     - brenda_to_ec.parquet
-    - (no longer) rumble_20241125_ec.csv
+    - (no longer) reviewed_20241125_ec.csv
     """
     # try to find ecs for either the enzyme or enzyme_full
     enzyme_df = pl.read_parquet('data/brenda/brenda_enzyme_synonyms.parquet')
@@ -617,18 +617,18 @@ def script_enzyme_name_to_ec():
     # duplicates = duplicates.sort("synonym")
     
 
-    rumble_df = pl.read_csv('data/humaneval/rumble/rumble_20241125.csv')
+    reviewed_df = pl.read_csv('data/humaneval/reviewed/reviewed_20241125.csv')
 
     # merge on enzyme_full if it exists, otherwise merge on enzyme
     from enzyextract.thesaurus.convert_ec import add_ecs
-    rumble_df = add_ecs(rumble_df, to_ec_df)
+    reviewed_df = add_ecs(reviewed_df, to_ec_df)
 
-    rumble_df_csv = rumble_df.with_columns(
+    reviewed_df_csv = reviewed_df.with_columns(
         pl.col("viable_ecs").list.join("; ").alias("viable_ecs")
     )
 
-    rumble_df_csv.write_csv('data/humaneval/rumble/rumble_20241205_ec.csv')
-    print(rumble_df)
+    reviewed_df_csv.write_csv('data/humaneval/reviewed/reviewed_20241205_ec.csv')
+    print(reviewed_df)
 
 if __name__ == '__main__':
     # script_detect_combined_mutants()

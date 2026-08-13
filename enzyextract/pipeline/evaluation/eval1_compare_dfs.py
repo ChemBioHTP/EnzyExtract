@@ -306,7 +306,7 @@ def _remove_bad_es_calc_kcat_value_and_clean_mutants(df: pl.DataFrame):
 def script_match_base_gpt(want_df: pl.DataFrame, base_df: pl.DataFrame, gpt_df: pl.DataFrame):
 
 
-    # base_df = pl.read_csv('data/humaneval/rumble/rumble_20241205_ec.csv', schema_overrides=so)
+    # base_df = pl.read_csv('data/humaneval/reviewed/reviewed_20241205_ec.csv', schema_overrides=so)
     those_pmids = set(base_df['pmid'].unique())
 
     # gpt_df = pl.read_csv('data/valid/_valid_beluga-t2neboth_1.csv', schema_overrides=so)
@@ -544,9 +544,9 @@ def add_diff(df):
         )
     )
 
-def load_rumble_df(exclude_train=False, exclude_rekcat=False):
+def load_reviewed_df(exclude_train=False, exclude_rekcat=False):
     so = {'pmid': pl.Utf8, 'km_2': pl.Utf8, 'kcat_2': pl.Utf8, 'kcat_km_2': pl.Utf8, 'pH': pl.Utf8, 'temperature': pl.Utf8}
-    base_df = pl.read_csv('data/humaneval/rumble/rumble_20241219.csv', schema_overrides=so)
+    base_df = pl.read_csv('data/humaneval/reviewed/reviewed_20241219.csv', schema_overrides=so)
 
     if exclude_train:
         train_pmids = pl.read_parquet('data/pmids/t2neboth_train.parquet')
@@ -633,8 +633,8 @@ def gpt_dataframe(working: str):
     """
     Return the gpt_df for the given working
     """
-    if working == 'rumble':
-        return load_rumble_df(exclude_train=False)
+    if working == 'reviewed':
+        return load_reviewed_df(exclude_train=False)
 
     fpath = gpt_locations()[working]
     if fpath.endswith('.csv'):

@@ -1,7 +1,7 @@
 from colorama import Fore, Style
 import polars as pl
 from enzyextract.metrics.precision_recall import paired_precision_recall, to_df_dual
-from enzyextract.pipeline.evaluation.eval1_compare_dfs import load_rumble_df
+from enzyextract.pipeline.evaluation.eval1_compare_dfs import load_reviewed_df
 
 def analyze_PR(matched_view: pl.DataFrame):
 
@@ -51,16 +51,16 @@ if __name__ == '__main__':
     # working = 'thedata'
     # working = 'pruned'
     # working = 'unpruned'
-    # working = 'rumble'
+    # working = 'reviewed'
     # working = 'thedata'
 
 
-    # against = 'rumble'
+    # against = 'reviewed'
     # against = 'brenda'
     # against = 'sabiork'
 
-    (working, against) = ('rumble', 'brenda')
-    # (working, against) = ('pruned', 'rumble')
+    (working, against) = ('reviewed', 'brenda')
+    # (working, against) = ('pruned', 'reviewed')
 
     scino_only = None
     # scino_only = True
@@ -78,8 +78,8 @@ if __name__ == '__main__':
     readme = f'data/metrics/{against}/{against}_{working}.parquet'
     matched_view = pl.read_parquet(readme)
 
-    if working == 'rumble' and against == 'brenda':
-        # consider rumble as GT
+    if working == 'reviewed' and against == 'brenda':
+        # consider reviewed as GT
         matched_view = _transpose(matched_view)
     # matched_view = matched_view.filter(
     #     pl.col('pmid') != '21980421'
@@ -95,9 +95,9 @@ if __name__ == '__main__':
     # To create a more representative evaluation, 
     # these documents are excluded from the kcat FN and accuracy metrics. Otherwise, FN=882.
 
-    rumble =  load_rumble_df(exclude_train=True, exclude_rekcat=True)
+    reviewed =  load_reviewed_df(exclude_train=True, exclude_rekcat=True)
     matched_view_filtered = matched_view.join(
-        rumble.select('pmid'),
+        reviewed.select('pmid'),
         on='pmid',
         how='semi'
     ) # filter out rekcat

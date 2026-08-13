@@ -1,7 +1,7 @@
 import polars as pl
 import os
 
-from enzyextract.pipeline.evaluation.eval1_compare_dfs import gpt_dataframe, load_rumble_df, eval1_main
+from enzyextract.pipeline.evaluation.eval1_compare_dfs import gpt_dataframe, load_reviewed_df, eval1_main
 
 
 if __name__ == '__main__':
@@ -9,9 +9,9 @@ if __name__ == '__main__':
     
     working = 'pruned'
     # working = 'unpruned'
-    # working = 'rumble'
+    # working = 'reviewed'
 
-    # against = 'rumble'
+    # against = 'reviewed'
     against = 'brenda'
     # against = 'sabiork'
 
@@ -36,8 +36,8 @@ if __name__ == '__main__':
         working += '_no_scientific_revised'
     
     is_brenda = False
-    if against == 'rumble':
-        known_df = load_rumble_df(exclude_train=True)
+    if against == 'reviewed':
+        known_df = load_reviewed_df(exclude_train=True)
     elif against == 'sabiork':
         known_df = pl.read_parquet('data/sabiork/valid_sabiork.parquet')
     else:
