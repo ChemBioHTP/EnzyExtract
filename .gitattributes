@@ -7,3 +7,4 @@ data/export/**/*.parquet filter=lfs diff=lfs merge=lfs -text
 data/enzymes/**/*.parquet filter=lfs diff=lfs merge=lfs -text
 data/recontext/**/*.parquet filter=lfs diff=lfs merge=lfs -text
 data/migrate/**/*.parquet filter=lfs diff=lfs merge=lfs -text
+EnzyExtractDB/EnzyExtractDB_176463_v*.parquet filter=lfs diff=lfs merge=lfs -text

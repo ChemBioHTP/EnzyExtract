@@ -23,9 +23,21 @@ A preliminary tutorial is available on [Google Colab](https://colab.research.goo
 # Database
 
 For explanations of each header, see [docs/enzyextract_headers.md](docs/enzyextract_headers.md). 
-**We recommend reading it** due to possible surprises.
+We recommend reading it due to **possible surprises**. Particularly, the `pmid` column may contain DOIs.
 
-## Initial Release
+## v1.1
+
+We are working on an updated database version with improvements in assignment of:
+- Organism
+- Enzyme name
+- Substrate name
+
+| Filename | kcat count | Location | Description |
+| --- | --- | --- | --- |
+| EnzyExtractDB_176463_v1.1_alpha | 176,463 | [EnzyExtractDB/EnzyExtractDB_176463_v1.1_alpha.parquet](EnzyExtractDB/EnzyExtractDB_176463_v1.1_alpha.parquet) | Improved organisms, enzyme names, substrate names (WIP) |
+
+
+## v1.0
 
 | Filename | kcat count | Location | Description |
 | --- | --- | --- | --- |
