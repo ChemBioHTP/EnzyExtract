@@ -488,6 +488,6 @@ def extract_fragments(
     }
 
 if __name__ == '__main__':
-    datadf = pl.read_parquet('data/recontext/1_fromyaml/data.parquet')
-    contextdf = pl.read_parquet('data/recontext/1_fromyaml/context.parquet')
+    datadf = pl.read_parquet('data/recontext/from_yaml/data.parquet')
+    contextdf = pl.read_parquet('data/recontext/from_yaml/context.parquet')
     extract_fragments(datadf, contextdf)

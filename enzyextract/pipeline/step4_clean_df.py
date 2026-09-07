@@ -72,4 +72,4 @@ def script_finalize_df(
     pass
 
 if __name__ == "__main__":
-    script_finalize_df(_custom_id_source=pl.read_parquet('data/recontext/1_fromyaml/data.parquet'), dry_run=True)
+    script_finalize_df(_custom_id_source=pl.read_parquet('data/recontext/from_yaml/data.parquet'), dry_run=True)

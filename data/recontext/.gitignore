@@ -1,0 +1,4 @@
+*.parquet
+!.gitignore
+!from_yaml/enzyextract_enzyme_synonyms.parquet
+!from_yaml/enzyextract_substrate_synonyms.parquet

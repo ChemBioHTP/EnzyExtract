@@ -216,11 +216,11 @@ def _preview_illegible(
 @export("data/export/2_dedup/TheData_kcat_hallucinations.parquet")
 def script_detect_hallucinations(
     thedata_df: pl.DataFrame = REQUIRE('data/export/TheData_kcat.parquet'),
-    custom_ids: pl.DataFrame = REQUIRE('data/recontext/1_fromyaml/data.parquet')
+    custom_ids: pl.DataFrame = REQUIRE('data/recontext/from_yaml/data.parquet')
 ):
     # Example usage
     # thedata_df = pl.read_parquet('data/export/TheData_kcat.parquet')
-    # custom_ids = pl.read_parquet('data/recontext/1_fromyaml/data.parquet')
+    # custom_ids = pl.read_parquet('data/recontext/from_yaml/data.parquet')
     
     thedata_df = deduplicate(thedata_df)
     # move pmid to the front
